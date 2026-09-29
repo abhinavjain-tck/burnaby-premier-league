@@ -5,7 +5,7 @@ import { NotConfigured } from "@/components/NotConfigured";
 import { RegistrationForm } from "@/components/registration/RegistrationForm";
 import { SponsorSlot } from "@/components/sponsors/SponsorSlot";
 import { isDbConfigured, isStorageConfigured } from "@/lib/config";
-import { getActiveSeason } from "@/lib/registration/queries";
+import { feeFrom, getActiveSeason } from "@/lib/registration/queries";
 
 export const metadata: Metadata = { title: "Register" };
 
@@ -33,7 +33,7 @@ export default async function RegisterPage() {
         <RegistrationForm
           mode="new"
           storageReady={isStorageConfigured()}
-          fee={{ text: process.env.NEXT_PUBLIC_FEE_TEXT, email: process.env.NEXT_PUBLIC_ETRANSFER_EMAIL }}
+          fee={feeFrom(season?.config)}
           stepSponsors={[0, 1, 2].map((i) => (
             <SponsorSlot key={i} placement="reg_step" pick={i} />
           ))}

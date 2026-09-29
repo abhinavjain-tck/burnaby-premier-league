@@ -8,15 +8,34 @@ export type Stats = { matches?: number; runs?: number; wickets?: number; best?: 
 
 export const REG_STATUSES = regStatus.enumValues;
 
+/** League settings an admin edits in seasons.config (JSON). All optional. */
+export type SeasonConfig = {
+  fee_text?: string; // e.g. "$60 per player"
+  etransfer_email?: string; // where players send the e-Transfer
+};
+
+export type FeeInfo = { text?: string; email?: string };
+
+export const feeFrom = (config: unknown): FeeInfo => {
+  const c = (config ?? {}) as SeasonConfig;
+  return { text: c.fee_text || undefined, email: c.etransfer_email || undefined };
+};
+
 /** The season currently taking registrations, or null if none is open. */
 export async function getActiveSeason() {
   const [row] = await getDb()
-    .select({ id: seasons.id, name: seasons.name })
+    .select({ id: seasons.id, name: seasons.name, config: seasons.config })
     .from(seasons)
     .where(eq(seasons.status, "registration"))
     .orderBy(desc(seasons.id))
     .limit(1);
   return row ?? null;
+}
+
+/** Fee details for the registration form: from the open season, else the newest season. */
+export async function getFeeInfo(): Promise<FeeInfo> {
+  const [row] = await getDb().select({ config: seasons.config }).from(seasons).orderBy(desc(seasons.status), desc(seasons.id)).limit(1);
+  return feeFrom(row?.config);
 }
 
 export async function getRegistrationByToken(token: string): Promise<Registration | null> {

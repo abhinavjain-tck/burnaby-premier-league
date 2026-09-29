@@ -6,7 +6,7 @@ import { CardPreview, toCard } from "@/components/registration/CardPreview";
 import { RegistrationForm } from "@/components/registration/RegistrationForm";
 import { isDbConfigured, isStorageConfigured } from "@/lib/config";
 import { editPath } from "@/lib/registration/messages";
-import { getRegistrationByToken, type Stats } from "@/lib/registration/queries";
+import { getRegistrationByToken, type Stats, getFeeInfo } from "@/lib/registration/queries";
 import { isEditToken } from "@/lib/registration/token";
 
 // Private page: keep it out of search engines, and never send the token in a Referer header.
@@ -62,7 +62,7 @@ export default async function EditRegistrationPage({ params, searchParams }: Pro
         mode="edit"
         token={token}
         storageReady={isStorageConfigured()}
-        fee={{ text: process.env.NEXT_PUBLIC_FEE_TEXT, email: process.env.NEXT_PUBLIC_ETRANSFER_EMAIL }}
+        fee={await getFeeInfo()}
         initial={{
           fullName: reg.fullName,
           phone: reg.phone,
