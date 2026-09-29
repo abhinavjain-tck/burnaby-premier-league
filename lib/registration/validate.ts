@@ -69,7 +69,8 @@ export type RegistrationInput = {
   bowlingStyle: string;
   bio: string | null;
   stats: { matches?: number; runs?: number; wickets?: number; best?: string };
-  photoUrl: string | null;
+  /** Left out when the form had no photo field (storage not set up), so an edit never wipes a photo. */
+  photoUrl?: string | null;
   cricheroesUrl: string | null;
   /** Only set when a new screenshot was uploaded, so edits never wipe an old one. */
   paymentProofPath?: string;
@@ -108,7 +109,7 @@ export function parseRegistration(
       bowlingStyle: d.bowlingStyle,
       bio: d.bio ?? null,
       stats,
-      photoUrl: d.photoUrl ?? null,
+      ...(form.has("photoUrl") ? { photoUrl: d.photoUrl ?? null } : {}),
       cricheroesUrl: d.cricheroesUrl ?? null,
       ...(d.paymentProofPath ? { paymentProofPath: d.paymentProofPath } : {}),
     },

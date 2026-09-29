@@ -1,0 +1,46 @@
+import { desc, eq } from "drizzle-orm";
+import { getDb } from "../db/client";
+import { playerRegistrations, regStatus, seasons } from "../db/schema";
+
+export type Registration = typeof playerRegistrations.$inferSelect;
+export type RegStatus = Registration["status"];
+export type Stats = { matches?: number; runs?: number; wickets?: number; best?: string };
+
+export const REG_STATUSES = regStatus.enumValues;
+
+/** The season currently taking registrations, or null if none is open. */
+export async function getActiveSeason() {
+  const [row] = await getDb()
+    .select({ id: seasons.id, name: seasons.name })
+    .from(seasons)
+    .where(eq(seasons.status, "registration"))
+    .orderBy(desc(seasons.id))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function getRegistrationByToken(token: string): Promise<Registration | null> {
+  const [row] = await getDb().select().from(playerRegistrations).where(eq(playerRegistrations.editToken, token)).limit(1);
+  return row ?? null;
+}
+
+export async function getRegistrationById(id: string): Promise<Registration | null> {
+  const [row] = await getDb().select().from(playerRegistrations).where(eq(playerRegistrations.id, id)).limit(1);
+  return row ?? null;
+}
+
+/** Admin list. Newest first. */
+export async function listRegistrations(status?: RegStatus) {
+  return getDb()
+    .select({
+      id: playerRegistrations.id,
+      fullName: playerRegistrations.fullName,
+      role: playerRegistrations.role,
+      tier: playerRegistrations.tier,
+      status: playerRegistrations.status,
+      paidAt: playerRegistrations.paidAt,
+    })
+    .from(playerRegistrations)
+    .where(status ? eq(playerRegistrations.status, status) : undefined)
+    .orderBy(desc(playerRegistrations.createdAt));
+}

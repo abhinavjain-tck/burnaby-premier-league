@@ -1,5 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { cache } from "react";
 import { isDbConfigured, isSupabaseConfigured } from "../config";
 import { getDb } from "../db/client";
@@ -32,6 +33,7 @@ async function roleFor(email: string): Promise<Role | null> {
 
 /** Signed-in Google user and their role, or null if nobody is signed in. Cached per request. */
 export const getViewer = cache(async (): Promise<Viewer | null> => {
+  await connection(); // per-request, even when Supabase is not set up (never prerender an admin page)
   if (!isSupabaseConfigured()) return null;
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();

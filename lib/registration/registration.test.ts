@@ -40,6 +40,7 @@ describe("registration", () => {
     if (!r.ok) return;
     expect(r.data).toMatchObject({ fullName: "Rohit Sharma", phone: "16045550101", email: null, bio: null, stats: {} });
     expect(r.data).not.toHaveProperty("paymentProofPath");
+    expect(r.data).not.toHaveProperty("photoUrl"); // no photo field sent: leave the stored photo alone
   });
 
   it("requires every basics field except email", () => {
