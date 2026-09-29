@@ -43,3 +43,8 @@ next-env.d.ts
 
 # supabase cli
 supabase/.temp/
+
+# e2e: .env.e2e holds public local-Supabase demo keys, safe to commit
+!.env.e2e
+/test-results/
+/playwright-report/
