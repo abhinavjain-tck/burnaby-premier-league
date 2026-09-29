@@ -12,7 +12,11 @@ export type SaveState =
   | { status: "saved" };
 
 /** Keep digits only: "+1 (604) 555-0101" → "16045550101". */
-export const normalisePhone = (raw: string): string => raw.replace(/\D/g, "");
+/** Digits only. A bare 10-digit Canadian/US number gets the country code, so "604…" and "+1 604…" match. */
+export const normalisePhone = (raw: string): string => {
+  const d = raw.replace(/\D/g, "");
+  return d.length === 10 ? `1${d}` : d;
+};
 
 const blank = (v: unknown) => (v === null || (typeof v === "string" && v.trim() === "") ? undefined : v);
 const optText = (max: number, msg: string) => z.preprocess(blank, z.string().trim().max(max, msg).optional());

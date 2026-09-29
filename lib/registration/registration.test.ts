@@ -21,9 +21,14 @@ const basics = {
 };
 
 describe("registration", () => {
+  it("adds the country code to a bare 10-digit number", () => {
+    expect(normalisePhone("(604) 555-0101")).toBe("16045550101");
+    expect(normalisePhone("+91 98765 43210")).toBe("919876543210");
+  });
+
   it("normalises phone to digits", () => {
     expect(normalisePhone("+1 (604) 555-0101")).toBe("16045550101");
-    expect(normalisePhone("604.555.0101")).toBe("6045550101");
+    expect(normalisePhone("604.555.0101")).toBe("16045550101");
   });
 
   it("makes 20-char URL-safe edit tokens", () => {

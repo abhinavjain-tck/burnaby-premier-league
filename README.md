@@ -25,9 +25,9 @@ Phone-first site for the Burnaby Premier League (Vancouver, BC): player registra
 cp .env.example .env.local   # fill from the Supabase dashboard
 pnpm install
 pnpm dev
-pnpm test                    # reducer + money rules
-pnpm drizzle-kit generate    # after editing lib/db/schema.ts
-pnpm drizzle-kit migrate
+pnpm test                    # reducer, money and registration rules
+pnpm db:generate             # after editing lib/db/schema.ts
+pnpm db:push                 # apply migrations to the linked Supabase project
 ```
 
 The repo `.npmrc` pins the public npm registry so a global private-registry config does not get in the way.
@@ -40,14 +40,14 @@ Do this once, signed in with the league Google account.
 
 1. **Create the project.** Pick the region closest to Vancouver (West US). Save the database password.
 2. **Copy keys into `.env.local`.** Project settings → API: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Connect → Transaction pooler (port 6543): `DATABASE_URL`.
-3. **Run migrations.** Use the Session pooler URL (port 5432) for this one command; the transaction pooler doesn't like DDL:
+3. **Apply the database.** One command creates the schema, RLS policies, Season 4 seed rows and the storage buckets:
    ```bash
-   DATABASE_URL="<session pooler url>" pnpm drizzle-kit migrate
+   npx supabase login && npx supabase link --project-ref <project-ref>
+   npx supabase db push
    ```
-4. **Run `supabase/policies.sql`, then `supabase/seed.sql`** in the SQL editor (or `psql "$DATABASE_URL" -f ...`). Both are safe to re-run. Add your admin emails to `user_roles` (see the end of `seed.sql`).
-5. **Create storage buckets** (Storage → New bucket):
-   - `photos`: **public**. File size limit 5 MB, allowed types `image/webp, image/jpeg, image/png`.
-   - `payment-proofs`: **private**. Same limits. Admins view files through 10-minute signed links.
+   Migrations live in `supabase/migrations`. Drizzle generates the schema ones (`pnpm db:generate` after editing `lib/db/schema.ts`, Supabase-style timestamped names); policies, seed and buckets are hand-written files in the same folder. Never run `drizzle-kit migrate`; the Supabase CLI owns applying them.
+4. **Add admin emails.** `SUPER_ADMIN_EMAILS` covers the first sign-in; also insert them into `user_roles` (SQL editor) so `is_admin()` in RLS knows them.
+5. **Buckets** `photos` (public) and `payment-proofs` (private) are created by the migration. Nothing to do.
 6. **Turn on Google sign-in.** In Google Cloud, create an OAuth client (Web) with redirect URI `https://<project-ref>.supabase.co/auth/v1/callback`. Paste the client ID and secret into Authentication → Providers → Google.
 7. **Allow our callback.** Authentication → URL Configuration: set Site URL to the production URL, and add these Redirect URLs:
    - `https://<your-domain>/auth/callback`
