@@ -7,6 +7,14 @@ export function AdminBar({ email }: { email: string }) {
       <Link href="/admin/registrations" className="text-lg font-black">
         BPL admin
       </Link>
+      <nav className="flex gap-4 text-sm font-bold">
+        <Link href="/admin/registrations" className="underline">
+          Registrations
+        </Link>
+        <Link href="/admin/settings" className="underline">
+          Settings
+        </Link>
+      </nav>
       <form action={signOut} className="flex items-center gap-3 text-sm">
         <span className="text-muted">{email}</span>
         <button type="submit" className="font-bold underline">

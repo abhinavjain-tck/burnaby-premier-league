@@ -46,7 +46,7 @@ Do this once, signed in with the league Google account.
    npx supabase db push
    ```
    Migrations live in `supabase/migrations`. Drizzle generates the schema ones (`pnpm db:generate` after editing `lib/db/schema.ts`, Supabase-style timestamped names); policies, seed and buckets are hand-written files in the same folder. Never run `drizzle-kit migrate`; the Supabase CLI owns applying them.
-4. **League settings** (fee line and e-Transfer email) live in `seasons.config`, editable in the SQL editor until there is an admin form:
+4. **League settings** (fee line, e-Transfer email, registration open or closed) and team names, short codes, colours and logos are now editable at `/admin/settings` once you can sign in as an admin (step 5). They live in `seasons.config` and the `teams` table. Until then, or if you prefer SQL:
    ```sql
    update seasons set config = config || '{"fee_text": "$60 per player", "etransfer_email": "pay@example.com"}' where id = 1;
    ```
@@ -63,7 +63,7 @@ Do this once, signed in with the league Google account.
 ## Layout
 
 ```
-app/                  routes: / (landing), /register, /r/[token], /admin, /admin/registrations, /auth/callback
+app/                  routes: / (landing), /register, /r/[token], /admin, /admin/registrations, /admin/settings, /auth/callback
 components/           sponsors/SponsorSlot, registration form and card, admin bits
 lib/money.ts          lakhs, crores, increment ladder, squad guard
 lib/auction/          pure reducer + tests, shared by server and phones
