@@ -9,12 +9,14 @@ import type { LiveMessage, LiveSnapshot, Snapshot } from "./types";
 export type LiveResult =
   | { kind: "applied"; snapshot: Snapshot }
   | { kind: "stale" } // already have it: ignore
-  | { kind: "refetch" }; // gap, undo/redo, or something we can't apply
+  | { kind: "refetch" } // gap, undo/redo, or something we can't apply
+  | { kind: "reload" }; // lots or teams changed: fetch everything
 
 /** Event types that close the "going once" clock on the board. */
 export const CLOCK_STOPPERS = new Set(["BID", "SOLD", "UNSOLD", "SKIP", "START_LOT", "PAUSE", "COMPLETE"]);
 
 export function applyLive(snap: Snapshot, msg: LiveMessage, eventLimit = 10): LiveResult {
+  if (msg.reload) return { kind: "reload" };
   const local = snap.auction.version;
   if (msg.version <= local) return { kind: "stale" };
   const row = msg.event;

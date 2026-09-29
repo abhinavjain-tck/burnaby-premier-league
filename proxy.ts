@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Keeps the admin Supabase session fresh. Server Components can't write cookies,
- * so the token refresh has to happen here. Only runs on /admin.
+ * so the token refresh has to happen here. Only runs on signed-in pages.
  */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -26,4 +26,5 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-export const config = { matcher: ["/admin/:path*"] };
+// Signed-in pages only: admin, and the auction console and owner view.
+export const config = { matcher: ["/admin/:path*", "/auction/:id/console", "/auction/:id/owner"] };

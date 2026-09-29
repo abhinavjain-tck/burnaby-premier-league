@@ -52,11 +52,20 @@ export type Snapshot = {
 /** The small part that changes on every event. What the polling fallback fetches. */
 export type LiveSnapshot = Pick<Snapshot, "auction" | "state" | "onBlock" | "lastEvents" | "undoSeq" | "redoSeq">;
 
-/** Realtime message on channel auction:{id}, event "event". `event: null` means "refetch". */
-export type LiveMessage = { version: number; event: EventRow | null };
+/**
+ * Realtime message on channel auction:{id}, event "event". `event: null` means
+ * "refetch if you're behind"; `reload` means lots or teams changed, refetch everything.
+ */
+export type LiveMessage = { version: number; event: EventRow | null; reload?: boolean };
 
 /** Realtime message on channel auction:{id}, event "clock". Not persisted. */
 export type ClockMessage = { type: "CLOCK"; endsAt: number; seconds: number };
 
 /** Anything the console can send. UNDO and REDO become marker rows, not reducer events. */
 export type Command = AuctionEvent | { type: "UNDO" } | { type: "REDO" };
+
+/** What the console gets back from sendCommand. */
+export type CommandResponse =
+  | { ok: true; snapshot: Snapshot; duplicate: boolean }
+  | { ok: false; code: "conflict"; message: string; snapshot: Snapshot | null }
+  | { ok: false; code: "rule" | "auth" | "invalid" | "config"; message: string };
