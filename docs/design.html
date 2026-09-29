@@ -1,0 +1,718 @@
+<title>Burnaby Premier League Platform</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (~68ch) with a sticky chip nav; wide tables/diagrams scroll in their own box. */
+:root{
+  --bg:#f5f6f2; --surface:#ffffff; --surface-2:#eceee7; --line:#d3d7cc;
+  --ink:#171f1b; --ink-2:#4a554f; --ink-3:#7a857f;
+  --accent:#0e6b4a; --accent-ink:#ffffff; --accent-soft:#dcefe5;
+  --sold:#a3212f; --sold-soft:#f6dfe1; --gold:#a9781a; --gold-soft:#f5ead0;
+  --warn:#8a5a00; --warn-soft:#fbeccc;
+  --code-bg:#1d2622; --code-ink:#e6ebe7;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#111614; --surface:#181f1c; --surface-2:#1f2824; --line:#2d3833;
+    --ink:#e8ece9; --ink-2:#b4bdb7; --ink-3:#7f8a84;
+    --accent:#4fbf93; --accent-ink:#0b1a13; --accent-soft:#173327;
+    --sold:#ef7a86; --sold-soft:#3a1a1f; --gold:#e0b45a; --gold-soft:#332a14;
+    --warn:#e8b34a; --warn-soft:#332a14;
+    --code-bg:#0c110f; --code-ink:#dfe6e1;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#111614; --surface:#181f1c; --surface-2:#1f2824; --line:#2d3833;
+  --ink:#e8ece9; --ink-2:#b4bdb7; --ink-3:#7f8a84;
+  --accent:#4fbf93; --accent-ink:#0b1a13; --accent-soft:#173327;
+  --sold:#ef7a86; --sold-soft:#3a1a1f; --gold:#e0b45a; --gold-soft:#332a14;
+  --warn:#e8b34a; --warn-soft:#332a14;
+  --code-bg:#0c110f; --code-ink:#dfe6e1;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6}
+.wrap{max-width:820px;margin:0 auto;padding-block:0 96px;padding-inline:20px}
+h1,h2,h3,h4{font-family:var(--display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(34px,7vw,56px);font-weight:900;letter-spacing:-.02em}
+h2{font-size:clamp(24px,4.5vw,32px);font-weight:700;margin-top:64px;padding-top:24px;border-top:2px solid var(--ink)}
+h3{font-size:20px;font-weight:700;margin-top:36px}
+h4{font-size:16px;font-weight:700;margin-top:24px;color:var(--ink-2)}
+p{margin:12px 0;max-width:68ch}
+ul,ol{padding-left:22px;max-width:70ch}
+li{margin:6px 0}
+li>ul{margin-top:4px}
+a{color:var(--accent)}
+strong{font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:1px 5px;border-radius:3px}
+pre{background:var(--code-bg);color:var(--code-ink);padding:16px;border-radius:6px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.5}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+header.hero{padding-block:48px 24px;border-bottom:1px solid var(--line)}
+header.hero p.lede{font-size:18px;color:var(--ink-2);max-width:60ch}
+.meta{display:flex;flex-wrap:wrap;gap:10px 24px;font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-top:16px}
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-20px;padding:10px 20px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+nav.toc::-webkit-scrollbar{display:none}
+nav.toc a{display:inline-block;font-family:var(--mono);font-size:12px;text-decoration:none;color:var(--ink-2);padding:6px 10px;border:1px solid var(--line);border-radius:999px;margin-right:6px;background:var(--surface)}
+nav.toc a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);padding:14px 16px;border-radius:0 6px 6px 0;margin:20px 0}
+.callout.warn{border-color:var(--warn);background:var(--warn-soft)}
+.callout.sold{border-color:var(--sold);background:var(--sold-soft)}
+.callout p{margin:6px 0}
+.callout .eyebrow{color:inherit;opacity:.75}
+.tablewrap{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px;background:var(--surface)}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);background:var(--surface-2)}
+tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.pill.rec{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.pill.risk{background:var(--sold-soft);color:var(--sold);border-color:transparent}
+.pill.gold{background:var(--gold-soft);color:var(--gold);border-color:transparent}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin:18px 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
+.card h4{margin-top:0;color:var(--ink)}
+.card p{font-size:14px;color:var(--ink-2);margin:8px 0 0}
+.card.rec{border-color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
+.stack{display:grid;gap:10px;margin:16px 0}
+.stack .row{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:6px;font-size:14px}
+.stack .row b{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--ink-2);text-transform:uppercase;padding-top:2px}
+@media (max-width:480px){.stack .row{grid-template-columns:1fr}}
+details{border:1px solid var(--line);border-radius:6px;background:var(--surface);margin:10px 0}
+summary{cursor:pointer;padding:12px 14px;font-weight:600;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);display:inline-block;width:18px;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details .body{padding:0 14px 14px;font-size:15px}
+.q{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line)}
+.q:last-child{border-bottom:none}
+.q .n{font-family:var(--mono);font-size:12px;color:var(--ink-3);padding-top:4px}
+.q .ask{font-weight:600}
+.q .assume{font-size:14px;color:var(--ink-2);margin-top:4px}
+.q .assume b{color:var(--accent);font-weight:600}
+.diagram{overflow-x:auto;margin:20px 0;padding:8px 0}
+.diagram svg{display:block;min-width:600px;width:100%;height:auto;font-family:var(--mono);font-size:12px}
+.diagram .box{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.2}
+.diagram .box.acc{fill:var(--accent-soft);stroke:var(--accent)}
+.diagram .box.sold{fill:var(--sold-soft);stroke:var(--sold)}
+.diagram .box.gold{fill:var(--gold-soft);stroke:var(--gold)}
+.diagram .box.dim{fill:var(--surface-2);stroke:var(--line)}
+.diagram text{fill:var(--ink)}
+.diagram text.sub{fill:var(--ink-3);font-size:10.5px}
+.diagram line,.diagram path{stroke:var(--ink-2);stroke-width:1.2;fill:none}
+.diagram .lbl{fill:var(--ink-2);font-size:10.5px}
+.cap{font-size:13px;color:var(--ink-3);margin-top:-6px}
+.phone{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:18px 0}
+.screen{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;font-size:12px;min-height:250px;display:flex;flex-direction:column;gap:6px}
+.screen .bar{height:5px;width:40%;background:var(--surface-2);border-radius:3px;margin:0 auto 6px}
+.screen .t{font-family:var(--display);font-weight:700;font-size:13px}
+.screen .blk{background:var(--surface-2);border-radius:5px;padding:6px 8px;color:var(--ink-2)}
+.screen .blk.acc{background:var(--accent-soft);color:var(--ink)}
+.screen .blk.sold{background:var(--sold-soft);color:var(--ink)}
+.screen .blk.gold{background:var(--gold-soft);color:var(--ink)}
+.screen .btn{margin-top:auto;background:var(--accent);color:var(--accent-ink);text-align:center;border-radius:6px;padding:8px;font-weight:600}
+.screen .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink-2)}
+.screen .who{font-family:var(--mono);font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;text-align:center}
+.timeline{display:grid;gap:0;margin:18px 0}
+.day{display:grid;grid-template-columns:110px 1fr;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+.day:last-child{border-bottom:none}
+.day .d{font-family:var(--display);font-weight:700}
+.day .d small{display:block;font-family:var(--mono);font-weight:400;font-size:11px;color:var(--ink-3)}
+.day ul{margin:0;font-size:14px}
+@media (max-width:480px){.day{grid-template-columns:1fr}}
+.ladder{font-family:var(--mono);font-size:13px;display:grid;grid-template-columns:auto auto;gap:4px 18px;width:max-content;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.small{font-size:14px;color:var(--ink-2)}
+@media (prefers-reduced-motion: no-preference){ html{scroll-behavior:smooth} }
+</style>
+
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow">Design doc · Season 4 · draft 2 (auction Sunday)</div>
+  <h1>Burnaby Premier League Platform</h1>
+  <p class="lede">A phone-only site for about 50 players, 4 owners, a couple of admins and one auctioneer standing on a cricket ground. Registration this week, an IPL-style auction in crores on Sunday, a full undo log, and nothing that does not need to exist by then. Free to run.</p>
+  <div class="meta">
+    <span>Written Tue 29 Sep 2026</span>
+    <span>Auction Sun 4 Oct 2026 · on the ground</span>
+    <span>Reading time ~35 min</span>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <a href="#tldr">TL;DR</a>
+  <a href="#questions">Questions</a>
+  <a href="#roles">Roles</a>
+  <a href="#stack">Stack</a>
+  <a href="#arch">Architecture</a>
+  <a href="#auth">Auth</a>
+  <a href="#data">Data model</a>
+  <a href="#registration">Registration</a>
+  <a href="#sponsors">Sponsors</a>
+  <a href="#content">Content</a>
+  <a href="#auction">Auction</a>
+  <a href="#realtime">Realtime</a>
+  <a href="#security">Security</a>
+  <a href="#repo">Repo</a>
+  <a href="#plan">Build plan</a>
+  <a href="#risks">Risks</a>
+</nav>
+
+<!-- ============================================================ -->
+<h2 id="tldr">TL;DR: the recommendation</h2>
+<p>One Next.js app on Vercel. One Supabase project for Postgres, admin auth, image storage, and realtime. No monorepo, no separate services, no queue. Sized for fifty phones on a ground on Sunday afternoon.</p>
+
+<div class="stack">
+  <div class="row"><b>Frontend</b><span>Next.js 15 (App Router, Server Components, Server Actions), Tailwind, shadcn/ui. High-contrast light theme because the board is read in sunlight.</span></div>
+  <div class="row"><b>Hosting</b><span>Vercel Hobby. Preview deploy per pull request.</span></div>
+  <div class="row"><b>Database</b><span>Supabase Postgres. Drizzle ORM. Row Level Security on every table. Money stored as integer lakhs (300 cr = 30,000 L) so there are never decimals in the ledger.</span></div>
+  <div class="row"><b>Auth</b><span>Season 4 cut: <strong>players do not log in.</strong> Registration is a public form with a private edit link. Only admins, the auctioneer and the 4 owners sign in, via Google, against an allowlist.</span></div>
+  <div class="row"><b>Images</b><span>Supabase Storage. Photos compressed in the browser to ~200 KB before upload.</span></div>
+  <div class="row"><b>Realtime</b><span>Supabase Realtime Broadcast, one channel for the auction, 5-second polling fallback for weak cellular.</span></div>
+  <div class="row"><b>Auction engine</b><span>Event-sourced. Every auctioneer tap is an immutable row. Undo and redo are pointer moves. Console runs on the auctioneer's phone.</span></div>
+  <div class="row"><b>Comms</b><span>WhatsApp group, as today. No email in v1.</span></div>
+</div>
+
+<div class="callout sold">
+  <div class="eyebrow">The five-day sprint</div>
+  <p><strong>Registration link out by Wednesday evening.</strong> Auction engine Thursday. Rehearsal with owners Friday evening on their phones. Second rehearsal Saturday with the real pool. Auction Sunday. If you need a registration link before Wednesday evening, open a Google Form tonight with the same fields; it imports as CSV and players get their edit link by WhatsApp.</p>
+</div>
+
+<h3>What is cut for Sunday</h3>
+<div class="grid">
+  <div class="card rec"><h4>Ships by Sunday</h4><p>Landing with title sponsor, registration form with photo and CricHeroes link, admin table with paid tick, auction console on a phone, public live board, owner view with purse and max bid, undo/redo, unlisted test auctions, event log export.</p></div>
+  <div class="card"><h4>Cut, comes after the auction</h4><p>Player login, news, videos, gallery, team pages (rosters publish as a static list first), email, push notifications, sponsor click tracking, sold share card (stretch goal for Saturday), CricHeroes stat fetch.</p></div>
+  <div class="card"><h4>Cut for good this season</h4><p>Owners bidding on their own phones (Format 2), Right to Match, projector screen, multi-season archive, Turborepo.</p></div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="questions">Questions before we build</h2>
+<p>Each question carries the assumption the rest of this document runs on. Correct any of them and the affected section changes; nothing else does.</p>
+
+<h3>League and timing</h3>
+<div class="q"><div class="n">Q1</div><div><div class="ask">Is this Sunday registration opening, or the auction itself, or the first match?</div><div class="assume"><b>Answered:</b> registration is live now, <b>auction is Sunday 4 Oct</b>, matches later.</div></div></div>
+<div class="q"><div class="n">Q2</div><div><div class="ask">How many teams, and how many players per squad (min and max)?</div><div class="assume"><b>Answered:</b> <b>4 teams, 11 to 13 players each</b>, so 44 to 52 players in the pool.</div></div></div>
+<div class="q"><div class="n">Q3</div><div><div class="ask">Do previous seasons matter to the site (past results, past owners, past squads)?</div><div class="assume">Assumed: <b>Season 4 only</b>, with a <code>season_id</code> on every table so seasons 5+ are cheap to add. Old data can be pasted in later.</div></div></div>
+<div class="q"><div class="n">Q4</div><div><div class="ask">Is there an existing domain and logo? Who owns the Google account we register Vercel and Supabase under?</div><div class="assume">Assumed: <b>a league Gmail account</b> owns both, so the project does not die with one volunteer.</div></div></div>
+
+<h3>Registration and payment</h3>
+<div class="q"><div class="n">Q5</div><div><div class="ask">How is the fee paid today? Interac e-Transfer to a league email, cash, both?</div><div class="assume">Assumed: <b>e-Transfer, marked manually by an admin</b>. Player can optionally upload a screenshot. No Stripe in v1. Still need: fee amount and the e-Transfer email for the form.</div></div></div>
+<div class="q"><div class="n">Q6</div><div><div class="ask">What is "interested" versus "registered"? Is there a waitlist or a cap?</div><div class="assume">Assumed: three states: <b>interested → registered (form done) → confirmed (paid)</b>. Only confirmed players enter the auction pool.</div></div></div>
+<div class="q"><div class="n">Q7</div><div><div class="ask">What player info goes on the auction card? Batting/bowling style, role, previous BPL team, CricHeroes stats?</div><div class="assume">Assumed: <b>photo, name, role, batting and bowling style, one-line bio, 4 self-reported numbers</b> (matches, runs, wickets, best score), CricHeroes link. Stats pulled from CricHeroes are phase 3 because there is no public API.</div></div></div>
+<div class="q"><div class="n">Q8</div><div><div class="ask">Should owners see who has registered before the auction, or only on auction day?</div><div class="assume">Assumed: <b>the pool is public as soon as a player registers</b>, since there is no time for a scouting window. Payment status stays admin-only. Still need: registration close time (proposed Saturday noon so tiers can be set).</div></div></div>
+
+<h3>Auction</h3>
+<div class="q"><div class="n">Q9</div><div><div class="ask">Is the auction in a physical room with a projector, fully online, or a mix?</div><div class="assume"><b>Answered:</b> <b>on a cricket ground, everyone on phones, no projector</b>. Owners bid by voice, the auctioneer or an operator records on a phone, every other phone is the board. Format 1 below, tuned for sunlight and cellular.</div></div></div>
+<div class="q"><div class="n">Q10</div><div><div class="ask">What is the purse and are base prices tiered?</div><div class="assume"><b>Answered in part:</b> purse is in crores, around <b>300 cr per team</b>. Proposed tiers below: Marquee 20 cr, A 10 cr, B 5 cr, C 2 cr. Stored as lakhs internally.</div></div></div>
+<div class="q"><div class="n">Q11</div><div><div class="ask">Are owners also players? Do they get auto-placed in their team? Is there an icon or retained player per team?</div><div class="assume">Assumed: <b>owner is a player, pre-sold to their own team at a fixed price</b> (say 25 cr) before lot 1. No retentions or Right-to-Match in Season 4.</div></div></div>
+<div class="q"><div class="n">Q12</div><div><div class="ask">Are there squad composition rules (minimum bowlers, one wicketkeeper, women's or junior slots)?</div><div class="assume">Assumed: <b>no hard quotas</b>, but the console shows role counts per team so the room can see imbalance.</div></div></div>
+<div class="q"><div class="n">Q13</div><div><div class="ask">What happens to unsold players? Second round, then random allocation?</div><div class="assume">Assumed: <b>unsold go back to the pool; an accelerated round at the end at base price; anyone still unsold is distributed by admin</b>.</div></div></div>
+<div class="q"><div class="n">Q14</div><div><div class="ask">Who can undo? Only the auction admin, or the auctioneer too?</div><div class="assume">Assumed: <b>one auction-admin role does both</b>; a second admin can be added as backup on the day.</div></div></div>
+
+<h3>Admin and content</h3>
+<div class="q"><div class="n">Q15</div><div><div class="ask">How many admins, and do they need different powers (content admin vs registration admin vs auction admin)?</div><div class="assume">Assumed: <b>super admin, admin, auction admin</b>. Admin does content and registration. Auction admin is a per-auction grant.</div></div></div>
+<div class="q"><div class="n">Q16</div><div><div class="ask">Do sponsors need a click report or impression count?</div><div class="assume">Assumed: <b>click count per sponsor</b> via a redirect route. No impression tracking in v1.</div></div></div>
+<div class="q"><div class="n">Q17</div><div><div class="ask">Do we need match schedule and scorecards on the site, or is CricHeroes the source of truth for that?</div><div class="assume">Assumed: <b>CricHeroes stays the scoring home</b>; we embed or link. No fixtures module in v1.</div></div></div>
+
+<!-- ============================================================ -->
+<h2 id="roles">Who uses it</h2>
+<p>Six roles. Only three of them log in this season (owner, auction admin, admin/super admin). Players and visitors never see a sign-in screen, which removes the single biggest source of day-of support questions.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Role</th><th>Who</th><th>Can</th><th>Cannot</th></tr></thead>
+<tbody>
+<tr><td><strong>Visitor</strong></td><td>Anyone with the link</td><td>See landing, sponsors, news, videos, public auction board, team pages</td><td>See phone numbers, payment status, or test auctions</td></tr>
+<tr><td><strong>Player</strong></td><td>Registered via the public form; no login in Season 4</td><td>Edit own card through a private edit link; see own team and price on the public board</td><td>Edit anyone else; see payment of others</td></tr>
+<tr><td><strong>Owner</strong></td><td>One of 4 Google accounts on the allowlist, linked to a team</td><td>Everything a player can, plus see own purse, squad, role counts live; in Format 2, place bids</td><td>Edit other teams; undo anything</td></tr>
+<tr><td><strong>Auction admin</strong></td><td>Granted per auction</td><td>Run the console: next lot, record bid, sold, unsold, pause, undo, redo, adjust purse, reorder queue</td><td>Change sponsors or content; add admins</td></tr>
+<tr><td><strong>Admin</strong></td><td>Granted by super admin</td><td>Registrations, payment ticks, sponsors, news, videos, gallery, create auctions, grant auction admin</td><td>Add or remove admins</td></tr>
+<tr><td><strong>Super admin</strong></td><td>One or two organisers</td><td>Everything, plus add/remove admins, open/close season, export data</td><td>Bypass the audit log (nothing does)</td></tr>
+</tbody></table></div>
+
+<!-- ============================================================ -->
+<h2 id="stack">Stack options</h2>
+<p>Four honest options. The first is the recommendation. The constraint that decides most of it: Vercel functions cannot hold a connection open, so realtime has to come from somewhere else, and the cheapest "somewhere else" that is also free is bundled with a database.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th></th><th>A · Supabase all-in <span class="pill rec">recommended</span></th><th>B · Neon + pieces</th><th>C · MongoDB Atlas</th><th>D · Firebase</th></tr></thead>
+<tbody>
+<tr><th>Database</th><td>Postgres, 500 MB, pauses after 7 idle days (a cron ping fixes that)</td><td>Postgres, 0.5 GB, scales to zero (cold start ~0.5 s)</td><td>Mongo M0, 512 MB, shared</td><td>Firestore, 1 GB, document store</td></tr>
+<tr><th>Auth</th><td>Built in, Google + magic link, 50k MAU</td><td>Auth.js (NextAuth) or Neon Auth</td><td>Auth.js</td><td>Firebase Auth</td></tr>
+<tr><th>Images</th><td>Built in, 1 GB</td><td>Cloudinary free (25 credits)</td><td>Cloudinary free</td><td>Firebase Storage (needs Blaze plan card on file since 2024)</td></tr>
+<tr><th>Realtime</th><td>Built in, 200 connections, 2M msgs/month</td><td>Ably free (200 conns) or Pusher free (100 conns)</td><td>Ably or Pusher</td><td>Built in (Firestore listeners)</td></tr>
+<tr><th>Accounts to create</th><td class="num">2 (Vercel, Supabase)</td><td class="num">4</td><td class="num">4</td><td class="num">2</td></tr>
+<tr><th>Auction undo log fit</th><td>Excellent: transactions, constraints, one SQL query rebuilds state</td><td>Excellent</td><td>OK: transactions exist but multi-doc invariants are on you</td><td>Weak: no server transactions across many docs without Cloud Functions</td></tr>
+<tr><th>Row-level access rules</th><td>RLS in SQL, testable</td><td>RLS via Neon Authorize or app-level only</td><td>App-level only</td><td>Security rules DSL</td></tr>
+<tr><th>Lock-in</th><td>Low: plain Postgres, pg_dump works</td><td>Low</td><td>Medium</td><td>High</td></tr>
+<tr><th>Verdict</th><td>Fewest moving parts, everything free, relational data fits</td><td>Good if we ever want DB branching per PR; more glue</td><td>Schema flexibility we do not need; realtime is extra</td><td>Fast to start, worst fit for the auction ledger</td></tr>
+</tbody></table></div>
+
+<h3>Mongo vs Postgres, specifically</h3>
+<p>The data is relational at its core: a player registers for a season, a lot puts a player in an auction, a bid links a lot to a team, a sale moves purse from a team. Undo means reversing exactly one of those links. Postgres gives foreign keys, a unique constraint on "one sold row per lot", a check that purse never goes negative, and a single transaction around "record sale + append event + bump version". Mongo can do all of that, but each guarantee is code instead of schema. For a hundred users the performance difference is zero, so the decision is about which one catches our mistakes at 9 pm on auction night. Postgres does.</p>
+<p>The one place Mongo would have been nicer is player profile fields that vary (some players add a video, some add three stats). A <code>jsonb</code> column covers that.</p>
+
+<h3>Why not a Turborepo</h3>
+<p>One Next.js app with route groups: <code>(public)</code>, <code>(player)</code>, <code>(admin)</code>, <code>(auction)</code>. Shared components live in <code>components/</code>. A monorepo adds build config and a second package.json for a team of one or two. If a separate "projector" app ever needs its own deploy, it can be a second Vercel project pointing at a subfolder later.</p>
+
+<div class="callout warn">
+  <div class="eyebrow">Vercel Hobby fine print</div>
+  <p>Hobby is licensed for personal, non-commercial use. A volunteer community league showing sponsor logos is a grey area. Options: accept it, or pay for Pro (US$20/month) for the auction month only. Hobby also caps a function at 60 seconds and gives ~100 GB bandwidth a month, both fine for us. The realtime constraint above is the one that shapes the design.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="arch">Architecture</h2>
+<p>Two boxes. Vercel renders pages and runs the server actions. Supabase holds everything that persists and fans out realtime. Browsers talk to Supabase directly only for two things: uploading an image and subscribing to the auction channel.</p>
+
+<div class="diagram">
+<svg viewBox="0 0 760 420" role="img" aria-label="Architecture: phones talk to Next.js on Vercel and directly to Supabase realtime and storage; Next.js talks to Supabase Postgres, Auth and Storage.">
+  <!-- clients -->
+  <rect class="box" x="20" y="30" width="150" height="60" rx="6"/><text x="95" y="55" text-anchor="middle">Player / owner phone</text><text class="sub" x="95" y="72" text-anchor="middle">PWA, Safari/Chrome</text>
+  <rect class="box" x="20" y="110" width="150" height="60" rx="6"/><text x="95" y="135" text-anchor="middle">Auctioneer laptop</text><text class="sub" x="95" y="152" text-anchor="middle">console + projector tab</text>
+  <rect class="box" x="20" y="190" width="150" height="60" rx="6"/><text x="95" y="215" text-anchor="middle">Admin phone/laptop</text><text class="sub" x="95" y="232" text-anchor="middle">registrations, content</text>
+  <!-- vercel -->
+  <rect class="box acc" x="270" y="30" width="200" height="220" rx="8"/>
+  <text x="370" y="55" text-anchor="middle" font-weight="700">Vercel · Next.js 15</text>
+  <rect class="box" x="285" y="70" width="170" height="36" rx="4"/><text x="370" y="93" text-anchor="middle">RSC pages (cached)</text>
+  <rect class="box" x="285" y="114" width="170" height="36" rx="4"/><text x="370" y="137" text-anchor="middle">Server Actions (writes)</text>
+  <rect class="box" x="285" y="158" width="170" height="36" rx="4"/><text x="370" y="181" text-anchor="middle">Route handlers (/go/:sponsor)</text>
+  <rect class="box" x="285" y="202" width="170" height="36" rx="4"/><text x="370" y="225" text-anchor="middle">Cron: keep-alive ping</text>
+  <!-- supabase -->
+  <rect class="box gold" x="550" y="30" width="190" height="300" rx="8"/>
+  <text x="645" y="55" text-anchor="middle" font-weight="700">Supabase (free)</text>
+  <rect class="box" x="565" y="70" width="160" height="40" rx="4"/><text x="645" y="88" text-anchor="middle">Postgres + RLS</text><text class="sub" x="645" y="102" text-anchor="middle">auction_events, players…</text>
+  <rect class="box" x="565" y="120" width="160" height="40" rx="4"/><text x="645" y="138" text-anchor="middle">Auth</text><text class="sub" x="645" y="152" text-anchor="middle">Google + magic link</text>
+  <rect class="box" x="565" y="170" width="160" height="40" rx="4"/><text x="645" y="188" text-anchor="middle">Storage</text><text class="sub" x="645" y="202" text-anchor="middle">photos, sponsor logos</text>
+  <rect class="box" x="565" y="220" width="160" height="40" rx="4"/><text x="645" y="238" text-anchor="middle">Realtime Broadcast</text><text class="sub" x="645" y="252" text-anchor="middle">channel auction:{id}</text>
+  <rect class="box dim" x="565" y="270" width="160" height="40" rx="4"/><text x="645" y="288" text-anchor="middle">pg_cron (optional)</text><text class="sub" x="645" y="302" text-anchor="middle">nightly backup export</text>
+  <!-- arrows clients -> vercel -->
+  <line x1="170" y1="60" x2="270" y2="90"/><line x1="170" y1="140" x2="270" y2="140"/><line x1="170" y1="220" x2="270" y2="190"/>
+  <text class="lbl" x="220" y="120" text-anchor="middle">HTTPS</text>
+  <!-- vercel -> supabase -->
+  <line x1="470" y1="90" x2="565" y2="90"/><text class="lbl" x="517" y="84" text-anchor="middle">SQL (Drizzle)</text>
+  <line x1="470" y1="134" x2="565" y2="240"/><text class="lbl" x="530" y="200" text-anchor="middle">broadcast</text>
+  <!-- direct browser -> supabase -->
+  <path d="M95 30 C 95 -10, 645 -10, 645 30" stroke-dasharray="4 3"/><text class="lbl" x="370" y="14" text-anchor="middle">direct: subscribe to realtime · upload image (signed)</text>
+  <!-- legend -->
+  <text class="sub" x="20" y="300">Write path on auction night:</text>
+  <text class="sub" x="20" y="318">1. Auctioneer taps SOLD → server action</text>
+  <text class="sub" x="20" y="334">2. One Postgres transaction: insert auction_events row, update lot + team purse, version += 1</text>
+  <text class="sub" x="20" y="350">3. Server broadcasts {version, event} on auction:{id}</text>
+  <text class="sub" x="20" y="366">4. Phones apply the event; if their version is behind by more than 1 they refetch state</text>
+  <text class="sub" x="20" y="392">Nothing is a long-lived process. If Vercel is slow, the DB is still the truth.</text>
+</svg>
+</div>
+
+<h3>Rendering strategy</h3>
+<ul>
+  <li><strong>Public pages</strong> (landing, news, sponsors, team pages): RSC, statically cached, revalidated by tag when an admin saves. Fast on a 3G phone in a park.</li>
+  <li><strong>Player and admin pages</strong>: RSC per request, read with the user's session so RLS applies.</li>
+  <li><strong>Auction pages</strong>: RSC renders the current snapshot, then a small client component subscribes to the channel and patches state. First paint shows real data even if the socket takes a second.</li>
+  <li><strong>Writes</strong>: Server Actions everywhere. Each action re-checks the role server-side. No client ever holds a service key.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="auth">Auth: one door, several keys</h2>
+<div class="callout">
+  <div class="eyebrow">Season 4 cut</div>
+  <p><strong>Players do not log in.</strong> The registration form is public. On submit we create the row and show a private URL <code>/r/&lt;edit_token&gt;</code>, also sent to the player's WhatsApp by the admin or copied by the player. That link edits the card until the pool locks. Cost: if a player loses the link, an admin resends it from the registrations table. Saving: a full day of auth UI, and zero "I can't sign in" messages on Sunday.</p>
+  <p>Admins, the auctioneer and the 4 owners sign in with Google. Their emails are an allowlist in <code>user_roles</code>. That is about eight accounts in total. Everything below about roles still applies; the player login path is simply built after the auction.</p>
+</div>
+<p>When player login does arrive: separate player and admin logins sound tidy but double the screens, the password resets, and the "which one do I use" questions in the WhatsApp group. One Supabase Auth login, roles in a table.</p>
+
+<div class="grid">
+  <div class="card rec"><h4>Recommended: Google + magic link</h4><p>Most players have Gmail on their phone; Google sign-in is one tap. Magic link covers everyone else and needs no password. Admins are the same accounts with a row in <code>user_roles</code>.</p></div>
+  <div class="card"><h4>Alternative: username + password</h4><p>Works offline from Google, but we own reset flows and weak passwords. Only worth it if several players refuse Google and cannot receive email.</p></div>
+  <div class="card"><h4>Alternative: phone OTP</h4><p>Cricketers know their phone number better than their email. Supabase supports it, but SMS costs money (Twilio). Park it for season 5.</p></div>
+</div>
+
+<h4>How roles get assigned</h4>
+<ol>
+  <li>Super admin emails are seeded in an env var, so the first login works without a UI.</li>
+  <li>Super admin adds an admin by email in <code>/admin/people</code>. A row is written to <code>user_roles</code> even before that person signs in; it attaches on first login by email match.</li>
+  <li>Owner is not a global role. It is a row in <code>team_owners(team_id, user_id)</code>, scoped to a season.</li>
+  <li>Auction admin is a row in <code>auction_admins(auction_id, user_id)</code>, so a test auction can have a different operator.</li>
+</ol>
+<p class="small">Session lives in an httpOnly cookie via <code>@supabase/ssr</code>. Middleware refreshes it. RLS policies use <code>auth.uid()</code> and a small <code>is_admin()</code> SQL function so the same rule protects direct Supabase calls and server actions.</p>
+
+<!-- ============================================================ -->
+<h2 id="data">Data model</h2>
+<p>Everything hangs off <code>seasons</code>. The auction tables are separate from the roster tables on purpose: a test auction must never write to a real team.</p>
+
+<div class="diagram">
+<svg viewBox="0 0 760 470" role="img" aria-label="Entity diagram: seasons own sponsors, teams, player_registrations and auctions; auctions own lots, bids and events; lots point at registrations; sales point at teams.">
+  <rect class="box acc" x="300" y="16" width="160" height="44" rx="6"/><text x="380" y="34" text-anchor="middle" font-weight="700">seasons</text><text class="sub" x="380" y="50" text-anchor="middle">id, name, status, purse, config jsonb</text>
+  <rect class="box" x="20" y="110" width="160" height="56" rx="6"/><text x="100" y="130" text-anchor="middle" font-weight="700">sponsors</text><text class="sub" x="100" y="146" text-anchor="middle">tier, logo_url, url, placements[]</text><text class="sub" x="100" y="159" text-anchor="middle">clicks int</text>
+  <rect class="box" x="210" y="110" width="160" height="56" rx="6"/><text x="290" y="130" text-anchor="middle" font-weight="700">teams</text><text class="sub" x="290" y="146" text-anchor="middle">name, colour, logo_url</text><text class="sub" x="290" y="159" text-anchor="middle">purse_start, purse_left*</text>
+  <rect class="box" x="400" y="110" width="160" height="56" rx="6"/><text x="480" y="130" text-anchor="middle" font-weight="700">player_registrations</text><text class="sub" x="480" y="146" text-anchor="middle">user_id, status, role, styles</text><text class="sub" x="480" y="159" text-anchor="middle">tier, bio, stats jsonb, paid_at</text>
+  <rect class="box" x="590" y="110" width="150" height="56" rx="6"/><text x="665" y="130" text-anchor="middle" font-weight="700">posts / media</text><text class="sub" x="665" y="146" text-anchor="middle">news md, youtube_id</text><text class="sub" x="665" y="159" text-anchor="middle">gallery image_url</text>
+  <rect class="box" x="20" y="215" width="160" height="44" rx="6"/><text x="100" y="233" text-anchor="middle" font-weight="700">profiles</text><text class="sub" x="100" y="249" text-anchor="middle">user_id, name, phone, photo_url, cricheroes_url</text>
+  <rect class="box" x="210" y="215" width="160" height="44" rx="6"/><text x="290" y="233" text-anchor="middle" font-weight="700">team_owners</text><text class="sub" x="290" y="249" text-anchor="middle">team_id, user_id</text>
+  <rect class="box" x="400" y="215" width="160" height="44" rx="6"/><text x="480" y="233" text-anchor="middle" font-weight="700">user_roles</text><text class="sub" x="480" y="249" text-anchor="middle">user_id, role (admin|super_admin)</text>
+  <!-- auction cluster -->
+  <rect class="box sold" x="20" y="300" width="720" height="150" rx="8"/>
+  <text x="34" y="322" font-weight="700">auction cluster (isolated; test auctions live here too)</text>
+  <rect class="box" x="34" y="335" width="150" height="56" rx="6"/><text x="109" y="353" text-anchor="middle" font-weight="700">auctions</text><text class="sub" x="109" y="368" text-anchor="middle">season_id, mode test|live</text><text class="sub" x="109" y="381" text-anchor="middle">status, share_token, version</text>
+  <rect class="box" x="204" y="335" width="150" height="56" rx="6"/><text x="279" y="353" text-anchor="middle" font-weight="700">auction_teams</text><text class="sub" x="279" y="368" text-anchor="middle">auction_id, team_id|fake</text><text class="sub" x="279" y="381" text-anchor="middle">purse_left, slots_left</text>
+  <rect class="box" x="374" y="335" width="150" height="56" rx="6"/><text x="449" y="353" text-anchor="middle" font-weight="700">auction_lots</text><text class="sub" x="449" y="368" text-anchor="middle">registration_id|fake, set, order</text><text class="sub" x="449" y="381" text-anchor="middle">base, status, sold_to, price</text>
+  <rect class="box acc" x="544" y="335" width="180" height="56" rx="6"/><text x="634" y="353" text-anchor="middle" font-weight="700">auction_events</text><text class="sub" x="634" y="368" text-anchor="middle">seq, type, payload jsonb</text><text class="sub" x="634" y="381" text-anchor="middle">undone bool, actor, at</text>
+  <text class="sub" x="34" y="420">* purse_left / slots_left / lot status are projections rebuilt from auction_events; auction.version = last applied seq.</text>
+  <text class="sub" x="34" y="436">On LIVE auction COMPLETE, a one-time "publish" copies sold lots into team_players so the season pages never read auction tables.</text>
+  <!-- lines -->
+  <line x1="380" y1="60" x2="100" y2="110"/><line x1="380" y1="60" x2="290" y2="110"/><line x1="380" y1="60" x2="480" y2="110"/><line x1="380" y1="60" x2="665" y2="110"/>
+  <line x1="380" y1="60" x2="109" y2="335" stroke-dasharray="3 3"/>
+  <line x1="290" y1="166" x2="290" y2="215"/><line x1="100" y1="166" x2="100" y2="215" stroke-dasharray="3 3"/>
+  <line x1="480" y1="166" x2="449" y2="335" stroke-dasharray="3 3"/>
+</svg>
+</div>
+
+<h3>Key tables</h3>
+<pre><code>create type reg_status as enum ('interested','registered','confirmed','withdrawn');
+create type player_role as enum ('batter','bowler','all_rounder','wicket_keeper');
+create type lot_status  as enum ('queued','on_block','sold','unsold','skipped');
+create type auction_status as enum ('draft','open','paused','completed');
+
+create table seasons (
+  id smallserial primary key, name text not null, year int not null,
+  status text not null default 'upcoming',     -- upcoming|registration|auction|live|done
+  purse int not null default 10000,
+  config jsonb not null default '{}'            -- tiers, increments, min/max squad
+);
+
+create table player_registrations (
+  id uuid primary key default gen_random_uuid(),
+  season_id smallint references seasons not null,
+  user_id uuid references auth.users not null,
+  status reg_status not null default 'interested',
+  role player_role, batting_style text, bowling_style text,
+  tier char(1) check (tier in ('M','A','B','C')),
+  bio text check (char_length(bio) &lt;= 280),
+  stats jsonb not null default '{}',            -- {matches, runs, wickets, best}
+  paid_at timestamptz, paid_marked_by uuid, payment_proof_url text,
+  created_at timestamptz default now(),
+  unique (season_id, user_id)
+);
+
+create table auction_events (
+  id bigserial primary key,
+  auction_id uuid references auctions not null,
+  seq int not null,                             -- 1..n per auction, gap-free
+  type text not null,                           -- START_LOT|BID|SOLD|UNSOLD|SKIP|ADJUST_PURSE|PAUSE|RESUME|REORDER
+  payload jsonb not null,                       -- {lot_id, team_id, amount, note}
+  undone boolean not null default false,        -- set by UNDO, cleared by REDO
+  actor uuid not null, at timestamptz default now(),
+  unique (auction_id, seq)
+);</code></pre>
+
+<p class="small">Storage: ~100 registrations, ~110 lots, maybe 1,500 bid events, a few hundred posts. Under 5 MB of Postgres for the season. Photos at 200 KB × 120 people ≈ 25 MB. The 500 MB and 1 GB free limits are not a concern for years.</p>
+
+<!-- ============================================================ -->
+<h2 id="registration">Registration flow</h2>
+<p>Built for a thumb on a bus. One screen per decision, saving as you go, resumable from the edit link. Sponsor strip on every step.</p>
+
+<div class="phone">
+  <div class="screen"><div class="bar"></div><div class="who">1 · start</div><div class="t">Play BPL Season 4</div><div class="blk gold">Presented by [Title sponsor]</div><div class="blk">Auction Sun 4 Oct · fee $X</div><div class="blk">No account needed. Takes 3 minutes.</div><div class="btn">Register</div></div>
+  <div class="screen"><div class="bar"></div><div class="who">2 · basics</div><div class="t">About you</div><div class="blk">Full name</div><div class="blk">WhatsApp number</div><div class="blk">Role: Batter · Bowler · AR · WK</div><div class="blk">Bats: R / L · Bowls: pace / spin</div><div class="btn">Next</div></div>
+  <div class="screen"><div class="bar"></div><div class="who">3 · auction card</div><div class="t">Your auction card</div><div class="blk acc">[ Photo ] tap to add</div><div class="blk">One line about you (280)</div><div class="blk">Matches · Runs · Wkts · Best</div><div class="blk">CricHeroes profile link</div><div class="btn">Next</div></div>
+  <div class="screen"><div class="bar"></div><div class="who">4 · fee</div><div class="t">League fee: $X</div><div class="blk">e-Transfer to pay@bpl.ca</div><div class="blk">Memo: your name</div><div class="blk">Upload screenshot (optional)</div><div class="blk gold">[Sponsor] · [Sponsor]</div><div class="btn">I've sent it</div></div>
+  <div class="screen"><div class="bar"></div><div class="who">5 · done</div><div class="t">You're in the pool</div><div class="blk acc">Status: Registered · awaiting payment check</div><div class="blk">Your private edit link: bpl.ca/r/k8f2…</div><div class="blk">Save it. Share the site with a teammate.</div><div class="btn ghost">Preview auction card</div></div>
+</div>
+
+<h3>Details that matter</h3>
+<ul>
+  <li><strong>Photo upload</strong>: browser resizes to 1024 px longest side, WebP, ~150 to 250 KB, using <code>browser-image-compression</code>. Uploads straight to Supabase Storage with a signed upload URL from a server action. Server stores the path, never the file.</li>
+  <li><strong>CricHeroes link</strong>: validate that it matches <code>cricheroes.com/player-profile/&lt;id&gt;/…</code> and store the numeric id. Phase 3: a nightly job fetches the public profile page and caches the headline numbers. There is no official API, so treat that as best effort and keep the self-reported fields.</li>
+  <li><strong>Interested vs registered</strong>: with no login, "interested" collapses into the form itself: step 2 alone (name, number, role) submits and creates a <code>registered</code> row; the card fields are optional and editable later through the edit link. Admin ticking payment flips to <code>confirmed</code>. Admin can also mark <code>withdrawn</code>.</li>
+  <li><strong>Editing</strong>: the edit link works until the admin locks the pool (proposed Saturday noon, so tiers and sets can be set). After that only admins edit. Duplicate guard: same phone number twice shows "already registered, resend my link".</li>
+  <li><strong>Admin registration table</strong>: sortable, filter by status and role, tap a row to tick paid, bulk export CSV. Role and tier counts at the top so you can see if you have six wicketkeepers and no spinners.</li>
+  <li><strong>Confirmation</strong>: the done screen and a "copy my edit link" button. No email in v1; the admin table has a "copy WhatsApp message" button per row that includes the link.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="sponsors">Sponsors everywhere, without looking like spam</h2>
+<p>Sponsor placement is a first-class table, not hard-coded images. Admin uploads a logo, picks a tier, and ticks which placements it appears in. Every placement renders from the same component with the same aspect ratio rules.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Placement key</th><th>Where</th><th>Who shows</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>hero</code></td><td>Landing, under the season headline</td><td>Title sponsor only</td><td>"Presented by". Largest logo on the site.</td></tr>
+<tr><td><code>strip</code></td><td>Footer of every page, sticky bottom on mobile during registration</td><td>All tiers, rotating every 6 s</td><td>Height 56 px. Tap → <code>/go/:slug</code> redirect that counts the click.</td></tr>
+<tr><td><code>reg_step</code></td><td>Between registration steps</td><td>Gold + Silver, one per step</td><td>Full-width card with a one-line message from the sponsor.</td></tr>
+<tr><td><code>auction_lot</code></td><td>Auction board, under the current player card</td><td>Rotates per lot</td><td>"Lot 42 brought to you by…". On the projector this is the biggest sponsor moment of the season.</td></tr>
+<tr><td><code>sold_card</code></td><td>Corner of the shareable "SOLD" image</td><td>Title sponsor</td><td>Players screenshot and post these. Free reach.</td></tr>
+<tr><td><code>team_page</code></td><td>Team pages</td><td>Optional per-team sponsor</td><td>Lets team owners bring their own sponsor.</td></tr>
+<tr><td><code>video</code></td><td>Before a YouTube embed loads</td><td>Any</td><td>Poster frame with logo, tap to play.</td></tr>
+</tbody></table></div>
+<p>Tiers: <span class="pill gold">Title</span> <span class="pill">Gold</span> <span class="pill">Silver</span> <span class="pill">Partner</span>. Sort order and placement eligibility come from tier; admins can override per sponsor. Logos stored as SVG or PNG on a transparent background, 2 size variants generated on upload.</p>
+
+<!-- ============================================================ -->
+<h2 id="content">Content: news, videos, photos</h2>
+<p>No headless CMS. Three admin forms and three public lists. Keep it boring.</p>
+<ul>
+  <li><strong>Posts</strong>: title, markdown body, cover image, publish toggle, pinned toggle. Rendered on the landing page and <code>/news</code>.</li>
+  <li><strong>Videos</strong>: paste a YouTube URL, we store the id and fetch the title via oEmbed (no API key). Grid on <code>/videos</code>, lazy-loaded embeds with the sponsor poster frame.</li>
+  <li><strong>Gallery</strong>: multi-image upload, album name, optional caption. Same compression path as player photos.</li>
+  <li><strong>Team pages</strong>: auto-generated from roster after the auction publishes. Owner can edit a blurb and upload a team photo.</li>
+  <li><strong>Rules and auction pages</strong>: markdown in a <code>pages</code> table keyed by slug, so the rules can change without a deploy.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="auction">The auction</h2>
+<p>This is the part people will remember. It has to be fair, legible from the back of a hall, and recoverable when the auctioneer taps the wrong team.</p>
+
+<h3>How the IPL does it</h3>
+<p>Worth copying because everyone in the room already understands it.</p>
+<ul>
+  <li><strong>Purse</strong>: fixed per team. Retentions come off the purse before the auction.</li>
+  <li><strong>Base price</strong>: each player picks from a small set of tiers. Bidding starts at base.</li>
+  <li><strong>Sets</strong>: players are grouped into sets by role (batters, all-rounders, keepers, pace, spin), with a <strong>marquee set</strong> of the biggest names first to set the market. Order within a set is drawn randomly.</li>
+  <li><strong>Increment ladder</strong>: the minimum raise grows with the price (e.g. 5 lakh steps below 1 crore, 10 lakh to 2 crore, 20 lakh to 5 crore, 25 lakh beyond).</li>
+  <li><strong>Squad guard</strong>: a team cannot bid more than <em>purse − (min squad size − current squad − 1) × lowest base price</em>, so everyone can still fill their squad.</li>
+  <li><strong>Right to Match</strong>: a team can match the winning bid for a player it had last season; the winning bidder then gets one final raise.</li>
+  <li><strong>Accelerated round</strong>: after the marquee and first sets, teams nominate unsold or unauctioned players to bring back, run quickly at base price.</li>
+  <li><strong>Unsold</strong>: no bid at base means unsold; they can return in the accelerated round.</li>
+</ul>
+
+<h3>Format options for BPL</h3>
+<div class="grid">
+  <div class="card rec"><h4>1 · Voice auction, app as ledger <span class="pill rec">Sunday</span></h4><p>Auctioneer calls the bids by voice on the ground. One operator records each bid on a phone. Every other phone is the board. Lowest tech risk, highest atmosphere. The app cannot get the auction wrong on its own; only the operator can, and undo fixes that.</p></div>
+  <div class="card"><h4>2 · Owners bid on their phones</h4><p>Each owner taps <em>Bid +50</em>. Server serialises bids, a 10 s clock resets on each bid, auto-sold when it expires. Works fully remote. Risk: one owner on bad Wi-Fi ruins the room, and disputes shift from "he said 500" to "my tap didn't register". Not for Sunday: five days is not enough to build and rehearse it, and a ground with fifty phones on one tower is the worst place to debut it. The event model supports it, so it is a Season 5 upgrade.</p></div>
+  <div class="card"><h4>3 · Snake draft</h4><p>No money. Teams pick in order 1→8, 8→1. Fast, dead simple, fair by construction. Good fallback if the auction rules cannot be agreed by auction day. The lot and event tables support it with <code>PICK</code> events.</p></div>
+  <div class="card"><h4>4 · Sealed bids</h4><p>Every team submits a secret bid per player; highest wins. Quiet, no drama, and nobody knows the market. Not recommended; mentioned so it is consciously rejected.</p></div>
+</div>
+
+<h3>Borrowed from CricAuction (and what we do differently)</h3>
+<p>CricAuction is the most-used local-league auction app. It is paid per auction and is a generic tool, so we are not using it, but its feature list is a good checklist of what organisers actually ask for.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>CricAuction feature</th><th>BPL equivalent</th><th>Phase</th></tr></thead>
+<tbody>
+<tr><td>Live auction themes for projectors and big screens</td><td>Dedicated <code>/auction/[id]/screen</code> route, dark high-contrast, huge type, no chrome, auto-advances with the console</td><td>2</td></tr>
+<tr><td>Share a view-only live link, no app needed</td><td>Public board at <code>/auction</code>; test auctions at <code>/auction/t/&lt;token&gt;</code></td><td>2</td></tr>
+<tr><td>Sold poster and squad poster, QR sharing</td><td>Server-rendered PNG via <code>next/og</code> (Satori): player photo, price, team colours, title sponsor logo. One tap to save or share. Squad poster per team after publish.</td><td>2</td></tr>
+<tr><td>"Mark as pre-sold"</td><td><code>PRESOLD</code> event: owners, icon players or retained players placed on a team at a fixed price before lot 1</td><td>2</td></tr>
+<tr><td>Unsold re-offered at reduced base in round two</td><td>Accelerated round; config flag <code>unsold_base_multiplier</code> (default 1.0, can be 0.5)</td><td>2</td></tr>
+<tr><td>Bulk add players (CSV)</td><td>CSV import in admin, mainly for test auctions and late walk-ins</td><td>2</td></tr>
+<tr><td>Join tournament by code</td><td>Not needed: one league, one season, everyone signs in</td><td>–</td></tr>
+<tr><td>YouTube Live overlay</td><td>The projector screen has a <code>?overlay=1</code> mode with a transparent background, usable as an OBS browser source if we ever stream</td><td>3</td></tr>
+<tr><td>Push notifications</td><td>Web Push on the installed PWA</td><td>3</td></tr>
+<tr><td>Soft delete</td><td>Nothing is deleted in the auction cluster; events are flagged <code>undone</code></td><td>2</td></tr>
+</tbody></table></div>
+<p><strong>Where we go further:</strong> sponsors as a placement system rather than a logo slot, player self-registration with payment tracking, a full event log with targeted undo, and row-level security so owners cannot see each other's private data. <strong>Where we deliberately do less:</strong> no multi-sport, no multi-tournament, no in-app purchase of "team slots".</p>
+
+<h3>Proposed rules for Season 4</h3>
+<p>Defaults for the owners to argue about on Friday. All of these are numbers in <code>seasons.config</code>, changeable by an admin without a deploy. Amounts are shown in crores and lakhs and stored as integer lakhs.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Rule</th><th>Proposed</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Purse</td><td class="num">300 cr per team</td><td>Your number. 4 teams × 300 cr = 1,200 cr chasing ~48 players, so the average player goes for about 25 cr.</td></tr>
+<tr><td>Squad size</td><td>min 11 · max 13</td><td>Your number. With ~48 in the pool and 4 teams, expect 12 each; the max stops one owner hoarding.</td></tr>
+<tr><td>Owner pre-sold</td><td class="num">25 cr</td><td>Owner is in their own team at a fixed cost so purses start equal. Set to 0 if owners are not playing.</td></tr>
+<tr><td>Base prices</td><td>Marquee 20 cr · A 10 cr · B 5 cr · C 2 cr</td><td>Tier set by admin on Saturday from known form, not self-selected, to avoid sandbagging. Roughly 6 / 12 / 18 / 12 players per tier.</td></tr>
+<tr><td>Marquee set</td><td>4 to 6 players</td><td>Goes first. Sets the market and gets the ground loud early.</td></tr>
+<tr><td>Set order</td><td>Marquee → All-rounders → Batters → Keepers → Pace → Spin, then tier C in the same role order</td><td>Alternating roles keeps every owner engaged the whole time.</td></tr>
+<tr><td>Order in set</td><td>Random, shuffled in the console at set start, visible on every phone</td><td>Visible shuffle = trust.</td></tr>
+<tr><td>Squad guard</td><td>max bid = purse_left − (11 − squad_size − 1) × 2 cr</td><td>Console greys out a team that cannot afford the current bid. Example: 100 cr left with 6 players means max bid 92 cr.</td></tr>
+<tr><td>Unsold</td><td>Back to pool; accelerated round at base (config: 100% or 50% of base); leftovers allocated by admin round-robin, largest purse first</td><td>Nobody goes home without a team.</td></tr>
+<tr><td>Right to Match</td><td>Off</td><td>Needs last-season rosters in the DB. Revisit for S5.</td></tr>
+<tr><td>Clock</td><td>Auctioneer's voice ("going once, twice"). The console has a 10-second visual countdown the operator starts on "going once"; every phone shows it.</td><td>Gives the ground a shared sense of when a lot closes without automating the sale.</td></tr>
+<tr><td>Tie / dispute</td><td>Auction admin decision, recorded as a <code>NOTE</code> event</td><td>Every ruling is in the log.</td></tr>
+</tbody></table></div>
+
+<h4>Increment ladder</h4>
+<div class="ladder">
+  <span>2 cr – 9.5 cr</span><span>+50 L</span>
+  <span>10 cr – 49 cr</span><span>+1 cr</span>
+  <span>50 cr – 97.5 cr</span><span>+2.5 cr</span>
+  <span>100 cr +</span><span>+5 cr</span>
+</div>
+<p class="small">The console shows exactly two buttons per team: "+step" and "custom". Custom must be a multiple of the step. Jumping 10 cr → 30 cr is allowed; 10 cr → 10.3 cr is not. With only 4 teams, the four "+step" buttons fit in one row of a phone screen in team colours.</p>
+
+<h3>Ground-specific design</h3>
+<ul>
+  <li><strong>Sunlight</strong>: the public board uses a white background, near-black type, and team colours as thick bars, not tints. Current bid is the largest thing on screen.</li>
+  <li><strong>Cellular</strong>: fifty phones on one tower. Board payloads are tiny (one event per broadcast). If the socket drops, the client polls a 2 KB snapshot every 5 seconds. The console retries a failed action with the same idempotency key so a double-tap never records two bids.</li>
+  <li><strong>Battery</strong>: no video, no animation loops, dark type on white. The console phone should be on a battery pack.</li>
+  <li><strong>Noise</strong>: the auctioneer needs a speaker. The app cannot fix that, but the visible countdown and the big "SOLD" flash help people at the back.</li>
+  <li><strong>Two phones for the auction team</strong>: auctioneer calls and watches the board; an operator taps the console. If it is one person, the console has a "board" tab so they can flip.</li>
+  <li><strong>Backup ledger</strong>: one person keeps a paper list of sold players and prices. The CSV export at each break is the digital backup.</li>
+</ul>
+
+<h3>State machine</h3>
+<div class="diagram">
+<svg viewBox="0 0 760 300" role="img" aria-label="Auction states draft, open, paused, completed; lot states queued, on block, sold, unsold, skipped, with unsold and skipped able to return to queued.">
+  <text x="20" y="24" font-weight="700">Auction</text>
+  <rect class="box dim" x="20" y="40" width="110" height="40" rx="20"/><text x="75" y="65" text-anchor="middle">draft</text>
+  <rect class="box acc" x="180" y="40" width="110" height="40" rx="20"/><text x="235" y="65" text-anchor="middle">open</text>
+  <rect class="box gold" x="340" y="40" width="110" height="40" rx="20"/><text x="395" y="65" text-anchor="middle">paused</text>
+  <rect class="box sold" x="500" y="40" width="130" height="40" rx="20"/><text x="565" y="65" text-anchor="middle">completed</text>
+  <line x1="130" y1="60" x2="180" y2="60"/><text class="lbl" x="155" y="52" text-anchor="middle">START</text>
+  <path d="M290 52 L340 52"/><text class="lbl" x="315" y="46" text-anchor="middle">PAUSE</text>
+  <path d="M340 70 L290 70"/><text class="lbl" x="315" y="84" text-anchor="middle">RESUME</text>
+  <line x1="450" y1="60" x2="500" y2="60"/><text class="lbl" x="475" y="52" text-anchor="middle">COMPLETE</text>
+  <text class="sub" x="500" y="100">completed + mode=live → PUBLISH copies</text><text class="sub" x="500" y="114">rosters to team_players (one-way, admin only)</text>
+
+  <text x="20" y="160" font-weight="700">Lot</text>
+  <rect class="box dim" x="20" y="176" width="110" height="40" rx="20"/><text x="75" y="201" text-anchor="middle">queued</text>
+  <rect class="box acc" x="200" y="176" width="120" height="40" rx="20"/><text x="260" y="201" text-anchor="middle">on_block</text>
+  <rect class="box sold" x="400" y="176" width="100" height="40" rx="20"/><text x="450" y="201" text-anchor="middle">sold</text>
+  <rect class="box gold" x="400" y="236" width="100" height="40" rx="20"/><text x="450" y="261" text-anchor="middle">unsold</text>
+  <rect class="box dim" x="540" y="236" width="100" height="40" rx="20"/><text x="590" y="261" text-anchor="middle">skipped</text>
+  <line x1="130" y1="196" x2="200" y2="196"/><text class="lbl" x="165" y="188" text-anchor="middle">START_LOT</text>
+  <line x1="320" y1="190" x2="400" y2="190"/><text class="lbl" x="360" y="182" text-anchor="middle">SOLD</text>
+  <path d="M320 206 L400 250"/><text class="lbl" x="372" y="238" text-anchor="middle">UNSOLD</text>
+  <path d="M300 216 L540 262"/><text class="lbl" x="470" y="290" text-anchor="middle">SKIP (owner absent, dispute, etc.)</text>
+  <path d="M400 268 C 250 300, 60 300, 75 216" stroke-dasharray="4 3"/><text class="lbl" x="200" y="300" text-anchor="middle">REQUEUE (accelerated round)</text>
+  <path d="M260 176 C 260 140, 200 130, 190 176" stroke-dasharray="4 3"/><text class="lbl" x="235" y="130" text-anchor="middle">BID × n (raises current_bid, current_team)</text>
+  <text class="sub" x="540" y="196">Any transition can be UNDOne;</text><text class="sub" x="540" y="210">undo of SOLD restores purse and slot.</text>
+</svg>
+</div>
+
+<h3>Undo and redo: event sourcing, small version</h3>
+<p>Every button on the console appends one row to <code>auction_events</code> inside a transaction that also updates the projection tables and increments <code>auctions.version</code>. Undo does not delete; it flags the most recent non-undone event as <code>undone = true</code> and re-applies the projection from the last snapshot. Redo clears the flag on the most recent undone event, if no new event has landed since.</p>
+
+<pre><code>-- Rebuild any auction's state from scratch (also the test for the projection code):
+select type, payload from auction_events
+ where auction_id = $1 and not undone
+ order by seq;
+
+-- Reducer (TypeScript, pure, ~120 lines):
+state = events.reduce(apply, initialState(auctionTeams, auctionLots))
+// apply(state, {type:'SOLD', payload:{lot_id, team_id, amount}}) =>
+//   team.purse_left -= amount; team.slots_left -= 1; lot.status='sold'; lot.sold_to=team_id; lot.price=amount</code></pre>
+
+<ul>
+  <li><strong>Why not just an "undo last sale" button?</strong> Because the mistake is discovered three lots later. With the log, the admin opens the event list, sees "Lot 41 SOLD to Strikers 650", and can undo that specific event with a <code>REVERSE(seq)</code> event that appends a compensating action. Ordinary undo is the fast path; targeted reverse is the safety net.</li>
+  <li><strong>Adjust purse</strong>: <code>ADJUST_PURSE {team_id, delta, note}</code>. Used for penalties, manual corrections, or a late owner buy-in. Shows on the board with the note, so it is never a quiet edit.</li>
+  <li><strong>Concurrency</strong>: two operators on the console at once is the real risk. Each action carries the <code>version</code> the client saw; the server rejects it if the DB is ahead ("Board changed, refresh"). Postgres <code>select … for update</code> on the auction row makes this exact.</li>
+  <li><strong>Export</strong>: one button dumps the event log and final rosters as CSV. Post it in the WhatsApp group after the auction. Total transparency costs nothing.</li>
+</ul>
+
+<h3>Test auctions and the private link</h3>
+<ul>
+  <li>An auction has <code>mode = test | live</code>. Only one live auction per season. Test auctions are unlimited.</li>
+  <li>Test auctions can be seeded three ways: <strong>random fake players</strong> (generated names, roles, tiers), <strong>the real registered pool</strong> (read-only copy of registrations), or <strong>a CSV</strong>.</li>
+  <li>Test auctions never appear in navigation. They are reached by <code>/auction/t/&lt;share_token&gt;</code>, a 20-char random token. Anyone with the link can watch; only assigned auction admins can operate.</li>
+  <li>Completing a test auction never publishes rosters. The button is not rendered for test mode and the server refuses it.</li>
+  <li>Admin can "promote" a test's configuration (sets, order, tiers) to the live auction with one click, so the rehearsal and the real thing run the same script.</li>
+</ul>
+
+<h3>The four screens (the fifth, the projector, is cut)</h3>
+<div class="phone">
+  <div class="screen"><div class="bar"></div><div class="who">Console · auctioneer phone</div><div class="t">Lot 22 · Set B · Pace</div><div class="blk acc">R. Sharma · Bowler · Base 5 cr</div><div class="blk">Current: 12.5 cr · Strikers</div><div class="blk">STR +1 · KNG +1 · TTN +1 · RYL +1</div><div class="blk">Custom · Start 10 s clock</div><div class="blk sold">SOLD · UNSOLD · SKIP</div><div class="blk">↶ Undo · ↷ Redo · Pause · Events</div></div>
+  <div class="screen"><div class="bar"></div><div class="who">Board · every phone</div><div class="t">R. SHARMA</div><div class="blk acc">[ photo ] Bowler · Right-arm pace</div><div class="blk">42 m · 310 r · 61 w · best 4/12</div><div class="blk sold">12.5 cr — STRIKERS</div><div class="blk">Going once… 10 · 9 · 8</div><div class="blk">Purses: 188 · 215 · 240 · 262 cr</div><div class="blk gold">Lot brought to you by [Sponsor]</div></div>
+  <div class="screen"><div class="bar"></div><div class="who">Owner · phone</div><div class="t">Strikers · 188 cr left</div><div class="blk">Squad 6/13 · Max bid now: 180 cr</div><div class="blk acc">Live: R. Sharma at 12.5 cr (you)</div><div class="blk">Squad: 3 bat · 2 bowl · 1 AR · 0 WK</div><div class="blk">Coming up: next 5 lots</div><div class="btn ghost">Season 5: BID +1 cr</div></div>
+  <div class="screen"><div class="bar"></div><div class="who">Player · same public board</div><div class="t">Find yourself: lot 31</div><div class="blk">About 9 lots away (~15 min)</div><div class="blk acc">Live now: R. Sharma · 12.5 cr · Strikers</div><div class="blk sold">After sale: "SOLD · 18 cr · Titans" (share card if built by Saturday)</div><div class="blk">All teams · purses · sold list</div></div>
+  
+</div>
+
+<h3>Pre-auction page</h3>
+<p>Public at <code>/auction</code> from the day registration closes. Countdown to start time, the rules page rendered from markdown, the eight teams and owners, the full pool grouped by set with tiers and base prices, and the sponsor line-up. When the live auction opens, the same URL becomes the public board. No second link to share.</p>
+
+<!-- ============================================================ -->
+<h2 id="realtime">Realtime and notifications</h2>
+<p>Only the auction needs true realtime. Everything else is fine with a page refresh.</p>
+<ul>
+  <li><strong>Channel</strong>: <code>auction:{id}</code> via Supabase Realtime Broadcast. Server action publishes <code>{version, event}</code> after the transaction commits. Clients apply the event with the same reducer used server-side; if <code>version</code> skips, they fetch a snapshot. Realtime is a hint, Postgres is the truth.</li>
+  <li><strong>Why Broadcast and not Postgres Changes</strong>: Changes would push raw row diffs from several tables, and RLS on realtime is fiddly. Broadcast sends one tidy event we control.</li>
+  <li><strong>Persistence</strong>: events are already persisted. A separate <code>notifications</code> table exists only for personal ones: "you were sold", "payment confirmed". These render as an in-app inbox with an unread badge.</li>
+  <li><strong>Push notifications</strong>: Web Push with VAPID keys works on iOS 16.4+ when the site is added to the home screen, free, no vendor. Phase 3. Until then the WhatsApp group does what it does today.</li>
+  <li><strong>Capacity</strong>: 200 concurrent connections on the free tier vs ~60 phones on the ground. Plenty. The public board still falls back to polling every 5 s if a socket drops, which on cellular it will.</li>
+  <li><strong>Reconnect</strong>: on <code>visibilitychange</code> (phone unlocked) the client refetches the snapshot. Phones sleep constantly in a hall; this one line avoids most "my screen is stuck" complaints.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="security">Security and privacy</h2>
+<ul>
+  <li><strong>RLS on every table.</strong> Players read and write only their own registration. Admin functions checked via <code>is_admin()</code>. Auction event inserts allowed only for <code>auction_admins</code> of that auction. Public tables (sponsors, posts, teams, published rosters) readable by anon.</li>
+  <li><strong>Phone numbers and payment status</strong> never leave the server; public and owner views select from a view that excludes them.</li>
+  <li><strong>Payment screenshots</strong> go in a private bucket, served through signed URLs that expire in 10 minutes, admin only.</li>
+  <li><strong>Service role key</strong> exists only in Vercel env vars and is used only by the cron and the publish step. Server actions run as the user.</li>
+  <li><strong>Test auction tokens</strong> are unguessable but not secret-secret: treat them as "unlisted YouTube". Rotate with one click.</li>
+  <li><strong>Uploads</strong> capped at 5 MB pre-compression, image types only, filenames replaced with UUIDs.</li>
+  <li><strong>Backups</strong>: Supabase free has no point-in-time recovery. A daily GitHub Action runs <code>pg_dump</code> to a private repo. On auction day, the event log export is the backup.</li>
+  <li><strong>Privacy</strong>: a one-paragraph notice at registration about what is public (name, photo, role, stats, team) and what is not (phone, email, payment). Players can withdraw and request deletion; admin button anonymises the row.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="repo">Repo, routes, environment</h2>
+<pre><code>bpl/
+├── app/
+│   ├── (public)/            page.tsx  news/  videos/  gallery/  teams/[slug]/  sponsors/  rules/
+│   ├── (player)/            register/  me/  me/card/
+│   ├── (admin)/admin/       registrations/  sponsors/  posts/  videos/  gallery/  people/  auctions/
+│   ├── (auction)/auction/   page.tsx (public board)  t/[token]/  [id]/console/  [id]/screen/  [id]/owner/
+│   ├── go/[slug]/route.ts   sponsor click redirect
+│   └── api/cron/keepalive/route.ts
+├── components/              ui/ (shadcn)  sponsors/  auction/  forms/
+├── lib/
+│   ├── db/                  schema.ts (Drizzle)  migrations/  queries/
+│   ├── auction/             reducer.ts  commands.ts  guards.ts  reducer.test.ts
+│   ├── supabase/            server.ts  client.ts  middleware.ts
+│   └── auth/                roles.ts
+├── supabase/                config.toml  seed.sql  policies.sql
+├── scripts/                 seed-fake-players.ts  export-events.ts
+└── .github/workflows/       ci.yml (typecheck, test)  backup.yml (nightly pg_dump)</code></pre>
+
+<h4>Environment variables</h4>
+<div class="tablewrap"><table>
+<thead><tr><th>Name</th><th>Where</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>NEXT_PUBLIC_SUPABASE_URL</code></td><td>Vercel, all envs</td><td>Project URL</td></tr>
+<tr><td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td><td>Vercel, all envs</td><td>Browser key; RLS makes it safe</td></tr>
+<tr><td><code>SUPABASE_SERVICE_ROLE_KEY</code></td><td>Vercel, server only</td><td>Cron + publish step</td></tr>
+<tr><td><code>DATABASE_URL</code></td><td>Vercel, server only</td><td>Drizzle via Supabase pooler (port 6543)</td></tr>
+<tr><td><code>SUPER_ADMIN_EMAILS</code></td><td>Vercel</td><td>Comma-separated bootstrap list</td></tr>
+<tr><td><code>RESEND_API_KEY</code></td><td>Vercel, server only</td><td>Confirmation emails</td></tr>
+<tr><td><code>CRON_SECRET</code></td><td>Vercel</td><td>Protects the keep-alive route</td></tr>
+</tbody></table></div>
+
+<h4>GitHub setup</h4>
+<ol>
+  <li>New private repo <code>burnaby-premier-league</code> under the league account (or yours, with the league account as admin).</li>
+  <li>Branch protection on <code>main</code>: PR required, CI green. Vercel preview URL on every PR.</li>
+  <li>Issues seeded from the build plan below, one milestone per phase.</li>
+  <li>Secrets: <code>SUPABASE_DB_URL</code> for the nightly backup action only.</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="plan">Build plan: five days to the auction</h2>
+<p>One developer, evenings plus the weekend. Each day ends with a deployed link. The order is chosen so that the thing most needed soonest (registration) ships first, and the thing that must be rehearsed (the auction) has two rehearsals.</p>
+
+<div class="timeline">
+  <div class="day"><div class="d">Tue 29 Sep<small>tonight</small></div><ul><li>Confirm fee amount, e-Transfer email, registration close time, team names and colours, the 4 owner emails, title sponsor logo.</li><li>Create Supabase project, Vercel project, GitHub repo. Scaffold Next.js, Tailwind, shadcn, Drizzle.</li><li>Schema: seasons, teams, registrations, sponsors, user_roles. Deploy a landing page with the title sponsor and "registration opens tomorrow".</li><li>If the link must go out tonight: Google Form with the same fields, shared now, imported Wednesday.</li></ul></div>
+  <div class="day"><div class="d">Wed 30 Sep<small>registration ships</small></div><ul><li>Registration form, photo compression and upload, edit link, done screen, duplicate guard.</li><li>Admin Google sign-in with allowlist. Registrations table with paid tick and "copy WhatsApp message".</li><li>Test on two real phones. <strong>Send the registration link to the group by evening.</strong></li></ul></div>
+  <div class="day"><div class="d">Thu 1 Oct<small>auction engine</small></div><ul><li>Auction tables, reducer with unit tests, commands with version check and idempotency key.</li><li>Console on phone: start lot, +step per team, custom, clock, SOLD, UNSOLD, SKIP, undo, redo, pause, events list.</li><li>Public board with realtime and polling fallback. Sponsor strip and auction-lot placement.</li></ul></div>
+  <div class="day"><div class="d">Fri 2 Oct<small>rehearsal 1</small></div><ul><li>Owner view (purse, max bid, squad, role counts). Test auction seeding with fake players. Pre-sold owners.</li><li>Rules page from markdown. Export CSV.</li><li><strong>Evening: rehearsal with the 4 owners on their phones</strong>, 15 fake lots. Collect complaints.</li></ul></div>
+  <div class="day"><div class="d">Sat 3 Oct<small>rehearsal 2</small></div><ul><li>Fix Friday's list. Lock the pool at noon; admin sets tiers and sets; shuffle.</li><li>Second rehearsal with the real pool in test mode, then promote its config to the live auction.</li><li>Stretch: sold share card. Charge the console phone and a battery pack.</li></ul></div>
+  <div class="day"><div class="d">Sun 4 Oct<small>auction</small></div><ul><li>Morning: check Supabase is awake, open the live auction in draft, pre-sell owners, verify purses read 275 cr each.</li><li>On the ground: paper ledger person assigned, speaker tested, board link pinned in WhatsApp.</li><li>After: export the event log, post it to the group, publish rosters as a static team list.</li></ul></div>
+  <div class="day"><div class="d">After</div><ul><li>Player login and card editing, team pages, news, videos, gallery, notifications, CricHeroes stat fetch, nightly backups, Season 5 owner-phone bidding.</li></ul></div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="risks">Risks and what we do about them</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Risk</th><th>Likelihood</th><th>Mitigation</th></tr></thead>
+<tbody>
+<tr><td>Cellular is bad on the ground</td><td><span class="pill risk">high</span></td><td>Console actions retry with an idempotency key. Board degrades to 5 s polling. One person keeps a paper ledger. Event log export at every break. Know which corner of the ground has signal before Sunday.</td></tr>
+<tr><td>Operator taps wrong team</td><td><span class="pill risk">high</span></td><td>Undo button, confirm dialog on SOLD showing team colour and amount in big type, 2 s "cancel" toast before broadcast.</td></tr>
+<tr><td>Supabase free project pauses after 7 idle days</td><td><span class="pill">medium</span></td><td>Vercel cron pings a keep-alive route daily. Also check the dashboard the morning of the auction.</td></tr>
+<tr><td>Vercel Hobby commercial clause</td><td><span class="pill">low</span></td><td>Upgrade to Pro for one month if asked; the app changes nothing.</td></tr>
+<tr><td>Players do not finish registration on phone</td><td><span class="pill">medium</span></td><td>Step 2 alone registers them; the rest is optional. Admin can fill a card in for someone over the phone.</td></tr>
+<tr><td>Player loses their edit link</td><td><span class="pill">medium</span></td><td>Admin resends from the table. Phone-number match on the form offers "resend my link".</td></tr>
+<tr><td>Rule disputes mid-auction</td><td><span class="pill">medium</span></td><td>Rules page public two weeks ahead, rehearsal with owners, every ruling logged as a NOTE event, auction admin has final say.</td></tr>
+<tr><td>Data loss</td><td><span class="pill">low</span></td><td>Nightly pg_dump to GitHub; CSV export button; Postgres is the single source of truth.</td></tr>
+<tr><td>Five days is not enough</td><td><span class="pill">medium</span></td><td>Registration and admin ship first regardless. If Thursday slips, Sunday runs on the console alone with polling and no owner view; the board still works. If Friday slips, the paper ledger is the auction and the app records results afterwards.</td></tr>
+<tr><td>Single developer gets sick the week of launch</td><td><span class="pill">low</span></td><td>Everything is in the repo with a README; a co-organiser has Vercel and Supabase access via the league account.</td></tr>
+</tbody></table></div>
+
+<h2 id="next">Next steps</h2>
+<ol>
+  <li>Tonight: fee amount, e-Transfer email, registration close time, 4 team names and colours, 4 owner Gmail addresses, whether owners play, title sponsor logo.</li>
+  <li>Decide: Google Form tonight as a stopgap, or wait for the site form Wednesday evening.</li>
+  <li>Confirm or change the crore numbers: 300 cr purse, 20/10/5/2 cr bases, 25 cr owner pre-sale, the increment ladder.</li>
+  <li>Give me the league Google account (or yours) to create Vercel, Supabase and the GitHub repo.</li>
+</ol>
+<p class="small">Sources consulted while writing: IPL 2025 auction rules coverage from Rajasthan Royals, ESPNcricinfo, myKhel and Sportskeeda; Supabase pricing and realtime limits docs; Neon and Vercel plan pages; Cloudinary plan comparison; CricAuction, CrickHunt and CricSmart product pages for what local-league auction apps already do.</p>
+</div>

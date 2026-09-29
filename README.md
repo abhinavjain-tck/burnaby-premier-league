@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Burnaby Premier League
 
-## Getting Started
+Phone-first site for the Burnaby Premier League (Vancouver, BC): player registration, sponsors, and a live IPL-style player auction with a full undo log.
 
-First, run the development server:
+**Design doc:** [docs/design.html](docs/design.html) (open it in a browser). It covers the stack decision, data model, registration flow, sponsor placements, auction rules and formats, realtime, security, and the day-by-day plan.
+
+## Stack
+
+- Next.js (App Router, Server Components, Server Actions), Tailwind, shadcn/ui
+- Supabase: Postgres, Auth (admins and owners only), Storage (photos), Realtime (auction board)
+- Drizzle ORM for schema and migrations
+- Vercel for hosting
+
+## Season 4 scope (auction Sunday 4 Oct 2026)
+
+- Players register through a public form and get a private edit link. No player login this season.
+- Admins, the auctioneer and the 4 team owners sign in with Google against an allowlist.
+- Auction runs on the ground: auctioneer calls bids by voice, an operator records them on a phone, every other phone shows the board.
+- Money is stored as integer **lakhs** (`300 cr` purse = `30000`). See `lib/money.ts`.
+- Every auction action is an immutable `auction_events` row. State is a replay. Undo flags a row; it never deletes. See `lib/auction/reducer.ts`.
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+cp .env.example .env.local   # fill from the Supabase dashboard
+pnpm install
 pnpm dev
-# or
-bun dev
+pnpm test                    # reducer + money rules
+pnpm drizzle-kit generate    # after editing lib/db/schema.ts
+pnpm drizzle-kit migrate
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The repo `.npmrc` pins the public npm registry so a global private-registry config does not get in the way.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Layout
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/            routes: (public) (admin) (auction)
+lib/money.ts    lakhs, crores, increment ladder, squad guard
+lib/auction/    pure reducer + tests, shared by server and phones
+lib/db/         Drizzle schema
+supabase/       migrations, RLS policies
+docs/           design doc
+```
