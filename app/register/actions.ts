@@ -3,12 +3,14 @@
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { randomUUID } from "node:crypto";
 import { isDbConfigured, isStorageConfigured } from "@/lib/config";
 import { getDb, isUniqueViolation } from "@/lib/db/client";
 import { playerRegistrations } from "@/lib/db/schema";
 import { editPath } from "@/lib/registration/messages";
 import { getActiveSeason } from "@/lib/registration/queries";
+import { isRegistrationOpen } from "@/lib/registration/settings";
 import { isEditToken, newEditToken } from "@/lib/registration/token";
 import { parseRegistration, type SaveState } from "@/lib/registration/validate";
 import { createServiceClient } from "@/lib/supabase/server";
@@ -25,6 +27,16 @@ function photoPrefix(): string | null {
  * New registrations redirect to the private edit page.
  */
 export async function saveRegistration(_prev: SaveState, formData: FormData): Promise<SaveState> {
+  try {
+    return await saveRegistrationInner(formData);
+  } catch (err) {
+    if (isRedirectError(err)) throw err; // redirect() works by throwing
+    console.error("saveRegistration failed", err);
+    return { status: "error", message: "Could not save right now. Try again in a minute." };
+  }
+}
+
+async function saveRegistrationInner(formData: FormData): Promise<SaveState> {
   if (!isDbConfigured()) {
     return { status: "error", message: "Not configured yet: registration opens once the database is connected." };
   }
@@ -55,7 +67,7 @@ export async function saveRegistration(_prev: SaveState, formData: FormData): Pr
   }
 
   const season = await getActiveSeason();
-  if (!season) return { status: "error", message: "Registration is closed." };
+  if (!season || !isRegistrationOpen(season.config)) return { status: "error", message: "Registration is closed." };
 
   const [existing] = await db
     .select({ id: playerRegistrations.id })
