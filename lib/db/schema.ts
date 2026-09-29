@@ -42,8 +42,8 @@ export const playerRegistrations = pgTable("player_registrations", {
   photoUrl: text("photo_url"),
   cricheroesUrl: text("cricheroes_url"),
   paidAt: timestamp("paid_at", { withTimezone: true }),
-  paidMarkedBy: uuid("paid_marked_by"),
-  paymentProofUrl: text("payment_proof_url"),
+  paidMarkedBy: text("paid_marked_by"), // admin email
+  paymentProofUrl: text("payment_proof_url"), // storage path in the private payment-proofs bucket, not a URL
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 }, (t) => [unique().on(t.seasonId, t.phone)]);
 
