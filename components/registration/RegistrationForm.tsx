@@ -133,7 +133,7 @@ export function RegistrationForm({ mode, token, initial = {}, storageReady, fee,
             {fee.text && <p className="font-bold">{fee.text}</p>}
             {fee.email && (
               <p>
-                Interac e-Transfer to <strong className="break-all select-all">{fee.email}</strong>. Put your name in the memo.
+                Interac e-Transfer to <strong className="break-words select-all">{fee.email}</strong>. Put your name in the memo.
               </p>
             )}
           </div>

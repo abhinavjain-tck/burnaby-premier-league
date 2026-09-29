@@ -9,8 +9,12 @@ import { editPath } from "@/lib/registration/messages";
 import { getRegistrationByToken, type Stats } from "@/lib/registration/queries";
 import { isEditToken } from "@/lib/registration/token";
 
-// Private page: keep it out of search engines.
-export const metadata: Metadata = { title: "Your registration", robots: { index: false, follow: false } };
+// Private page: keep it out of search engines, and never send the token in a Referer header.
+export const metadata: Metadata = {
+  title: "Your registration",
+  robots: { index: false, follow: false },
+  referrer: "no-referrer",
+};
 
 const STATUS_TEXT = {
   registered: "Registered · awaiting payment check",
