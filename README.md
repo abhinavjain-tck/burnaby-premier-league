@@ -25,7 +25,8 @@ Phone-first site for the Burnaby Premier League (Vancouver, BC): player registra
 cp .env.example .env.local   # fill from the Supabase dashboard
 pnpm install
 pnpm dev
-pnpm test                    # reducer, money and registration rules
+pnpm test                    # reducer, money, auction engine and registration rules
+TEST_DATABASE_URL=postgres://... pnpm test   # also run the auction DB tests (throwaway, migrated database only)
 pnpm db:generate             # after editing lib/db/schema.ts
 pnpm db:push                 # apply migrations to the linked Supabase project
 ```
@@ -60,13 +61,26 @@ Do this once, signed in with the league Google account.
 9. **Set env vars in Vercel** (Project → Settings → Environment Variables), for Production and Preview: everything in `.env.example`. `NEXT_PUBLIC_*` values are baked in at build time, so redeploy after changing them.
 10. **Check it.** `/` shows the placeholder title sponsor, `/register` saves a test player and lands on `/r/<token>`, and `/admin` signs you in and lists that player.
 
+## Running an auction
+
+1. `/admin/auctions` → New auction. Start with a **test** one: four made-up teams and a private board link.
+2. On the auction page: add confirmed players (or 48 fake ones), shuffle within sets, pre-sell owners, and add the operator's email as an auction admin.
+3. The operator opens `/auction/<id>/console` on their phone. Everyone else watches `/auction` (live) or the private link (test).
+4. When the rehearsal looks right, create the **live** auction (one per season) and use "Promote config to live auction".
+5. Export the events and lots CSV at each break. That's the backup.
+
+Phones get each event over Supabase Realtime (`auction:<id>` channel) and fall back to polling every 5 s.
+
 ## Layout
 
 ```
-app/                  routes: / (landing), /register, /r/[token], /admin, /admin/registrations, /auth/callback
-components/           sponsors/SponsorSlot, registration form and card, admin bits
+app/                  routes: / (landing), /register, /r/[token], /admin, /admin/registrations, /auth/callback,
+                      /admin/auctions, /auction (public board), /auction/t/[token] (test board),
+                      /auction/[id]/console, /auction/[id]/owner
+components/           sponsors/SponsorSlot, registration form and card, admin bits, auction screens
 lib/money.ts          lakhs, crores, increment ladder, squad guard
-lib/auction/          pure reducer + tests, shared by server and phones
+lib/auction/          pure reducer, rules, undo/redo log and snapshots (shared with phones);
+                      commands.ts runs a console command in one transaction, then broadcasts
 lib/db/               Drizzle schema and lazy client
 lib/supabase/         cookie-based server and browser clients
 lib/auth/roles.ts     getViewer(), requireAdmin()

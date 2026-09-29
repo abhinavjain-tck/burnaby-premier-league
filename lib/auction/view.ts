@@ -52,7 +52,7 @@ export const ROLE_SHORT: Record<string, string> = { batter: "bat", bowler: "bowl
 
 const STATUS_TEXT: Record<Snapshot["state"]["status"], string> = {
   draft: "Not started",
-  open: "Live",
+  open: "Bidding open",
   paused: "Paused",
   completed: "Finished",
 };

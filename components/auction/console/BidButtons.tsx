@@ -13,8 +13,10 @@ export function BidButtons({ snap, disabled, onBid }: Props) {
   const options = bidOptions(snap.state, snap.config, snap.teams.map((t) => t.id));
   const lot = snap.onBlock ? snap.state.lots[snap.onBlock] : undefined;
   const label = lot?.currentBid === undefined ? "Base" : `+${fmt(stepAt(snap.config, lot.currentBid))}`;
+  const paused = snap.state.status !== "open"; // one message for everyone, not four
   return (
     <div className="grid grid-cols-4 gap-2">
+      {paused && <p className="col-span-4 font-bold text-red-800">Bids are off while the auction is {snap.state.status}.</p>}
       {snap.teams.map((team) => {
         const o = options.find((x) => x.teamId === team.id)!;
         const bg = safeColour(team.colour);
@@ -33,7 +35,7 @@ export function BidButtons({ snap, disabled, onBid }: Props) {
               <span className="text-sm leading-tight">{label}</span>
               {o.amount !== null && <span className="text-base leading-tight tabular-nums">{fmt(o.amount)}</span>}
             </button>
-            {o.reason && lot && <span className="text-center text-xs leading-tight font-semibold text-red-800">{o.reason}</span>}
+            {o.reason && lot && !paused && <span className="text-center text-xs leading-tight font-semibold text-red-800">{o.reason}</span>}
           </div>
         );
       })}

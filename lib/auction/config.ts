@@ -58,7 +58,7 @@ const fields = {
 
 const schema = z
   .object(fields)
-  .refine((c) => c.minSquad <= c.maxSquad, { message: "minSquad can't be more than maxSquad", path: ["minSquad"] });
+  .refine((c) => c.minSquad <= c.maxSquad, { message: "can't be more than maxSquad", path: ["minSquad"] });
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 

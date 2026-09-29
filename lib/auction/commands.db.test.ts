@@ -1,14 +1,15 @@
 /**
  * Runs against a real, throwaway Postgres. Skipped unless TEST_DATABASE_URL is set.
  *   TEST_DATABASE_URL=postgres://postgres@127.0.0.1:55439/bpl pnpm test
- * The database needs supabase/migrations applied and at least one season with 4 teams (the seed).
+ * The database needs supabase/migrations applied. The test adds its own season and teams
+ * (it becomes the newest season while the test runs) and removes everything it made.
  */
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { getDb } from "../db/client";
-import { auctionAdmins, auctionEvents, auctionLots, auctions, auctionTeams, playerRegistrations } from "../db/schema";
+import { auctionAdmins, auctionEvents, auctionLots, auctions, auctionTeams, playerRegistrations, seasons, teams } from "../db/schema";
 import * as admin from "./admin";
 import { AuctionRuleError, runCommand, VersionConflict } from "./commands";
 import { DEFAULT_CONFIG, stepAt } from "./config";
@@ -24,6 +25,7 @@ const broadcasts: Array<{ headers: Record<string, unknown>; body: unknown }> = [
 let server: Server;
 let failBroadcast = false;
 let n = 0;
+let seasonId = 0;
 
 async function send(id: string, cmd: Command, expectedVersion?: number, key?: string) {
   const version = expectedVersion ?? (await findAuction(getDb(), id))!.version;
@@ -68,6 +70,12 @@ describe.skipIf(!url)("auction commands against Postgres", () => {
     await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
     process.env.NEXT_PUBLIC_SUPABASE_URL = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
     process.env.SUPABASE_SERVICE_ROLE_KEY = "service-key-for-tests";
+
+    const [season] = await getDb().insert(seasons).values({ name: "Auction DB test", year: 2099 }).returning({ id: seasons.id });
+    seasonId = season.id;
+    await getDb()
+      .insert(teams)
+      .values(["AAA", "BBB", "CCC", "DDD"].map((short, i) => ({ seasonId, name: `Team ${short}`, short, colour: ["#1d4ed8", "#b91c1c", "#15803d", "#6d28d9"][i] })));
   });
 
   afterAll(async () => {
@@ -80,6 +88,10 @@ describe.skipIf(!url)("auction commands against Postgres", () => {
       await db.delete(auctions).where(inArray(auctions.id, made));
     }
     if (regs.length) await db.delete(playerRegistrations).where(inArray(playerRegistrations.id, regs));
+    if (seasonId) {
+      await db.delete(teams).where(eq(teams.seasonId, seasonId));
+      await db.delete(seasons).where(eq(seasons.id, seasonId));
+    }
     // Close the pool so vitest can exit. The Db type hides $client, but drizzle() sets it.
     await (db as unknown as { $client: { end(): Promise<void> } }).$client.end();
     await new Promise((r) => server.close(r));
