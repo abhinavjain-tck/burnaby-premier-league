@@ -35,6 +35,38 @@ The repo `.npmrc` pins the public npm registry so a global private-registry conf
 
 Without env vars the app still runs: pages show a "Not configured yet" notice where they need the database or Supabase.
 
+## Local development and e2e
+
+Runs the whole stack on your machine with Docker. No hosted Supabase project needed.
+
+```bash
+npx supabase start            # first run pulls Docker images; applies supabase/migrations
+npx supabase status -o env    # prints API_URL, ANON_KEY, SERVICE_ROLE_KEY
+```
+
+Copy the keys into `.env.local`:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<ANON_KEY>
+SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY>
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+SUPER_ADMIN_EMAILS=you@example.com
+```
+
+Then `pnpm dev`. Google sign-in does not work locally; use the e2e admin helper or Studio (http://127.0.0.1:54323) instead.
+
+End-to-end tests (Playwright, iPhone 13 viewport, Chromium):
+
+```bash
+npx playwright install chromium   # once
+pnpm e2e                          # starts pnpm dev for you, reads .env.e2e
+pnpm e2e:ui                       # interactive runner
+E2E_PORT=3100 pnpm e2e            # if something else already uses port 3000
+```
+
+`.env.e2e` is committed on purpose: the local Supabase keys are public demo values. The tests wipe `player_registrations` and reset the season config between tests, and sign in as `e2e-admin@example.com` through the Supabase admin API (no Google). Run them against the local stack only, never a hosted project. CI does the same in `.github/workflows/e2e.yml`.
+
 ## Set up Supabase
 
 Do this once, signed in with the league Google account.
@@ -47,7 +79,7 @@ Do this once, signed in with the league Google account.
    npx supabase db push
    ```
    Migrations live in `supabase/migrations`. Drizzle generates the schema ones (`pnpm db:generate` after editing `lib/db/schema.ts`, Supabase-style timestamped names); policies, seed and buckets are hand-written files in the same folder. Never run `drizzle-kit migrate`; the Supabase CLI owns applying them.
-4. **League settings** (fee line and e-Transfer email) live in `seasons.config`, editable in the SQL editor until there is an admin form:
+4. **League settings** (fee line, e-Transfer email, registration open or closed) and team names, short codes, colours and logos are now editable at `/admin/settings` once you can sign in as an admin (step 5). They live in `seasons.config` and the `teams` table. Until then, or if you prefer SQL:
    ```sql
    update seasons set config = config || '{"fee_text": "$60 per player", "etransfer_email": "pay@example.com"}' where id = 1;
    ```
@@ -74,8 +106,8 @@ Phones get each event over Supabase Realtime (`auction:<id>` channel) and fall b
 ## Layout
 
 ```
-app/                  routes: / (landing), /register, /r/[token], /admin, /admin/registrations, /auth/callback,
-                      /admin/auctions, /auction (public board), /auction/t/[token] (test board),
+app/                  routes: / (landing), /register, /r/[token], /admin, /admin/registrations, /admin/settings,
+                      /admin/auctions, /auth/callback, /auction (public board), /auction/t/[token] (test board),
                       /auction/[id]/console, /auction/[id]/owner
 components/           sponsors/SponsorSlot, registration form and card, admin bits, auction screens
 lib/money.ts          lakhs, crores, increment ladder, squad guard

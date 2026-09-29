@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CopyButton } from "@/components/CopyButton";
-import { NotConfigured } from "@/components/NotConfigured";
+import { NotConfigured, UNAVAILABLE_MESSAGE } from "@/components/NotConfigured";
 import { CardPreview, toCard } from "@/components/registration/CardPreview";
 import { RegistrationForm } from "@/components/registration/RegistrationForm";
-import { isDbConfigured, isStorageConfigured } from "@/lib/config";
+import { isDbConfigured, isStorageConfigured, NotConfiguredError } from "@/lib/config";
 import { editPath } from "@/lib/registration/messages";
-import { getRegistrationByToken, type Stats, getFeeInfo } from "@/lib/registration/queries";
+import { getRegistrationByToken, type FeeInfo, type Registration, type Stats, getFeeInfo } from "@/lib/registration/queries";
 import { isEditToken } from "@/lib/registration/token";
 
 // Private page: keep it out of search engines, and never send the token in a Referer header.
@@ -40,7 +40,23 @@ export default async function EditRegistrationPage({ params, searchParams }: Pro
     );
   }
   if (!isEditToken(token)) notFound();
-  const reg = await getRegistrationByToken(token);
+  let reg: Registration | null = null;
+  let fee: FeeInfo = {};
+  try {
+    reg = await getRegistrationByToken(token);
+    if (reg) fee = await getFeeInfo();
+  } catch (err) {
+    if (!(err instanceof NotConfiguredError)) console.error("EditRegistrationPage: db read failed", err);
+    return (
+      <main className="mx-auto max-w-xl px-4 py-6">
+        {err instanceof NotConfiguredError ? (
+          <NotConfigured>Edit links work once the database is connected.</NotConfigured>
+        ) : (
+          <NotConfigured title="Temporarily unavailable">{UNAVAILABLE_MESSAGE}</NotConfigured>
+        )}
+      </main>
+    );
+  }
   if (!reg) notFound();
 
   const stats = (reg.stats ?? {}) as Stats;
@@ -62,7 +78,7 @@ export default async function EditRegistrationPage({ params, searchParams }: Pro
         mode="edit"
         token={token}
         storageReady={isStorageConfigured()}
-        fee={await getFeeInfo()}
+        fee={fee}
         initial={{
           fullName: reg.fullName,
           phone: reg.phone,

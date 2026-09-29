@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "../db/client";
-import { playerRegistrations, regStatus, seasons } from "../db/schema";
+import { playerRegistrations, regStatus, seasons, teams } from "../db/schema";
 
 export type Registration = typeof playerRegistrations.$inferSelect;
 export type RegStatus = Registration["status"];
@@ -12,6 +12,7 @@ export const REG_STATUSES = regStatus.enumValues;
 export type SeasonConfig = {
   fee_text?: string; // e.g. "$60 per player"
   etransfer_email?: string; // where players send the e-Transfer
+  registration_open?: boolean; // false closes /register (missing means open)
 };
 
 export type FeeInfo = { text?: string; email?: string };
@@ -36,6 +37,20 @@ export async function getActiveSeason() {
 export async function getFeeInfo(): Promise<FeeInfo> {
   const [row] = await getDb().select({ config: seasons.config }).from(seasons).orderBy(desc(seasons.status), desc(seasons.id)).limit(1);
   return feeFrom(row?.config);
+}
+
+/** The season the settings page edits: the open one, else the newest. */
+export async function getSettingsSeason() {
+  const [row] = await getDb()
+    .select({ id: seasons.id, name: seasons.name, config: seasons.config })
+    .from(seasons)
+    .orderBy(desc(seasons.status), desc(seasons.id))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function listTeams(seasonId: number) {
+  return getDb().select().from(teams).where(eq(teams.seasonId, seasonId)).orderBy(teams.name);
 }
 
 export async function getRegistrationByToken(token: string): Promise<Registration | null> {
