@@ -11,6 +11,9 @@ export function AdminBar({ email }: { email: string }) {
         <Link href="/admin/registrations" className="underline">
           Registrations
         </Link>
+        <Link href="/admin/auctions" className="underline">
+          Auctions
+        </Link>
         <Link href="/admin/settings" className="underline">
           Settings
         </Link>

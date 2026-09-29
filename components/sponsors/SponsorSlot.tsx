@@ -1,13 +1,15 @@
 import { asc, sql } from "drizzle-orm";
 import Image from "next/image";
+import { cache } from "react";
 import { isDbConfigured } from "@/lib/config";
 import { getDb } from "@/lib/db/client";
 import { sponsors } from "@/lib/db/schema";
 
-type Placement = "hero" | "strip" | "reg_step";
+type Placement = "hero" | "strip" | "reg_step" | "auction_lot";
 type Sponsor = { id: string; name: string; logoUrl: string | null; url: string | null };
 
-async function loadSponsors(placement: Placement): Promise<Sponsor[]> {
+/** Cached per request, so several slots on one page share one query. */
+const loadSponsors = cache(async (placement: Placement): Promise<Sponsor[]> => {
   if (!isDbConfigured()) return [];
   try {
     return await getDb()
@@ -23,7 +25,10 @@ async function loadSponsors(placement: Placement): Promise<Sponsor[]> {
     console.error(`SponsorSlot(${placement}) failed`, err);
     return [];
   }
-}
+});
+
+/** How many sponsors have this placement (0 when the DB is not set up). */
+export const countSponsors = async (placement: Placement): Promise<number> => (await loadSponsors(placement)).length;
 
 const safeHref = (url: string | null) => (url && /^https?:\/\//.test(url) ? url : null);
 
@@ -46,7 +51,7 @@ function Logo({ sponsor, className }: { sponsor: Sponsor; className: string }) {
 /**
  * Renders sponsors for one placement key from the sponsors table.
  * Renders nothing when there are none (or the DB is not set up).
- * `pick` chooses one sponsor for reg_step, one per registration step.
+ * `pick` chooses one sponsor for reg_step (one per step) and auction_lot (rotates by lot).
  */
 export async function SponsorSlot({ placement, pick = 0 }: { placement: Placement; pick?: number }) {
   const list = await loadSponsors(placement);
@@ -58,6 +63,16 @@ export async function SponsorSlot({ placement, pick = 0 }: { placement: Placemen
         <p className="text-sm font-bold uppercase tracking-wide text-muted">Presented by</p>
         <Logo sponsor={list[0]} className="h-20" />
       </section>
+    );
+  }
+
+  if (placement === "auction_lot") {
+    const sponsor = list[pick % list.length];
+    return (
+      <aside aria-label="Lot sponsor" className="flex items-center justify-between gap-3 rounded-lg border-2 border-zinc-300 px-4 py-3">
+        <span className="text-sm font-semibold text-muted">Lot brought to you by</span>
+        <Logo sponsor={sponsor} className="h-10" />
+      </aside>
     );
   }
 

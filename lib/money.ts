@@ -13,17 +13,20 @@ export function fmt(lakhs: number): string {
   return `${Number.isInteger(cr) ? cr : cr.toFixed(cr * 10 % 1 === 0 ? 1 : 2)} cr`;
 }
 
-/** Bid increment ladder (in lakhs). Edit in seasons.config later; this is the default. */
-export const LADDER: Array<{ upTo: number; step: number }> = [
+export type Rung = { upTo: number; step: number };
+
+/** Bid increment ladder (in lakhs). Default; an auction can override it in its config. */
+export const LADDER: Rung[] = [
   { upTo: crore(10), step: 50 },
   { upTo: crore(50), step: crore(1) },
   { upTo: crore(100), step: crore(2.5) },
   { upTo: Infinity, step: crore(5) },
 ];
 
-export function stepFor(current: number): number {
-  for (const rung of LADDER) if (current < rung.upTo) return rung.step;
-  return LADDER[LADDER.length - 1].step;
+/** Minimum raise at this price. */
+export function stepFor(current: number, ladder: Rung[] = LADDER): number {
+  for (const rung of ladder) if (current < rung.upTo) return rung.step;
+  return ladder[ladder.length - 1].step;
 }
 
 /** IPL-style squad guard: leave enough purse to fill the minimum squad at the lowest base. */

@@ -22,6 +22,8 @@ export interface Lot {
   currentTeamId?: string;
   soldTo?: string;
   price?: number;
+  /** state.version when it sold, so the board can list sales newest first. */
+  soldOrder?: number;
 }
 
 export interface AuctionState {
@@ -63,8 +65,13 @@ function teamOf(s: AuctionState, id: string): Team {
 /** Structural clone that works in every runtime we target. */
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
 
+/** Apply one event and return the new state. Never mutates `prev`. Throws AuctionRuleError on an illegal move. */
 export function apply(prev: AuctionState, e: AuctionEvent): AuctionState {
-  const s = clone(prev);
+  return step(clone(prev), e);
+}
+
+/** Mutates `s` in place. Only called on a private copy. */
+function step(s: AuctionState, e: AuctionEvent): AuctionState {
   s.version += 1;
   switch (e.type) {
     case "START": s.status = "open"; return s;
@@ -76,7 +83,7 @@ export function apply(prev: AuctionState, e: AuctionEvent): AuctionState {
     case "PRESOLD": {
       const lot = lotOf(s, e.lotId); const team = teamOf(s, e.teamId);
       if (lot.status !== "queued") throw new AuctionRuleError("Only queued lots can be pre-sold");
-      lot.status = "sold"; lot.soldTo = team.id; lot.price = e.amount;
+      lot.status = "sold"; lot.soldTo = team.id; lot.price = e.amount; lot.soldOrder = s.version;
       team.purseLeft -= e.amount; team.squadSize += 1;
       return s;
     }
@@ -102,7 +109,8 @@ export function apply(prev: AuctionState, e: AuctionEvent): AuctionState {
       const lot = lotOf(s, e.lotId); const team = teamOf(s, e.teamId);
       if (lot.status !== "on_block") throw new AuctionRuleError("Lot is not on the block");
       if (e.amount > team.purseLeft) throw new AuctionRuleError("Team cannot afford this sale");
-      lot.status = "sold"; lot.soldTo = team.id; lot.price = e.amount;
+      lot.status = "sold"; lot.soldTo = team.id; lot.price = e.amount; lot.soldOrder = s.version;
+      lot.currentBid = undefined; lot.currentTeamId = undefined;
       team.purseLeft -= e.amount; team.squadSize += 1;
       s.onBlockLotId = undefined;
       return s;
@@ -130,5 +138,6 @@ export function apply(prev: AuctionState, e: AuctionEvent): AuctionState {
 
 /** Rebuild state from the event log, skipping undone events. */
 export function replay(initial: AuctionState, events: Array<{ event: AuctionEvent; undone: boolean }>): AuctionState {
-  return events.filter((r) => !r.undone).reduce((s, r) => apply(s, r.event), initial);
+  // One copy up front, then mutate: replaying 1,500 events stays well under a millisecond.
+  return events.filter((r) => !r.undone).reduce((s, r) => step(s, r.event), clone(initial));
 }

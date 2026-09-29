@@ -1,4 +1,5 @@
-import { pgTable, pgEnum, uuid, text, integer, smallint, smallserial, boolean, timestamp, jsonb, char, bigserial, unique } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { pgTable, pgEnum, uuid, text, integer, smallint, smallserial, boolean, timestamp, jsonb, char, bigserial, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const regStatus = pgEnum("reg_status", ["registered", "confirmed", "withdrawn"]);
 export const playerRole = pgEnum("player_role", ["batter", "bowler", "all_rounder", "wicket_keeper"]);
@@ -82,7 +83,10 @@ export const auctions = pgTable("auctions", {
   version: integer("version").notNull().default(0),
   config: jsonb("config").notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+}, (t) => [
+  // Only one live auction per season. Test auctions are unlimited.
+  uniqueIndex("auctions_one_live_per_season").on(t.seasonId).where(sql`${t.mode} = 'live'`),
+]);
 
 export const auctionAdmins = pgTable("auction_admins", {
   auctionId: uuid("auction_id").notNull().references(() => auctions.id),
