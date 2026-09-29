@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "auctions_one_live_per_season" ON "auctions" USING btree ("season_id") WHERE "auctions"."mode" = 'live';
