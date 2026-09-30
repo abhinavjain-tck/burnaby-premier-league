@@ -95,7 +95,7 @@ export default async function RegistrationDetailPage({ params }: Props) {
 
           <form action={setTier.bind(null, reg.id)}>
             <fieldset>
-              <legend className="label">Set band (M = marquee)</legend>
+              <legend className="label">Set band (M = Star)</legend>
               <div className="grid grid-cols-4 gap-2">
                 {TIERS.map((t) => (
                   <button

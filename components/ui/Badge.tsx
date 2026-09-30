@@ -42,9 +42,9 @@ export function RoleChip({ role, short = false }: { role: string | null | undefi
   );
 }
 
-const BAND_NAME: Record<string, string> = { M: "Marquee", A: "Band A", B: "Band B", C: "Band C" };
+const BAND_NAME: Record<string, string> = { M: "Star", A: "Band A", B: "Band B", C: "Band C" };
 
-/** Price band (tier). Marquee gets the gold. */
+/** Price band (tier). Star gets the gold. */
 export function BandChip({ tier }: { tier: string | null | undefined }) {
   if (!tier) return null;
   return <Badge tone={tier === "M" ? "gold" : "neutral"}>{BAND_NAME[tier] ?? `Band ${tier}`}</Badge>;

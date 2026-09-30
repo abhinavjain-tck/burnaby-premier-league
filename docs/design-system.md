@@ -16,7 +16,7 @@ Picked with the ui-ux-pro-max skill ("Sports/Fitness" pairing, vibrant block sty
 | `edge` | #56675b | Input and outline-button borders | 6:1 |
 | `pitch` | #0b4d2c | Brand, primary buttons, header | white on it 9.9:1 |
 | `pitch-dark` / `pitch-soft` | #07371f / #e1efe5 | Hover / success tint | |
-| `gold` | #f5b301 | Accent fill: Register CTA, focus ring, Marquee, countdown | ink on it 10:1 |
+| `gold` | #f5b301 | Accent fill: Register CTA, focus ring, Star band, countdown | ink on it 10:1 |
 | `gold-ink` | #6b4700 | Gold-toned text on white | 8.3:1 |
 | `ball` | #b3261e | Unsold, errors, danger, "live" dot | white on it 6.5:1 |
 
@@ -65,7 +65,7 @@ Shared, in `components/ui/`:
 | `Button`, `ButtonLink`, `buttonClass()` | Variants: primary, accent, outline, danger, ghost. Sizes md/lg/xl. |
 | CSS classes | `.btn`, `.btn-accent`, `.btn-outline`, `.btn-danger`, `.btn-ghost`, `.link`, `.field`, `.label`, `.hint`, `.error`, `.choice`, `.card`, `.eyebrow`, `.num` |
 | `Card` | White panel, optional title, aside and team-colour top strip |
-| `Badge`, `RoleChip`, `BandChip`, `WkChip` | Solid chips. Marquee band is gold, WK is ink. |
+| `Badge`, `RoleChip`, `BandChip`, `WkChip` | Solid chips. Star band is gold, WK is ink. |
 | `Stat` | Label + big display number, inside a `<dl>` |
 | `SectionHeader` | Eyebrow + display heading + optional right slot |
 | `EmptyState` | Icon, one line, optional action |

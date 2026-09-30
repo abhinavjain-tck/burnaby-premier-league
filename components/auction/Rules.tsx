@@ -1,7 +1,7 @@
 import { lowestBase, TIER_KEYS, type AuctionConfig } from "@/lib/auction/config";
 import { fmt } from "@/lib/money";
 
-const TIER_NAME: Record<string, string> = { M: "Marquee", A: "Tier A", B: "Tier B", C: "Tier C" };
+const TIER_NAME: Record<string, string> = { M: "Star", A: "Tier A", B: "Tier B", C: "Tier C" };
 
 /** The auction rules, straight from the config numbers, so the page never disagrees with the console. */
 export function Rules({ config }: { config: AuctionConfig }) {
@@ -22,7 +22,7 @@ export function Rules({ config }: { config: AuctionConfig }) {
         <li>
           Base prices: {TIER_KEYS.map((t) => `${TIER_NAME[t]} ${fmt(config.basePrices[t])}`).join(" · ")}. Bidding starts at base.
         </li>
-        <li>Marquee players go first, then one set per role. Order inside a set is shuffled on the day, in front of everyone.</li>
+        <li>Star players go first, then one set per role. Order inside a set is shuffled on the day, in front of everyone.</li>
         <li>
           Raises go up in steps:{" "}
           {config.ladder
