@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Radio } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from "react";
 import { Badge, BandChip, RoleChip } from "@/components/ui/Badge";
 import { cx } from "@/components/ui/cx";
 import { PlayerPhoto } from "@/components/ui/PlayerPhoto";
@@ -20,8 +20,6 @@ type Props = {
   liveAccent?: string;
   prevCount?: number;
   nextCount?: number;
-  /** Extra classes for the fixed "Back to live" button, e.g. to centre it over one column. */
-  backClassName?: string;
 };
 
 const reducedMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -31,7 +29,7 @@ const reducedMotion = () => typeof window !== "undefined" && window.matchMedia("
  * keyboard to move. Snaps back to live when a new lot opens or a result lands, never on a bid.
  * Only for looking: it never feeds a lot id to a command.
  */
-export function LotCarousel({ snap, live, liveAccent, prevCount = 5, nextCount = 3, backClassName }: Props) {
+export function LotCarousel({ snap, live, liveAccent, prevCount = 5, nextCount = 3 }: Props) {
   const prev = previousResults(snap, prevCount);
   const next = nextLots(snap, nextCount);
   const liveIdx = prev.length;
@@ -55,7 +53,10 @@ export function LotCarousel({ snap, live, liveAccent, prevCount = 5, nextCount =
     const el = scroller.current;
     const slide = el?.children[Math.max(0, Math.min(i, el.children.length - 1))] as HTMLElement | undefined;
     if (!el || !slide) return;
-    el.scrollTo({ left: slide.offsetLeft, behavior: smooth && !reducedMotion() ? "smooth" : "auto" });
+    el.scrollTo({
+      left: slide.offsetLeft,
+      behavior: smooth && !reducedMotion() ? "smooth" : "auto",
+    });
   }, []);
 
   // Back to live on first paint and whenever the lot on the block or the latest result changes.
@@ -80,6 +81,18 @@ export function LotCarousel({ snap, live, liveAccent, prevCount = 5, nextCount =
     return () => ro.disconnect();
   }, [go]);
 
+  // The strip is as tall as the live card, not the tallest card, so there's no big gap under
+  // short cards. Browsing never changes the live card, so the bid buttons below never jump.
+  const liveSlide = useRef<HTMLDivElement>(null);
+  const [liveHeight, setLiveHeight] = useState<number | undefined>(undefined);
+  useLayoutEffect(() => {
+    const el = liveSlide.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => setLiveHeight(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
       e.preventDefault();
@@ -88,39 +101,61 @@ export function LotCarousel({ snap, live, liveAccent, prevCount = 5, nextCount =
   };
 
   const onLive = idx === liveIdx;
-  const labels: Array<{ label: string; target: number; active: boolean; disabled: boolean }> = [
-    { label: "Prev", target: liveIdx - 1, active: idx < liveIdx, disabled: prev.length === 0 },
+  const labels: Array<{
+    label: string;
+    target: number;
+    active: boolean;
+    disabled: boolean;
+  }> = [
+    {
+      label: "Prev",
+      target: liveIdx - 1,
+      active: idx < liveIdx,
+      disabled: prev.length === 0,
+    },
     { label: "Live", target: liveIdx, active: onLive, disabled: false },
-    { label: "Next", target: liveIdx + 1, active: idx > liveIdx, disabled: false },
+    {
+      label: "Next",
+      target: liveIdx + 1,
+      active: idx > liveIdx,
+      disabled: false,
+    },
   ];
 
   return (
     <section aria-label="Lots" aria-roledescription="carousel" className="space-y-2">
-      <div className="flex items-center gap-2">
+      <div className="flex min-h-12 items-center gap-2">
         <button type="button" aria-label="Show earlier card" disabled={idx <= 0} onClick={() => go(idx - 1)} className="btn-outline size-11 min-h-11 shrink-0 px-0">
           <ChevronLeft aria-hidden className="size-6" />
         </button>
-        <div className="flex flex-1 items-center justify-center gap-1">
-          {labels.map((l, i) => (
-            <span key={l.label} className="contents">
-              {i > 0 && (
-                <span aria-hidden className="font-bold text-muted">
-                  ·
-                </span>
-              )}
-              <button
-                type="button"
-                disabled={l.disabled}
-                aria-current={l.active ? "true" : undefined}
-                onClick={() => go(l.target)}
-                className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 font-display text-xl font-extrabold tracking-wide text-muted uppercase focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:cursor-not-allowed disabled:opacity-40 aria-[current]:bg-ink aria-[current]:text-white"
-              >
-                {l.label === "Live" && <span aria-hidden className="inline-block size-2.5 rounded-full bg-ball" />}
-                {l.label}
-              </button>
-            </span>
-          ))}
-        </div>
+        {/* Off the live card, the labels give way to Back to live. Same row, same height: nothing below moves. */}
+        {!onLive ? (
+          <button type="button" onClick={() => go(liveIdx)} className="btn min-h-12 flex-1 px-2 font-display text-2xl font-extrabold whitespace-nowrap uppercase">
+            <Radio aria-hidden className="size-6" /> Back to live
+          </button>
+        ) : (
+          <div className="flex flex-1 items-center justify-center gap-1">
+            {labels.map((l, i) => (
+              <span key={l.label} className="contents">
+                {i > 0 && (
+                  <span aria-hidden className="font-bold text-muted">
+                    ·
+                  </span>
+                )}
+                <button
+                  type="button"
+                  disabled={l.disabled}
+                  aria-current={l.active ? "true" : undefined}
+                  onClick={() => go(l.target)}
+                  className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 font-display text-xl font-extrabold tracking-wide text-muted uppercase focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:cursor-not-allowed disabled:opacity-40 aria-[current]:bg-ink aria-[current]:text-white"
+                >
+                  {l.label === "Live" && <span aria-hidden className="inline-block size-2.5 rounded-full bg-ball" />}
+                  {l.label}
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
         <button type="button" aria-label="Show later card" disabled={idx >= total - 1} onClick={() => go(idx + 1)} className="btn-outline size-11 min-h-11 shrink-0 px-0">
           <ChevronRight aria-hidden className="size-6" />
         </button>
@@ -133,14 +168,15 @@ export function LotCarousel({ snap, live, liveAccent, prevCount = 5, nextCount =
         aria-label="Swipe or use arrow keys to see the last and next lots"
         onKeyDown={onKeyDown}
         onScroll={() => setIdx(nearest())}
-        className="relative flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain rounded-lg [scrollbar-width:none] focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-gold [&::-webkit-scrollbar]:hidden"
+        style={liveHeight ? { height: liveHeight } : undefined}
+        className="relative flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain rounded-lg [scrollbar-width:none] focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-gold [&::-webkit-scrollbar]:hidden"
       >
         {[...prev].reverse().map((r, i) => (
-          <Slide key={r.lot.id} label={`Previous: ${r.lot.playerName}`}>
+          <Slide key={r.lot.id} label={`Previous: ${r.lot.playerName}`} maxHeight={liveHeight}>
             <PrevCard snap={snap} result={r} ago={prev.length - i} />
           </Slide>
         ))}
-        <Slide label="Live" accent={live ? liveAccent : undefined}>
+        <Slide ref={liveSlide} label="Live" accent={live ? liveAccent : undefined}>
           {live ? (
             <>
               <span className="absolute top-3 right-3 inline-flex min-h-7 items-center gap-1.5 rounded-sm border-2 border-ball bg-paper px-2 text-sm leading-none font-extrabold tracking-wider text-ink uppercase">
@@ -153,35 +189,35 @@ export function LotCarousel({ snap, live, liveAccent, prevCount = 5, nextCount =
             <StateCard snap={snap} next={next[0]} />
           )}
         </Slide>
-        <Slide label="Next up">
+        <Slide label="Next up" maxHeight={liveHeight}>
           <NextList lots={next} />
         </Slide>
       </div>
-
-      {!onLive && (
-        <button
-          type="button"
-          onClick={() => go(liveIdx)}
-          className={cx(
-            "btn fixed bottom-4 left-1/2 z-40 min-h-14 -translate-x-1/2 px-6 font-display whitespace-nowrap text-2xl font-extrabold uppercase shadow-pop motion-safe:animate-rise",
-            backClassName,
-          )}
-        >
-          <Radio aria-hidden className="size-6" /> Back to live
-        </button>
-      )}
     </section>
   );
 }
 
-function Slide({ label, accent, children }: { label: string; accent?: string; children: ReactNode }) {
+type SlideProps = {
+  label: string;
+  accent?: string;
+  children: ReactNode;
+  ref?: Ref<HTMLDivElement>;
+  maxHeight?: number;
+};
+
+/** One card. Cards other than live get the live card's height as a cap and scroll inside if taller. */
+function Slide({ label, accent, children, ref, maxHeight }: SlideProps) {
   return (
     <div
+      ref={ref}
       role="group"
       aria-roledescription="slide"
       aria-label={label}
-      className={cx("card relative w-full shrink-0 self-start snap-center snap-always p-4", accent && "border-t-[6px]")}
-      style={accent ? { borderTopColor: accent } : undefined}
+      className={cx("card relative w-full shrink-0 self-start snap-center snap-always p-4", maxHeight !== undefined && "overflow-y-auto overscroll-y-contain", accent && "border-t-[6px]")}
+      style={{
+        ...(accent ? { borderTopColor: accent } : {}),
+        ...(maxHeight ? { maxHeight } : {}),
+      }}
     >
       {children}
     </div>
@@ -204,9 +240,13 @@ function PrevCard({ snap, result, ago }: { snap: Snapshot; result: LotResult; ag
             <Badge tone="pitch" className="min-h-8 text-base">
               Sold
             </Badge>
-            <span aria-hidden className="text-muted">·</span>
+            <span aria-hidden className="text-muted">
+              ·
+            </span>
             {team && <TeamChip team={team} teams={snap.teams} className="min-h-8 text-lg" />}
-            <span aria-hidden className="text-muted">·</span>
+            <span aria-hidden className="text-muted">
+              ·
+            </span>
             <span className="num">{fmt(result.price)}</span>
           </p>
         ) : (

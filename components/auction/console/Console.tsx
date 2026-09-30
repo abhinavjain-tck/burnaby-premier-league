@@ -131,7 +131,6 @@ export function Console({ initial, boardHref, sponsors, sponsorBand }: Props) {
 
             <LotCarousel
               snap={snap}
-              backClassName="lg:left-[21rem]"
               live={
                 lot && (
                   <div className="space-y-4">

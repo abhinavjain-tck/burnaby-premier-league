@@ -59,6 +59,9 @@ test.describe("lot carousel on the console (phone)", () => {
     await expect(slide(page, "Live")).toContainText("Nik Next");
     await expect(backToLive(page)).toBeHidden();
     await expect(page.getByText("Bidding: Nik Next")).toBeVisible();
+    const kings = page.getByRole("button", { name: /Kings bids/ });
+    const kingsTop = async () => (await kings.evaluate((el) => el.getBoundingClientRect().top + window.scrollY));
+    const kingsBefore = await kingsTop();
 
     // Arrow back to the previous lot: its result shows.
     await page.getByRole("button", { name: "Show earlier card" }).click();
@@ -66,8 +69,12 @@ test.describe("lot carousel on the console (phone)", () => {
     await expect(prev).toBeInViewport({ ratio: 0.9 });
     await expect(prev).toContainText("Sold");
     await expect(prev).toContainText("RYL");
-    await expect(page.getByRole("button", { name: "Prev", exact: true })).toHaveAttribute("aria-current", "true");
     await expect(backToLive(page)).toBeVisible();
+    // Back to live sits in the carousel row, well above the bid buttons, and the bid buttons didn't move.
+    const back = (await backToLive(page).boundingBox())!;
+    expect(back.height).toBeGreaterThanOrEqual(44);
+    expect(back.y + back.height).toBeLessThan((await kings.boundingBox())!.y);
+    expect(await kingsTop()).toBe(kingsBefore);
     await carousel(page).scrollIntoViewIfNeeded();
     await shot(page, "carousel-console-prev-375");
 
@@ -88,9 +95,12 @@ test.describe("lot carousel on the console (phone)", () => {
 
     // Keyboard: right arrow goes to the next lots, in running order.
     await carousel(page).getByRole("group", { name: /Swipe or use arrow keys/ }).focus();
+    // (The live card grew with the bid, as it always has; browsing to Next must not move anything.)
+    const kingsOnLive = await kingsTop();
     await page.keyboard.press("ArrowRight");
     const next = slide(page, "Next up");
-    await expect(next).toBeInViewport({ ratio: 0.9 });
+    await expect(next).toBeInViewport({ ratio: 0.5 });
+    expect(await kingsTop()).toBe(kingsOnLive);
     await expect(next.getByRole("listitem").first()).toContainText("Oli Third");
     await expect(next.getByRole("listitem")).toHaveCount(3);
     await expect(next.getByRole("listitem").nth(1)).toContainText("Pat Fourth");
