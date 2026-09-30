@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Lock, ShieldCheck } from "lucide-react";
 import { connection } from "next/server";
 import { NotConfigured, UNAVAILABLE_MESSAGE } from "@/components/NotConfigured";
 import { RegistrationForm } from "@/components/registration/RegistrationForm";
 import { SponsorSlot } from "@/components/sponsors/SponsorSlot";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PageShell } from "@/components/ui/PageShell";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 import { isDbConfigured, isStorageConfigured, NotConfiguredError } from "@/lib/config";
 import { feeFrom, getActiveSeason } from "@/lib/registration/queries";
 import { isRegistrationOpen } from "@/lib/registration/settings";
@@ -28,12 +31,9 @@ export default async function RegisterPage() {
   const open = !failed && (!dbReady || (season !== null && isRegistrationOpen(season.config)));
 
   return (
-    <main className="mx-auto max-w-xl space-y-5 px-4 py-6">
-      <Link href="/" className="font-bold text-brand underline">
-        ← BPL Season 4
-      </Link>
-      <h1 className="text-3xl font-black">Register to play</h1>
-      <p>
+    <PageShell current="register" className="space-y-5">
+      <SectionHeader as="h1" eyebrow="BPL Season 4" title="Register to play" />
+      <p className="text-lg">
         Only step 1 is required. You get a private link to finish your auction card later. No account needed.
       </p>
 
@@ -53,14 +53,18 @@ export default async function RegisterPage() {
           ))}
         />
       ) : (
-        <p className="rounded-lg border-2 border-ink p-4 font-bold">Registration is closed for this season.</p>
+        <EmptyState icon={Lock} title="Registration is closed">
+          <p>Registration is closed for this season.</p>
+        </EmptyState>
       )}
 
-      <p className="text-sm text-muted">
-        Public: your name, photo, role, styles, bio, stats and team. Private: your phone, email and payment. Only league admins see those.
-      </p>
-
-      <SponsorSlot placement="strip" />
-    </main>
+      <div className="flex gap-3 rounded-md bg-pitch-soft p-4 text-sm">
+        <ShieldCheck aria-hidden className="size-5 shrink-0 text-pitch" />
+        <p>
+          <strong>Public:</strong> your name, photo, role, styles, bio, stats and team. <strong>Private:</strong> your phone, email and
+          payment. Only league admins see those.
+        </p>
+      </div>
+    </PageShell>
   );
 }

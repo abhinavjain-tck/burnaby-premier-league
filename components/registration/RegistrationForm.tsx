@@ -4,6 +4,7 @@ import { startTransition, useActionState, useState } from "react";
 import { saveRegistration } from "@/app/register/actions";
 import { BATTING_STYLES, BIO_MAX, BOWLING_STYLES, ROLES } from "@/lib/registration/options";
 import type { FieldErrors, SaveState } from "@/lib/registration/validate";
+import { ArrowRight, CircleAlert, CircleCheck, ChevronDown } from "lucide-react";
 import { PhotoInput } from "./PhotoInput";
 
 export type FormDefaults = {
@@ -82,7 +83,7 @@ export function RegistrationForm({ mode, token, initial = {}, storageReady, fee,
         <Choices name="battingStyle" label="Bats" options={BATTING_STYLES.map((v) => ({ value: v, label: v }))} defaultValue={initial.battingStyle} error={errors.battingStyle} />
         <Choices name="bowlingStyle" label="Bowls" options={BOWLING_STYLES.map((v) => ({ value: v, label: v }))} defaultValue={initial.bowlingStyle} error={errors.bowlingStyle} />
         <button type="button" className="btn-outline w-full" onClick={() => goTo("basics", "card")}>
-          Next: auction card
+          Next: auction card <ArrowRight aria-hidden className="size-5" />
         </button>
       </Step>
       {stepSponsors[0]}
@@ -103,7 +104,7 @@ export function RegistrationForm({ mode, token, initial = {}, storageReady, fee,
             One line about you
           </label>
           <textarea id="bio" name="bio" rows={2} maxLength={BIO_MAX} defaultValue={initial.bio} className="field" />
-          <p className="text-sm text-muted">Up to {BIO_MAX} characters.</p>
+          <p className="hint mt-1">Up to {BIO_MAX} characters.</p>
           {errors.bio && <p className="error">{errors.bio}</p>}
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -122,15 +123,15 @@ export function RegistrationForm({ mode, token, initial = {}, storageReady, fee,
           error={errors.cricheroesUrl}
         />
         <button type="button" className="btn-outline w-full" onClick={() => goTo("card", "fee")}>
-          Next: fee
+          Next: fee <ArrowRight aria-hidden className="size-5" />
         </button>
       </Step>
       {stepSponsors[1]}
 
       <Step n={3} title="League fee" tag="Optional" open={isOpen("fee")} onToggle={() => toggle("fee")}>
         {fee.text || fee.email ? (
-          <div className="space-y-1">
-            {fee.text && <p className="font-bold">{fee.text}</p>}
+          <div className="space-y-1 rounded-md border-l-4 border-gold bg-gold-soft p-3">
+            {fee.text && <p className="font-display text-2xl font-extrabold">{fee.text}</p>}
             {fee.email && (
               <p>
                 Interac e-Transfer to <strong className="break-words select-all">{fee.email}</strong>. Put your name in the memo.
@@ -149,13 +150,13 @@ export function RegistrationForm({ mode, token, initial = {}, storageReady, fee,
           onBusyChange={onBusy}
           error={errors.paymentProofPath}
         />
-        {initial.hasPaymentProof && <p className="text-sm text-muted">We already have a screenshot from you. Upload again only to replace it.</p>}
+        {initial.hasPaymentProof && <p className="hint">We already have a screenshot from you. Upload again only to replace it.</p>}
       </Step>
       {stepSponsors[2]}
 
       <Result state={state} mode={mode} />
 
-      <button type="submit" className="btn w-full" disabled={pending || uploads > 0}>
+      <button type="submit" className="btn min-h-14 w-full text-xl" disabled={pending || uploads > 0}>
         {pending ? "Saving…" : uploads > 0 ? "Waiting for upload…" : mode === "new" ? "Register" : "Save changes"}
       </button>
     </form>
@@ -164,29 +165,34 @@ export function RegistrationForm({ mode, token, initial = {}, storageReady, fee,
 
 function Result({ state, mode }: { state: SaveState; mode: "new" | "edit" }) {
   if (state.status === "idle") return null;
-  const box = "rounded-lg border-2 p-4";
+  const box = "flex gap-3 rounded-md border-2 p-4 animate-rise";
   if (state.status === "saved") {
     return (
-      <p role="status" className={`${box} border-brand bg-emerald-50 font-bold text-brand`}>
+      <p role="status" className={`${box} border-pitch bg-pitch-soft font-bold text-pitch`}>
+        <CircleCheck aria-hidden className="size-6 shrink-0" />
         Saved.
       </p>
     );
   }
   if (state.status === "duplicate") {
     return (
-      <div role="alert" className={`${box} border-red-700 bg-red-50 text-red-900`}>
-        <p className="font-bold">Already registered</p>
-        <p>
-          {mode === "new"
-            ? "This WhatsApp number is already in the pool. Lost your edit link? Message a league admin on WhatsApp and they will resend it."
-            : "Another player already registered with that WhatsApp number."}
-        </p>
+      <div role="alert" className={`${box} border-ball bg-ball-soft text-ink`}>
+        <CircleAlert aria-hidden className="size-6 shrink-0 text-ball" />
+        <div>
+          <p className="font-bold">Already registered</p>
+          <p>
+            {mode === "new"
+              ? "This WhatsApp number is already in the pool. Lost your edit link? Message a league admin on WhatsApp and they will resend it."
+              : "Another player already registered with that WhatsApp number."}
+          </p>
+        </div>
       </div>
     );
   }
   const message = state.status === "invalid" ? "Please fix the fields marked in red." : state.message;
   return (
-    <p role="alert" className={`${box} border-red-700 bg-red-50 font-bold text-red-900`}>
+    <p role="alert" className={`${box} border-ball bg-ball-soft font-bold text-ink`}>
+      <CircleAlert aria-hidden className="size-6 shrink-0 text-ball" />
       {message}
     </p>
   );
@@ -194,28 +200,28 @@ function Result({ state, mode }: { state: SaveState; mode: "new" | "edit" }) {
 
 function Step(props: { n: number; title: string; tag: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
   const id = `step-${props.n}`;
+  const required = props.tag === "Required";
   return (
-    <section className="rounded-xl border-2 border-ink">
+    <section className="card">
       <h2>
         <button
           type="button"
           aria-expanded={props.open}
           aria-controls={id}
           onClick={props.onToggle}
-          className="flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left"
+          className="flex min-h-16 w-full cursor-pointer items-center gap-3 rounded-lg px-4 text-left focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-gold"
         >
-          <span>
-            <span className="text-lg font-black">
-              {props.n} · {props.title}
-            </span>
-            <span className="ml-2 text-sm text-muted">{props.tag}</span>
+          <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-pitch font-display text-xl font-extrabold text-white">
+            {props.n}
           </span>
-          <span aria-hidden className="text-2xl font-black">
-            {props.open ? "−" : "+"}
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-2xl leading-tight font-bold uppercase">{props.title}</span>
+            <span className={`text-sm font-semibold ${required ? "text-ball" : "text-muted"}`}>{props.tag}</span>
           </span>
+          <ChevronDown aria-hidden className={`size-6 shrink-0 transition-transform duration-200 ${props.open ? "rotate-180" : ""}`} />
         </button>
       </h2>
-      <div id={id} hidden={!props.open} className="space-y-4 border-t-2 border-ink p-4">
+      <div id={id} hidden={!props.open} className="space-y-5 border-t border-line p-4">
         {props.children}
       </div>
     </section>
@@ -230,7 +236,7 @@ function Text({ name, label, error, hint, ...rest }: TextProps) {
       <label htmlFor={name} className="label">
         {label}
       </label>
-      {hint && <p className="mb-1 text-sm text-muted">{hint}</p>}
+      {hint && <p className="hint mb-1">{hint}</p>}
       <input id={name} name={name} aria-invalid={Boolean(error)} className="field" {...rest} />
       {error && <p className="error">{error}</p>}
     </div>

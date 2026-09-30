@@ -16,7 +16,7 @@ export function SiteHeader({ current }: { current?: "home" | "register" | "aucti
           <LogoMark />
           <span className="leading-none">
             <span className="block font-display text-2xl font-extrabold tracking-wide">BPL</span>
-            <span className="block text-xs font-semibold tracking-wider text-white/85 uppercase">Season 4</span>
+            <span className="block text-xs font-semibold tracking-wider whitespace-nowrap text-white/85 uppercase">Season 4</span>
           </span>
         </Link>
         <nav aria-label="Main" className="flex items-center gap-1 sm:gap-2">
@@ -28,8 +28,8 @@ export function SiteHeader({ current }: { current?: "home" | "register" | "aucti
             Auction
           </Link>
           {current !== "register" && (
-            <Link href="/register" className="btn-accent min-h-11 px-4 text-base">
-              Register to play
+            <Link href="/register" className="btn-accent min-h-11 px-3 text-base whitespace-nowrap">
+              Register now
             </Link>
           )}
         </nav>
@@ -72,9 +72,12 @@ export function PageShell({
   width = "narrow",
   current,
   sponsors = true,
+  before,
   className,
 }: {
   children: ReactNode;
+  /** Full-width block between the header and <main> content, e.g. a hero. Rendered inside <main>. */
+  before?: ReactNode;
   width?: Width;
   current?: "home" | "register" | "auction";
   sponsors?: boolean;
@@ -83,8 +86,9 @@ export function PageShell({
   return (
     <div className="flex min-h-dvh flex-col">
       <SiteHeader current={current} />
-      <main id="main" className={cx("mx-auto w-full flex-1 px-4 py-6", WIDTH[width], className)}>
-        {children}
+      <main id="main" className="flex-1">
+        {before}
+        <div className={cx("mx-auto w-full px-4 py-6", WIDTH[width], className)}>{children}</div>
       </main>
       <SiteFooter sponsors={sponsors} />
     </div>
