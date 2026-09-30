@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { KeyRound } from "lucide-react";
 import { CopyButton } from "@/components/CopyButton";
+import { Badge } from "@/components/ui/Badge";
+import { PageShell } from "@/components/ui/PageShell";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 import { NotConfigured, UNAVAILABLE_MESSAGE } from "@/components/NotConfigured";
 import { CardPreview, toCard } from "@/components/registration/CardPreview";
 import { RegistrationForm } from "@/components/registration/RegistrationForm";
@@ -15,6 +19,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 };
+
+const STATUS_TONE = { registered: "gold", confirmed: "pitch", withdrawn: "neutral" } as const;
 
 const STATUS_TEXT = {
   registered: "Registered · awaiting payment check",
@@ -34,9 +40,9 @@ export default async function EditRegistrationPage({ params, searchParams }: Pro
   const [{ token }, query] = await Promise.all([params, searchParams]);
   if (!isDbConfigured()) {
     return (
-      <main className="mx-auto max-w-xl px-4 py-6">
+      <PageShell>
         <NotConfigured>Edit links work once the database is connected.</NotConfigured>
-      </main>
+      </PageShell>
     );
   }
   if (!isEditToken(token)) notFound();
@@ -48,31 +54,44 @@ export default async function EditRegistrationPage({ params, searchParams }: Pro
   } catch (err) {
     if (!(err instanceof NotConfiguredError)) console.error("EditRegistrationPage: db read failed", err);
     return (
-      <main className="mx-auto max-w-xl px-4 py-6">
+      <PageShell>
         {err instanceof NotConfiguredError ? (
           <NotConfigured>Edit links work once the database is connected.</NotConfigured>
         ) : (
           <NotConfigured title="Temporarily unavailable">{UNAVAILABLE_MESSAGE}</NotConfigured>
         )}
-      </main>
+      </PageShell>
     );
   }
   if (!reg) notFound();
 
   const stats = (reg.stats ?? {}) as Stats;
   return (
-    <main className="mx-auto max-w-xl space-y-5 px-4 py-6">
-      <h1 className="text-3xl font-black">{query.new ? "You're in the pool" : "Your registration"}</h1>
-      <p className="text-lg font-bold">Status: {STATUS_TEXT[reg.status]}</p>
+    <PageShell className="space-y-6">
+      <div className="space-y-3">
+        <SectionHeader as="h1" eyebrow="BPL Season 4" title={query.new ? "You're in the pool" : "Your registration"} />
+        <p className="flex flex-wrap items-center gap-2 text-lg font-bold">
+          Status: <Badge tone={STATUS_TONE[reg.status]}>{STATUS_TEXT[reg.status]}</Badge>
+        </p>
+      </div>
 
-      <section className="space-y-3 rounded-xl border-2 border-brand bg-emerald-50 p-4">
-        <p>
-          <strong>This is your private edit link.</strong> Save it. Anyone with it can edit your card, so don&apos;t post it in the group.
+      <section className="space-y-3 rounded-lg border-2 border-gold bg-gold-soft p-4">
+        <p className="flex gap-3">
+          <KeyRound aria-hidden className="size-6 shrink-0 text-gold-ink" />
+          <span>
+            <strong>This is your private edit link.</strong> Save it. Anyone with it can edit your card, so don&apos;t post it in the group.
+          </span>
         </p>
         <CopyButton label="Copy my edit link" path={editPath(token)} />
       </section>
 
-      <CardPreview card={toCard(reg)} />
+      <section aria-labelledby="card-h" className="space-y-3">
+        <h2 id="card-h" className="eyebrow text-center">
+          Your auction card
+        </h2>
+
+        <CardPreview card={toCard(reg)} />
+      </section>
 
       <RegistrationForm
         mode="edit"
@@ -96,6 +115,6 @@ export default async function EditRegistrationPage({ params, searchParams }: Pro
           hasPaymentProof: Boolean(reg.paymentProofUrl),
         }}
       />
-    </main>
+    </PageShell>
   );
 }

@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Board } from "@/components/auction/Board";
 import { lotSponsors } from "@/components/auction/lotSponsors";
 import { NotConfigured } from "@/components/NotConfigured";
+import { PageShell } from "@/components/ui/PageShell";
 import { isShareToken } from "@/lib/auction/share";
 import { findTestAuctionByToken, getPublicSnapshot } from "@/lib/auction/snapshot";
 import { isDbConfigured } from "@/lib/config";
@@ -23,14 +24,18 @@ export default async function TestAuctionBoard({ params }: Props) {
   await connection();
   if (!isDbConfigured()) {
     return (
-      <main className="mx-auto max-w-xl px-4 py-6">
+      <PageShell current="auction">
         <NotConfigured>Test auctions work once the database is connected.</NotConfigured>
-      </main>
+      </PageShell>
     );
   }
   if (!isShareToken(token)) notFound();
   const row = await findTestAuctionByToken(token);
   const snap = row ? await getPublicSnapshot(row.id) : null;
   if (!snap) notFound();
-  return <Board initial={snap} sponsors={await lotSponsors()} />;
+  return (
+    <PageShell current="auction" width="wide" className="py-4">
+      <Board initial={snap} sponsors={await lotSponsors()} />
+    </PageShell>
+  );
 }

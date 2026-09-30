@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { isMarker } from "@/lib/auction/log";
 import type { Snapshot } from "@/lib/auction/types";
 import { describeEvent } from "@/lib/auction/view";
@@ -13,16 +14,19 @@ const time = (iso: string) => {
 /** Last 20 events, newest first. Undone ones are struck through; undo/redo markers are muted. */
 export function EventList({ snap }: { snap: Snapshot }) {
   return (
-    <details className="rounded-lg border-2 border-ink p-3">
-      <summary className="cursor-pointer text-lg font-black">Events (last {snap.lastEvents.length})</summary>
-      <ol className="mt-2 divide-y divide-zinc-200">
+    <details className="card group p-3">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 font-display text-xl font-extrabold uppercase [&::-webkit-details-marker]:hidden">
+        <span>Events (last {snap.lastEvents.length})</span>
+        <ChevronDown aria-hidden className="size-6 shrink-0 transition-transform duration-200 group-open:rotate-180" />
+      </summary>
+      <ol className="mt-2 divide-y divide-line">
         {snap.lastEvents.map((e) => (
           <li key={e.seq} className={`py-2 ${isMarker(e.type) ? "text-muted" : ""}`}>
             <span className={e.undone ? "line-through decoration-2" : "font-semibold"}>
               <span className="mr-2 font-mono text-sm text-muted">#{e.seq}</span>
               {describeEvent(snap, e)}
             </span>
-            {e.undone && <span className="ml-2 text-sm font-bold text-red-800">undone</span>}
+            {e.undone && <span className="ml-2 rounded-sm bg-ball px-1.5 text-sm font-bold text-white uppercase">undone</span>}
             <span className="block text-xs text-muted">
               {time(e.at)}
               {e.actor ? ` · ${e.actor}` : ""}

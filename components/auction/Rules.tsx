@@ -1,17 +1,17 @@
 import { lowestBase, TIER_KEYS, type AuctionConfig } from "@/lib/auction/config";
 import { fmt } from "@/lib/money";
 
-const TIER_NAME: Record<string, string> = { M: "Marquee", A: "Tier A", B: "Tier B", C: "Tier C" };
+const TIER_NAME: Record<string, string> = { M: "Star", A: "Tier A", B: "Tier B", C: "Tier C" };
 
 /** The auction rules, straight from the config numbers, so the page never disagrees with the console. */
 export function Rules({ config }: { config: AuctionConfig }) {
   const guardExample = Math.max(0, 10000 - (config.minSquad - 6 - 1) * lowestBase(config));
   return (
     <section aria-labelledby="rules-h" className="space-y-3">
-      <h2 id="rules-h" className="text-2xl font-black">
+      <h2 id="rules-h" className="font-display text-3xl leading-tight font-extrabold uppercase">
         How the auction works
       </h2>
-      <ul className="list-disc space-y-2 pl-5">
+      <ul className="card space-y-3 p-4 pl-9 marker:text-pitch [&>li]:list-disc [&>li]:pl-1">
         <li>
           Every team starts with <strong>{fmt(config.purseLakhs)}</strong>. Squads are <strong>{config.minSquad}</strong> to{" "}
           <strong>{config.maxSquad}</strong> players.
@@ -22,7 +22,7 @@ export function Rules({ config }: { config: AuctionConfig }) {
         <li>
           Base prices: {TIER_KEYS.map((t) => `${TIER_NAME[t]} ${fmt(config.basePrices[t])}`).join(" · ")}. Bidding starts at base.
         </li>
-        <li>Marquee players go first, then one set per role. Order inside a set is shuffled on the day, in front of everyone.</li>
+        <li>Star players go first, then one set per role. Order inside a set is shuffled on the day, in front of everyone.</li>
         <li>
           Raises go up in steps:{" "}
           {config.ladder

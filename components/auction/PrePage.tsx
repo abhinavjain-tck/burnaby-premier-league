@@ -1,8 +1,10 @@
-import { safeColour } from "@/lib/auction/colour";
+import { CalendarDays } from "lucide-react";
+import { RoleChip } from "@/components/ui/Badge";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { teamColour, teamStyle } from "@/components/ui/team";
 import type { AuctionConfig } from "@/lib/auction/config";
 import type { Snapshot } from "@/lib/auction/types";
 import { fmt } from "@/lib/money";
-import { roleLabel } from "@/lib/registration/options";
 import { AutoRefresh } from "./AutoRefresh";
 import { Rules } from "./Rules";
 
@@ -13,56 +15,61 @@ export function PrePage({ config, snap, notice }: { config: AuctionConfig; snap:
   const sets = new Map<string, Snapshot["lots"]>();
   for (const l of snap?.lots ?? []) sets.set(l.setName, [...(sets.get(l.setName) ?? []), l]);
   return (
-    <main className="mx-auto max-w-xl space-y-6 px-4 py-6">
+    <div className="space-y-8">
       {notice}
-      <header className="space-y-1 text-center">
-        <p className="font-bold tracking-wide text-brand uppercase">BPL Season 4 player auction</p>
-        <h1 className="text-4xl font-black">Auction starts {AUCTION_DAY}</h1>
-        <p className="text-muted">This page turns into the live board when bidding opens. Keep it open.</p>
+      <header className="card space-y-3 border-l-8 border-l-gold p-5">
+        <p className="eyebrow">BPL Season 4 player auction</p>
+        <h1 className="flex items-center gap-3 font-display text-4xl leading-[0.95] font-extrabold uppercase sm:text-5xl">
+          <CalendarDays aria-hidden className="size-9 shrink-0 text-pitch" />
+          Auction starts {AUCTION_DAY}
+        </h1>
+        <p className="text-lg text-muted">This page turns into the live board when bidding opens. Keep it open.</p>
       </header>
 
-      {snap && snap.teams.length > 0 && (
-        <section aria-labelledby="teams-h" className="space-y-2">
-          <h2 id="teams-h" className="text-2xl font-black">
-            Teams
-          </h2>
-          <ul className="grid grid-cols-2 gap-2">
-            {snap.teams.map((t) => (
-              <li key={t.id} className="rounded-lg border-l-8 border-y-2 border-r-2 border-ink px-3 py-2 font-bold" style={{ borderLeftColor: safeColour(t.colour) }}>
-                {t.name}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <Rules config={config} />
-
-      {sets.size > 0 && (
-        <section aria-labelledby="pool-h" className="space-y-3">
-          <h2 id="pool-h" className="text-2xl font-black">
-            The pool ({snap?.lots.length})
-          </h2>
-          {[...sets.entries()].map(([name, lots]) => (
-            <div key={name}>
-              <h3 className="font-black">
-                {name} ({lots.length})
-              </h3>
-              <ul className="divide-y divide-zinc-200">
-                {lots.map((l) => (
-                  <li key={l.id} className="flex justify-between gap-2 py-1">
-                    <span className="min-w-0 truncate">
-                      <span className="font-bold">{l.playerName}</span> <span className="text-muted">· {roleLabel(l.role)}</span>
+      <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+        <div className="space-y-8">
+          {snap && snap.teams.length > 0 && (
+            <section aria-labelledby="teams-h" className="space-y-3">
+              <SectionHeader id="teams-h" title="Teams" />
+              <ul className="grid grid-cols-2 gap-2">
+                {snap.teams.map((t) => (
+                  <li key={t.id} className="card relative overflow-hidden p-3 pt-4">
+                    <span aria-hidden className="absolute inset-x-0 top-0 h-1.5" style={{ background: teamColour(t, snap.teams) }} />
+                    <span className="rounded-sm px-1.5 font-display text-lg font-extrabold uppercase" style={teamStyle(t, snap.teams)}>
+                      {t.short}
                     </span>
-                    <span className="shrink-0 tabular-nums">{fmt(l.base)}</span>
+                    <p className="mt-1 font-bold">{t.name}</p>
                   </li>
                 ))}
               </ul>
-            </div>
-          ))}
-        </section>
-      )}
+            </section>
+          )}
+          <Rules config={config} />
+        </div>
+
+        {sets.size > 0 && (
+          <section aria-labelledby="pool-h" className="space-y-3">
+            <SectionHeader id="pool-h" title={<>The pool <span className="num text-muted">({snap?.lots.length})</span></>} />
+            {[...sets.entries()].map(([name, lots]) => (
+              <div key={name} className="card overflow-hidden">
+                <h3 className="flex items-center justify-between bg-pitch px-4 py-2 font-display text-xl font-extrabold text-white uppercase">
+                  {name} <span className="num text-base">{lots.length}</span>
+                </h3>
+                <ul className="divide-y divide-line">
+                  {lots.map((l) => (
+                    <li key={l.id} className="flex min-h-11 items-center gap-2 px-4 py-1.5">
+                      <span className="min-w-0 flex-1 truncate font-bold">{l.playerName}</span>
+                      <RoleChip role={l.role} short />
+                      <span className="num w-16 shrink-0 text-right font-display text-lg font-extrabold">{fmt(l.base)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </section>
+        )}
+      </div>
       <AutoRefresh seconds={30} />
-    </main>
+    </div>
   );
 }

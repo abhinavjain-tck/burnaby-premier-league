@@ -1,48 +1,50 @@
-import Image from "next/image";
+import { BandChip, RoleChip } from "@/components/ui/Badge";
+import { PlayerPhoto } from "@/components/ui/PlayerPhoto";
 import type { LotView } from "@/lib/auction/view";
 import { fmt } from "@/lib/money";
-import { roleLabel } from "@/lib/registration/options";
-
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("");
 
 /** The player on the block. `big` for the board, compact for the console. */
 export function LotCard({ lot, big = false }: { lot: LotView; big?: boolean }) {
   const stats = lot.card.stats ?? {};
-  const photo = big ? "h-28 w-28 text-4xl" : "h-20 w-20 text-2xl";
-  const statLine = [
-    stats.matches !== undefined && `${stats.matches} m`,
-    stats.runs !== undefined && `${stats.runs} r`,
-    stats.wickets !== undefined && `${stats.wickets} w`,
-    stats.best && `best ${stats.best}`,
-  ].filter(Boolean);
+  const statLine: Array<[string, string | number]> = [];
+  if (stats.matches !== undefined) statLine.push(["Matches", stats.matches]);
+  if (stats.runs !== undefined) statLine.push(["Runs", stats.runs]);
+  if (stats.wickets !== undefined) statLine.push(["Wkts", stats.wickets]);
+  if (stats.best) statLine.push(["Best", stats.best]);
+  const styles = [lot.card.battingStyle, lot.card.bowlingStyle].filter(Boolean).join(" · ");
   return (
-    <article aria-label={`Lot ${lot.order}: ${lot.playerName}`} className="flex gap-3">
-      {lot.photoUrl ? (
-        <Image src={lot.photoUrl} alt="" width={112} height={112} unoptimized className={`${photo} shrink-0 rounded-lg object-cover`} />
-      ) : (
-        <div aria-hidden className={`${photo} grid shrink-0 place-items-center rounded-lg bg-zinc-200 font-black`}>
-          {initials(lot.playerName)}
+    <article aria-label={`Lot ${lot.order}: ${lot.playerName}`} className="space-y-3">
+      <p className="eyebrow">
+        Lot <span className="num">{lot.order}</span> · {lot.setName}
+      </p>
+      <div className="flex gap-3 sm:gap-4">
+        <PlayerPhoto name={lot.playerName} url={lot.photoUrl} size={big ? "xl" : "md"} />
+        <div className="min-w-0 flex-1">
+          <h2 className={`${big ? "text-4xl sm:text-5xl" : "text-3xl"} font-display leading-[0.95] font-extrabold break-words uppercase`}>{lot.playerName}</h2>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <RoleChip role={lot.role} />
+            <BandChip tier={lot.tier} />
+          </div>
+          <p className="mt-2 font-semibold">
+            Base <span className="num font-display text-xl font-extrabold">{fmt(lot.live.base)}</span>
+          </p>
+        </div>
+      </div>
+      {big && (styles || statLine.length > 0) && (
+        <div className="space-y-2">
+          {styles && <p className="font-semibold text-muted">{styles}</p>}
+          {statLine.length > 0 && (
+            <dl className="grid grid-cols-4 divide-x divide-line rounded-md border border-line bg-canvas text-center">
+              {statLine.map(([label, value]) => (
+                <div key={label} className="px-1 py-1.5">
+                  <dt className="text-xs font-bold text-muted uppercase">{label}</dt>
+                  <dd className="num font-display text-xl leading-tight font-extrabold">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
       )}
-      <div className="min-w-0">
-        <p className="text-sm font-bold text-muted uppercase">
-          Lot {lot.order} · {lot.setName}
-        </p>
-        <h2 className={`${big ? "text-4xl" : "text-2xl"} leading-tight font-black break-words`}>{lot.playerName}</h2>
-        <p className="font-bold">
-          {roleLabel(lot.role)}
-          {lot.tier ? ` · Tier ${lot.tier}` : ""} · Base {fmt(lot.live.base)}
-        </p>
-        {big && (lot.card.battingStyle || lot.card.bowlingStyle) && (
-          <p className="text-muted">{[lot.card.battingStyle, lot.card.bowlingStyle].filter(Boolean).join(" · ")}</p>
-        )}
-        {big && statLine.length > 0 && <p className="font-semibold">{statLine.join(" · ")}</p>}
-      </div>
     </article>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AdminBar } from "@/components/admin/AdminBar";
+import { safeColour } from "@/lib/auction/colour";
 import { NotConfigured } from "@/components/NotConfigured";
 import { requireAdmin } from "@/lib/auth/roles";
 import { isDbConfigured } from "@/lib/config";
@@ -11,7 +12,7 @@ export const metadata: Metadata = { title: "Settings", robots: { index: false, f
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-const input = "w-full rounded-lg border-2 border-ink px-3 py-2";
+const input = "field";
 
 export default async function SettingsPage({ searchParams }: Props) {
   const admin = await requireAdmin();
@@ -21,7 +22,7 @@ export default async function SettingsPage({ searchParams }: Props) {
     return (
       <>
         <AdminBar email={admin.email} />
-        <main className="mx-auto max-w-2xl p-4">
+        <main className="mx-auto max-w-5xl px-4 py-6">
           <NotConfigured>Settings show up once DATABASE_URL is set.</NotConfigured>
         </main>
       </>
@@ -38,7 +39,7 @@ export default async function SettingsPage({ searchParams }: Props) {
     return (
       <>
         <AdminBar email={admin.email} />
-        <main className="mx-auto max-w-2xl p-4">
+        <main className="mx-auto max-w-5xl px-4 py-6">
           <NotConfigured title="Temporarily unavailable">Could not load settings. Try again in a minute.</NotConfigured>
         </main>
       </>
@@ -49,21 +50,21 @@ export default async function SettingsPage({ searchParams }: Props) {
   return (
     <>
       <AdminBar email={admin.email} />
-      <main className="mx-auto max-w-2xl space-y-8 p-4">
-        <h1 className="text-2xl font-black">Settings{season ? ` · ${season.name}` : ""}</h1>
+      <main className="mx-auto max-w-5xl space-y-8 px-4 py-6">
+        <h1 className="font-display text-4xl leading-none font-extrabold uppercase">Settings{season ? ` · ${season.name}` : ""}</h1>
 
         {typeof error === "string" && (
-          <p role="alert" className="rounded-lg border-2 border-red-700 bg-red-50 p-3 font-bold text-red-900">
+          <p role="alert" className="rounded-md border-2 border-ball bg-ball-soft p-3 font-bold text-ink">
             {error}
           </p>
         )}
         {saved === "league" && (
-          <p role="status" className="rounded-lg border-2 border-brand bg-emerald-50 p-3 font-bold">
+          <p role="status" className="rounded-md border-2 border-pitch bg-pitch-soft p-3 font-bold text-pitch">
             League settings saved.
           </p>
         )}
         {saved === "teams" && (
-          <p role="status" className="rounded-lg border-2 border-brand bg-emerald-50 p-3 font-bold">
+          <p role="status" className="rounded-md border-2 border-pitch bg-pitch-soft p-3 font-bold text-pitch">
             Teams saved.
           </p>
         )}
@@ -72,8 +73,8 @@ export default async function SettingsPage({ searchParams }: Props) {
           <NotConfigured>No season row yet. Run the seed migration first.</NotConfigured>
         ) : (
           <>
-            <form action={saveLeagueSettings} className="space-y-4">
-              <h2 className="text-xl font-black">League</h2>
+            <form action={saveLeagueSettings} className="card max-w-2xl space-y-4 p-4">
+              <h2 className="font-display text-2xl font-extrabold uppercase">League</h2>
               <label className="block space-y-1">
                 <span className="font-bold">Fee line</span>
                 <input name="fee_text" defaultValue={fee.text ?? ""} placeholder="$60 per player" maxLength={120} className={input} />
@@ -82,8 +83,8 @@ export default async function SettingsPage({ searchParams }: Props) {
                 <span className="font-bold">e-Transfer email (optional)</span>
                 <input name="etransfer_email" type="email" defaultValue={fee.email ?? ""} maxLength={200} className={input} />
               </label>
-              <label className="flex items-center gap-3">
-                <input name="registration_open" type="checkbox" defaultChecked={isRegistrationOpen(season.config)} className="size-6" />
+              <label className="flex min-h-12 cursor-pointer items-center gap-3">
+                <input name="registration_open" type="checkbox" defaultChecked={isRegistrationOpen(season.config)} className="size-6 accent-pitch" />
                 <span className="font-bold">Registration is open</span>
               </label>
               <button type="submit" className="btn">
@@ -91,12 +92,13 @@ export default async function SettingsPage({ searchParams }: Props) {
               </button>
             </form>
 
-            <form action={saveTeams} className="space-y-4">
-              <h2 className="text-xl font-black">Teams</h2>
+            <form action={saveTeams} className="max-w-2xl space-y-4">
+              <h2 className="font-display text-2xl font-extrabold uppercase">Teams</h2>
               {teamRows.length === 0 && <p className="text-muted">No teams for this season yet.</p>}
               {teamRows.map((t) => (
-                <fieldset key={t.id} className="space-y-2 rounded-lg border-2 border-ink p-3">
-                  <legend className="px-1 font-bold">{t.name}</legend>
+                <fieldset key={t.id} className="card space-y-3 border-l-8 p-4" style={{ borderLeftColor: safeColour(t.colour) }}>
+                  <legend className="sr-only">{t.name}</legend>
+                  <p aria-hidden className="font-display text-2xl font-extrabold uppercase">{t.name}</p>
                   <input type="hidden" name="id" value={t.id} />
                   <label className="block space-y-1">
                     <span className="text-sm font-bold">Name</span>
@@ -117,7 +119,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                     </label>
                     <label className="block space-y-1">
                       <span className="text-sm font-bold">Colour</span>
-                      <input name={`colour_${t.id}`} type="color" defaultValue={t.colour} className="block h-11 w-16 rounded-lg border-2 border-ink" />
+                      <input name={`colour_${t.id}`} type="color" defaultValue={t.colour} className="block h-12 w-16 cursor-pointer rounded-md border-2 border-edge bg-paper" />
                     </label>
                   </div>
                   <label className="block space-y-1">

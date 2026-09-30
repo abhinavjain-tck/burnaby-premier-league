@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChevronRight, Gavel } from "lucide-react";
 import { AdminBar } from "@/components/admin/AdminBar";
+import { StatusBadge } from "@/components/admin/StatusBadge";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { NewAuctionForm } from "@/components/admin/NewAuctionForm";
 import { NotConfigured } from "@/components/NotConfigured";
 import { requireAdmin } from "@/lib/auth/roles";
@@ -19,7 +22,7 @@ export default async function AuctionsPage() {
     return (
       <>
         <AdminBar email={admin.email} />
-        <main className="mx-auto max-w-4xl p-4">
+        <main className="mx-auto max-w-5xl px-4 py-6">
           <NotConfigured>Auctions show up once DATABASE_URL is set.</NotConfigured>
         </main>
       </>
@@ -30,30 +33,36 @@ export default async function AuctionsPage() {
   return (
     <>
       <AdminBar email={admin.email} />
-      <main className="mx-auto max-w-2xl space-y-6 p-4">
-        <h1 className="text-2xl font-black">Auctions</h1>
+      <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+        <h1 className="font-display text-4xl leading-none font-extrabold uppercase">Auctions</h1>
         {rows.length === 0 ? (
-          <p className="text-muted">No auctions yet. Start with a test one to rehearse.</p>
+          <EmptyState icon={Gavel} title="No auctions yet">
+            Start with a test one to rehearse.
+          </EmptyState>
         ) : (
           <ul className="space-y-2">
             {rows.map((a) => (
               <li key={a.id}>
-                <Link href={`/admin/auctions/${a.id}`} className="block rounded-lg border-2 border-ink p-3">
-                  <span className="block text-lg font-black">
-                    {a.name}{" "}
-                    <span className={`rounded px-2 text-sm ${a.mode === "live" ? "bg-red-700 text-white" : "bg-zinc-200"}`}>{a.mode}</span>
+                <Link href={`/admin/auctions/${a.id}`} className="card flex items-center gap-3 p-4 hover:border-edge">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-display text-2xl leading-tight font-extrabold uppercase">{a.name}</span>
+                    <span className="mt-1 flex flex-wrap items-center gap-1.5 text-muted">
+                      <StatusBadge status={a.mode} />
+                      <StatusBadge status={a.status} />
+                      <span className="num text-sm font-semibold">
+                        {a.lots} lots · {a.version} events
+                      </span>
+                    </span>
                   </span>
-                  <span className="text-muted">
-                    {a.status} · {a.lots} lots · {a.version} events
-                  </span>
+                  <ChevronRight aria-hidden className="size-5 shrink-0 text-muted" />
                 </Link>
               </li>
             ))}
           </ul>
         )}
 
-        <section className="space-y-3 rounded-lg border-2 border-ink p-4">
-          <h2 className="text-xl font-black">New auction</h2>
+        <section className="card space-y-3 p-4">
+          <h2 className="font-display text-2xl font-extrabold uppercase">New auction</h2>
           <NewAuctionForm defaultConfig={DEFAULT_JSON} />
         </section>
       </main>

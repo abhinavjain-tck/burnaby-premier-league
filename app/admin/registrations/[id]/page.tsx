@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { markPaid, setTier, withdraw } from "@/app/admin/actions";
+import { ArrowLeft } from "lucide-react";
 import { AdminBar } from "@/components/admin/AdminBar";
+import { StatusBadge } from "@/components/admin/StatusBadge";
 import { CopyButton } from "@/components/CopyButton";
 import { NotConfigured } from "@/components/NotConfigured";
 import { CardPreview, toCard } from "@/components/registration/CardPreview";
@@ -34,7 +36,7 @@ export default async function RegistrationDetailPage({ params }: Props) {
     return (
       <>
         <AdminBar email={admin.email} />
-        <main className="mx-auto max-w-xl p-4">
+        <main className="mx-auto max-w-5xl px-4 py-6">
           <NotConfigured>Registration details show up once DATABASE_URL is set.</NotConfigured>
         </main>
       </>
@@ -48,26 +50,30 @@ export default async function RegistrationDetailPage({ params }: Props) {
   return (
     <>
       <AdminBar email={admin.email} />
-      <main className="mx-auto max-w-xl space-y-5 p-4">
-        <Link href="/admin/registrations" className="font-bold text-brand underline">
-          ← All registrations
+      <main className="mx-auto max-w-5xl space-y-5 px-4 py-6">
+        <Link href="/admin/registrations" className="link">
+          <ArrowLeft aria-hidden className="size-5" /> All registrations
         </Link>
 
+        <div className="grid gap-5 md:grid-cols-2 md:items-start">
         <CardPreview card={toCard(reg)} />
 
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-          <dt className="font-bold">WhatsApp</dt>
-          <dd className="font-mono">{reg.phone}</dd>
-          <dt className="font-bold">Email</dt>
+        <div className="space-y-5">
+        <dl className="card grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 p-4">
+          <dt className="font-bold text-muted">WhatsApp</dt>
+          <dd className="num font-semibold">{reg.phone}</dd>
+          <dt className="font-bold text-muted">Email</dt>
           <dd className="break-all">{reg.email ?? "—"}</dd>
-          <dt className="font-bold">Status</dt>
-          <dd>{reg.status}</dd>
-          <dt className="font-bold">Paid</dt>
+          <dt className="font-bold text-muted">Status</dt>
+          <dd>
+            <StatusBadge status={reg.status} />
+          </dd>
+          <dt className="font-bold text-muted">Paid</dt>
           <dd>{reg.paidAt ? `${when(reg.paidAt)} by ${reg.paidMarkedBy ?? "?"}` : "Not yet"}</dd>
-          <dt className="font-bold">Screenshot</dt>
+          <dt className="font-bold text-muted">Screenshot</dt>
           <dd>
             {proof ? (
-              <a href={proof} target="_blank" rel="noopener noreferrer" className="font-bold text-brand underline">
+              <a href={proof} target="_blank" rel="noopener noreferrer" className="link">
                 View (link lasts 10 min)
               </a>
             ) : reg.paymentProofUrl ? (
@@ -78,7 +84,7 @@ export default async function RegistrationDetailPage({ params }: Props) {
           </dd>
         </dl>
 
-        <section className="space-y-3">
+        <section className="card space-y-4 p-4">
           {!reg.paidAt && (
             <form action={markPaid.bind(null, reg.id)}>
               <button type="submit" className="btn w-full">
@@ -89,7 +95,7 @@ export default async function RegistrationDetailPage({ params }: Props) {
 
           <form action={setTier.bind(null, reg.id)}>
             <fieldset>
-              <legend className="label">Set tier</legend>
+              <legend className="label">Set band (M = Star)</legend>
               <div className="grid grid-cols-4 gap-2">
                 {TIERS.map((t) => (
                   <button
@@ -98,7 +104,9 @@ export default async function RegistrationDetailPage({ params }: Props) {
                     name="tier"
                     value={t}
                     aria-pressed={reg.tier === t}
-                    className={`min-h-12 rounded-lg border-2 border-ink text-lg font-black ${reg.tier === t ? "bg-ink text-white" : "bg-white"}`}
+                    className={`min-h-12 cursor-pointer rounded-md border-2 font-display text-2xl font-extrabold ${
+                      reg.tier === t ? "border-pitch bg-pitch text-white" : "border-edge bg-paper text-ink hover:border-ink"
+                    }`}
                   >
                     {t}
                   </button>
@@ -111,12 +119,14 @@ export default async function RegistrationDetailPage({ params }: Props) {
 
           {reg.status !== "withdrawn" && (
             <form action={withdraw.bind(null, reg.id)}>
-              <button type="submit" className="btn-outline w-full border-red-700 text-red-800">
+              <button type="submit" className="btn-danger w-full">
                 Withdraw
               </button>
             </form>
           )}
         </section>
+        </div>
+        </div>
       </main>
     </>
   );

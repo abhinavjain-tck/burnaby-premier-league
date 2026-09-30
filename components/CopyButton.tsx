@@ -1,5 +1,6 @@
 "use client";
 
+import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 
 type Props = {
@@ -29,7 +30,8 @@ export function CopyButton({ label, path, before = "" }: Props) {
   return (
     <div>
       <button type="button" onClick={copy} className="btn-outline w-full sm:w-auto">
-        {copied ? "Copied" : label}
+        {copied ? <Check aria-hidden className="size-5 text-pitch" /> : <Copy aria-hidden className="size-5" />}
+        <span aria-live="polite">{copied ? "Copied" : label}</span>
       </button>
       {fallback && (
         <p className="mt-2 text-sm">
