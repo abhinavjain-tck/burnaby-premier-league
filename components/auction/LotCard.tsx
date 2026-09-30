@@ -2,9 +2,19 @@ import { BandChip, RoleChip } from "@/components/ui/Badge";
 import { PlayerPhoto } from "@/components/ui/PlayerPhoto";
 import { setLabel, type LotView } from "@/lib/auction/view";
 import { fmt } from "@/lib/money";
+import type { ReactNode } from "react";
+
+type Props = {
+  lot: LotView;
+  big?: boolean;
+  /** Replaces the "Lot 12 · Batters" line. */
+  eyebrow?: ReactNode;
+  /** Replaces the base price line. The carousel shows a finished lot's result there. */
+  detail?: ReactNode;
+};
 
 /** The player on the block. `big` for the board, compact for the console. */
-export function LotCard({ lot, big = false }: { lot: LotView; big?: boolean }) {
+export function LotCard({ lot, big = false, eyebrow, detail }: Props) {
   const stats = lot.card.stats ?? {};
   const statLine: Array<[string, string | number]> = [];
   if (stats.matches !== undefined) statLine.push(["Matches", stats.matches]);
@@ -15,7 +25,11 @@ export function LotCard({ lot, big = false }: { lot: LotView; big?: boolean }) {
   return (
     <article aria-label={`Lot ${lot.order}: ${lot.playerName}`} className="space-y-3">
       <p className="eyebrow">
-        Lot <span className="num">{lot.order}</span> · {setLabel(lot.setName)}
+        {eyebrow ?? (
+          <>
+            Lot <span className="num">{lot.order}</span> · {setLabel(lot.setName)}
+          </>
+        )}
       </p>
       <div className="flex gap-3 sm:gap-4">
         <PlayerPhoto name={lot.playerName} url={lot.photoUrl} size={big ? "xl" : "md"} />
@@ -25,9 +39,11 @@ export function LotCard({ lot, big = false }: { lot: LotView; big?: boolean }) {
             <RoleChip role={lot.role} />
             <BandChip tier={lot.tier} />
           </div>
-          <p className="mt-2 font-semibold">
-            Base <span className="num font-display text-xl font-extrabold">{fmt(lot.live.base)}</span>
-          </p>
+          {detail ?? (
+            <p className="mt-2 font-semibold">
+              Base <span className="num font-display text-xl font-extrabold">{fmt(lot.live.base)}</span>
+            </p>
+          )}
         </div>
       </div>
       {big && (styles || statLine.length > 0) && (

@@ -14,6 +14,7 @@ import { BidLine } from "../BidLine";
 import { Countdown } from "../Countdown";
 import { LiveStatus } from "../LiveStatus";
 import { LotCard } from "../LotCard";
+import { LotCarousel } from "../LotCarousel";
 import { useAuctionLive } from "../useAuctionLive";
 import { BidButtons } from "./BidButtons";
 import { CustomBid } from "./CustomBid";
@@ -128,13 +129,24 @@ export function Console({ initial, boardHref, sponsors, sponsorBand }: Props) {
               </button>
             )}
 
+            <LotCarousel
+              snap={snap}
+              live={
+                lot && (
+                  <div className="space-y-4">
+                    <LotCard lot={lot} />
+                    <BidLine amount={lot.live.currentBid} team={leader} teams={snap.teams} base={lot.live.base} />
+                  </div>
+                )
+              }
+            />
+
             {lot ? (
               <section aria-label="On the block" className="space-y-4">
-                <div className="card space-y-4 p-4">
-                  <LotCard lot={lot} />
-                  <BidLine amount={lot.live.currentBid} team={leader} teams={snap.teams} base={lot.live.base} />
-                </div>
-
+                {/* The carousel may show another lot; every button here acts on the live one. */}
+                <p className="truncate font-bold">
+                  Bidding: <span className="font-display text-xl font-extrabold uppercase">{lot.playerName}</span>
+                </p>
                 <BidButtons snap={snap} disabled={busy} onBid={(teamId, amount) => void send({ type: "BID", lotId: lot.id, teamId, amount })} />
                 <CustomBid snap={snap} disabled={busy} onBid={(teamId, amount) => void send({ type: "BID", lotId: lot.id, teamId, amount })} />
 
