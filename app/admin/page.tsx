@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { GoogleSignInButton } from "@/components/admin/GoogleSignInButton";
+import { SignInCard } from "@/components/auction/SignInGate";
 import { NotConfigured } from "@/components/NotConfigured";
 import { getViewer } from "@/lib/auth/roles";
 import { isSupabaseConfigured } from "@/lib/config";
@@ -16,8 +17,7 @@ export default async function AdminSignInPage({ searchParams }: Props) {
   if (viewer?.role) redirect("/admin/registrations");
 
   return (
-    <main className="mx-auto max-w-md space-y-5 px-4 py-10">
-      <h1 className="text-3xl font-black">BPL admin</h1>
+    <SignInCard title="BPL admin">
       {!isSupabaseConfigured() ? (
         <NotConfigured>Admin sign-in works once Supabase is connected (NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY).</NotConfigured>
       ) : viewer ? (
@@ -34,7 +34,7 @@ export default async function AdminSignInPage({ searchParams }: Props) {
         </div>
       ) : (
         <>
-          <p>For league admins, the auctioneer and team owners.</p>
+          <p className="text-lg">For league admins, the auctioneer and team owners.</p>
           {error && (
             <p role="alert" className="error">
               Sign-in didn&apos;t finish. Try again.
@@ -43,6 +43,6 @@ export default async function AdminSignInPage({ searchParams }: Props) {
           <GoogleSignInButton />
         </>
       )}
-    </main>
+    </SignInCard>
   );
 }

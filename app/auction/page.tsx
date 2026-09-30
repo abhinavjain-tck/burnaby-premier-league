@@ -4,6 +4,7 @@ import { Board } from "@/components/auction/Board";
 import { lotSponsors } from "@/components/auction/lotSponsors";
 import { PrePage } from "@/components/auction/PrePage";
 import { NotConfigured } from "@/components/NotConfigured";
+import { PageShell } from "@/components/ui/PageShell";
 import { DEFAULT_CONFIG } from "@/lib/auction/config";
 import { findLiveAuction, getPublicSnapshot, latestSeasonConfig } from "@/lib/auction/snapshot";
 import { isDbConfigured } from "@/lib/config";
@@ -17,13 +18,25 @@ export const metadata: Metadata = {
 export default async function AuctionPage() {
   await connection(); // always per request: the auction changes by the second
   if (!isDbConfigured()) {
-    return <PrePage config={DEFAULT_CONFIG} snap={null} notice={<NotConfigured>The live board shows up once the database is connected.</NotConfigured>} />;
+    return (
+      <PageShell current="auction" width="wide">
+        <PrePage config={DEFAULT_CONFIG} snap={null} notice={<NotConfigured>The live board shows up once the database is connected.</NotConfigured>} />
+      </PageShell>
+    );
   }
 
   const live = await findLiveAuction();
   const snap = live ? await getPublicSnapshot(live.id) : null;
   if (!snap || snap.state.status === "draft") {
-    return <PrePage config={snap?.config ?? (await latestSeasonConfig())} snap={snap} />;
+    return (
+      <PageShell current="auction" width="wide">
+        <PrePage config={snap?.config ?? (await latestSeasonConfig())} snap={snap} />
+      </PageShell>
+    );
   }
-  return <Board initial={snap} sponsors={await lotSponsors()} />;
+  return (
+    <PageShell current="auction" width="wide" className="py-4">
+      <Board initial={snap} sponsors={await lotSponsors()} />
+    </PageShell>
+  );
 }

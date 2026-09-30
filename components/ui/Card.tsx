@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cx } from "./cx";
 
-type CardProps = ComponentProps<"section"> & {
+type CardProps = Omit<ComponentProps<"section">, "title"> & {
   title?: ReactNode;
   /** Right side of the title row: a count, a link, a chip. */
   aside?: ReactNode;
@@ -24,7 +24,7 @@ export function Card({ title, aside, accent, pad = true, className, children, st
           {aside}
         </header>
       )}
-      <div className={cx(pad && "p-4", pad && title && "pt-3")}>{children}</div>
+      <div className={cx(pad && "p-4", pad && Boolean(title) && "pt-3")}>{children}</div>
     </section>
   );
 }

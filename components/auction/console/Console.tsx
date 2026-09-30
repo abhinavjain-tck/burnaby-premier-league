@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, Ban, CircleAlert, ExternalLink, Gavel, Info, Pause, Play, Redo2, SkipForward, Timer, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { fetchConsoleSnapshot, startClock } from "@/app/auction/actions";
@@ -72,41 +73,50 @@ export function Console({ initial, boardHref }: { initial: Snapshot; boardHref: 
   const sellingTeam = selling ? teamById(snap, selling.teamId) : undefined;
 
   return (
-    <main className="mx-auto max-w-xl space-y-4 px-3 py-3 pb-28">
-      <header className="flex items-center justify-between gap-2 border-b-2 border-ink pb-2">
+    <main className="mx-auto max-w-2xl space-y-4 px-3 pt-0 pb-28">
+      <header className="sticky top-0 z-30 -mx-3 flex items-center justify-between gap-2 bg-ink px-3 py-2 text-white shadow-card">
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-muted uppercase">
+          <p className="truncate text-sm font-bold tracking-wider text-white/85 uppercase">
             Console · {snap.auction.name} {snap.auction.mode === "test" ? "(test)" : ""}
           </p>
-          <p className="text-lg font-black">
-            {statusText(snap)} · {remainingCount(snap)} to go · v{snap.auction.version}
+          <p className="font-display text-xl leading-tight font-extrabold uppercase">
+            {statusText(snap)} · <span className="num">{remainingCount(snap)}</span> to go · <span className="num">v{snap.auction.version}</span>
           </p>
         </div>
         <LiveStatus connected={connected} />
       </header>
 
       {notice && (
-        <p role="alert" className={`rounded-lg p-3 text-lg font-bold ${notice.tone === "error" ? "bg-red-100 text-red-900" : "bg-amber-100 text-amber-950"}`}>
+        <p
+          role="alert"
+          className={`flex items-center gap-2 rounded-md border-2 p-3 text-lg font-bold motion-safe:animate-rise ${
+            notice.tone === "error" ? "border-ball bg-ball-soft text-ink" : "border-gold-dark bg-gold-soft text-ink"
+          }`}
+        >
+          {notice.tone === "error" ? <CircleAlert aria-hidden className="size-6 shrink-0 text-ball" /> : <Info aria-hidden className="size-6 shrink-0" />}
           {notice.text}
         </p>
       )}
 
       {status === "draft" && (
-        <button type="button" disabled={busy} onClick={() => void send({ type: "START" })} className="btn w-full text-xl">
-          Open the auction
+        <button type="button" disabled={busy} onClick={() => void send({ type: "START" })} className="btn min-h-16 w-full text-2xl">
+          <Play aria-hidden className="size-6" /> Open the auction
         </button>
       )}
 
       {lot ? (
-        <section aria-label="On the block" className="space-y-3">
-          <LotCard lot={lot} />
-          <BidLine amount={lot.live.currentBid} team={leader} base={lot.live.base} />
+        <section aria-label="On the block" className="space-y-4">
+          <div className="card space-y-4 p-4">
+            <LotCard lot={lot} />
+            <BidLine amount={lot.live.currentBid} team={leader} teams={snap.teams} base={lot.live.base} />
+          </div>
+
           <BidButtons snap={snap} disabled={busy} onBid={(teamId, amount) => void send({ type: "BID", lotId: lot.id, teamId, amount })} />
           <CustomBid snap={snap} disabled={busy} onBid={(teamId, amount) => void send({ type: "BID", lotId: lot.id, teamId, amount })} />
 
           <Countdown clock={clock} />
           <button type="button" disabled={busy || !open} onClick={() => void runClock()} className="btn-outline w-full">
-            Start {CLOCK_SECONDS} s clock
+            <Timer aria-hidden className="size-5" /> Start {CLOCK_SECONDS} s clock
           </button>
 
           <button
@@ -117,16 +127,17 @@ export function Console({ initial, boardHref }: { initial: Snapshot; boardHref: 
               lot.live.currentBid !== undefined &&
               setConfirming({ lotId: lot.id, teamId: leader.id, amount: lot.live.currentBid, version: snap.auction.version })
             }
-            className="btn min-h-16 w-full text-2xl"
+            className="btn min-h-20 w-full font-display text-3xl font-extrabold uppercase"
           >
+            <Gavel aria-hidden className="size-7" />
             SOLD{leader && lot.live.currentBid !== undefined ? ` · ${leader.short} ${fmt(lot.live.currentBid)}` : ""}
           </button>
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" disabled={busy || !open || lot.live.currentBid !== undefined} onClick={() => void send({ type: "UNSOLD", lotId: lot.id })} className="btn-outline">
-              UNSOLD
+            <button type="button" disabled={busy || !open || lot.live.currentBid !== undefined} onClick={() => void send({ type: "UNSOLD", lotId: lot.id })} className="btn-danger min-h-14">
+              <Ban aria-hidden className="size-5" /> UNSOLD
             </button>
-            <button type="button" disabled={busy || status === "draft"} onClick={() => void send({ type: "SKIP", lotId: lot.id })} className="btn-outline">
-              SKIP
+            <button type="button" disabled={busy || status === "draft"} onClick={() => void send({ type: "SKIP", lotId: lot.id })} className="btn-outline min-h-14">
+              <SkipForward aria-hidden className="size-5" /> SKIP
             </button>
           </div>
         </section>
@@ -137,27 +148,33 @@ export function Console({ initial, boardHref }: { initial: Snapshot; boardHref: 
             type="button"
             disabled={busy || !open || !nextLotId}
             onClick={() => nextLotId && void send({ type: "START_LOT", lotId: nextLotId })}
-            className="btn min-h-16 w-full text-xl"
+            className="btn min-h-20 w-full text-xl"
           >
-            {nextLot ? `Next lot: ${nextLot.playerName}` : "No lots left in the pool"}
+            {nextLot ? (
+              <>
+                Next lot: <strong className="font-display text-2xl uppercase">{nextLot.playerName}</strong> <ArrowRight aria-hidden className="size-6" />
+              </>
+            ) : (
+              "No lots left in the pool"
+            )}
           </button>
         )
       )}
 
       <div className="grid grid-cols-3 gap-2">
-        <button type="button" disabled={busy || snap.undoSeq === null} onClick={() => void send({ type: "UNDO" })} className="btn-outline">
-          ↶ Undo
+        <button type="button" disabled={busy || snap.undoSeq === null} onClick={() => void send({ type: "UNDO" })} className="btn-outline px-2">
+          <Undo2 aria-hidden className="size-5" /> Undo
         </button>
-        <button type="button" disabled={busy || snap.redoSeq === null} onClick={() => void send({ type: "REDO" })} className="btn-outline">
-          ↷ Redo
+        <button type="button" disabled={busy || snap.redoSeq === null} onClick={() => void send({ type: "REDO" })} className="btn-outline px-2">
+          <Redo2 aria-hidden className="size-5" /> Redo
         </button>
         {status === "paused" ? (
-          <button type="button" disabled={busy} onClick={() => void send({ type: "RESUME" })} className="btn-outline">
-            Resume
+          <button type="button" disabled={busy} onClick={() => void send({ type: "RESUME" })} className="btn-accent px-2">
+            <Play aria-hidden className="size-5" /> Resume
           </button>
         ) : (
-          <button type="button" disabled={busy || !open} onClick={() => void send({ type: "PAUSE" })} className="btn-outline">
-            Pause
+          <button type="button" disabled={busy || !open} onClick={() => void send({ type: "PAUSE" })} className="btn-outline px-2">
+            <Pause aria-hidden className="size-5" /> Pause
           </button>
         )}
       </div>
@@ -166,8 +183,8 @@ export function Console({ initial, boardHref }: { initial: Snapshot; boardHref: 
       <UnsoldList snap={snap} disabled={busy || status === "completed"} onRequeue={(lotId) => void send({ type: "REQUEUE", lotId })} />
 
       <p className="text-center">
-        <Link href={boardHref} target="_blank" className="font-bold text-brand underline">
-          Open the public board
+        <Link href={boardHref} target="_blank" className="link">
+          Open the public board <ExternalLink aria-hidden className="size-4" />
         </Link>
       </p>
 
@@ -175,6 +192,7 @@ export function Console({ initial, boardHref }: { initial: Snapshot; boardHref: 
         <SoldSheet
           player={snap.lots.find((l) => l.id === confirming.lotId)?.playerName ?? ""}
           team={teamById(snap, confirming.teamId)!}
+          teams={snap.teams}
           amount={confirming.amount}
           onConfirm={() => confirmSale(confirming)}
           onClose={() => setConfirming(null)}

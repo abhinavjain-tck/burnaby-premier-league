@@ -1,7 +1,8 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
-import { safeColour, textOn } from "@/lib/auction/colour";
+import { teamStyle } from "@/components/ui/team";
 import { bidBlocker } from "@/lib/auction/rules";
 import type { Snapshot } from "@/lib/auction/types";
 import { crore, fmt } from "@/lib/money";
@@ -19,8 +20,11 @@ export function CustomBid({ snap, disabled, onBid }: Props) {
   const [text, setText] = useState("");
   const amount = toLakhs(text);
   return (
-    <details className="rounded-lg border-2 border-ink p-3">
-      <summary className="cursor-pointer text-lg font-black">Custom amount</summary>
+    <details className="card group p-3">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 font-display text-xl font-extrabold uppercase [&::-webkit-details-marker]:hidden">
+        <span>Jump bid (custom amount)</span>
+        <ChevronDown aria-hidden className="size-6 shrink-0 transition-transform duration-200 group-open:rotate-180" />
+      </summary>
       <label className="label mt-3" htmlFor="custom-bid">
         Amount in crores
       </label>
@@ -36,7 +40,6 @@ export function CustomBid({ snap, disabled, onBid }: Props) {
       <div className="mt-3 grid grid-cols-4 gap-2">
         {snap.teams.map((team) => {
           const reason = amount === null ? "Enter an amount" : bidBlocker(snap.state, snap.config, team.id, amount);
-          const bg = safeColour(team.colour);
           return (
             <div key={team.id} className="flex flex-col gap-1">
               <button
@@ -47,17 +50,17 @@ export function CustomBid({ snap, disabled, onBid }: Props) {
                   onBid(team.id, amount);
                   setText("");
                 }}
-                className="min-h-12 rounded-lg border-2 border-ink font-black disabled:opacity-35"
-                style={{ background: bg, color: textOn(bg) }}
+                className="min-h-14 cursor-pointer rounded-md font-display text-2xl font-extrabold uppercase disabled:cursor-not-allowed disabled:opacity-35"
+                style={teamStyle(team, snap.teams)}
               >
                 {team.short}
               </button>
-              {amount !== null && reason && <span className="text-center text-xs leading-tight font-semibold text-red-800">{reason}</span>}
+              {amount !== null && reason && <span className="text-center text-sm leading-tight font-semibold text-ball">{reason}</span>}
             </div>
           );
         })}
       </div>
-      {amount !== null && <p className="mt-2 text-muted">Tap a team to bid {fmt(amount)}.</p>}
+      {amount !== null && <p className="mt-2 font-semibold text-muted">Tap a team to bid <span className="num">{fmt(amount)}</span>.</p>}
     </details>
   );
 }

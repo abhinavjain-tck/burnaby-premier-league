@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { requeueBase } from "@/lib/auction/config";
 import type { Snapshot } from "@/lib/auction/types";
 import { fmt } from "@/lib/money";
@@ -14,9 +15,12 @@ export function UnsoldList({ snap, disabled, onRequeue }: Props) {
   });
   if (lots.length === 0) return null;
   return (
-    <details className="rounded-lg border-2 border-ink p-3">
-      <summary className="cursor-pointer text-lg font-black">Unsold and skipped ({lots.length})</summary>
-      <ul className="mt-2 divide-y divide-zinc-200">
+    <details className="card group p-3">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 font-display text-xl font-extrabold uppercase [&::-webkit-details-marker]:hidden">
+        <span>Unsold and skipped ({lots.length})</span>
+        <ChevronDown aria-hidden className="size-6 shrink-0 transition-transform duration-200 group-open:rotate-180" />
+      </summary>
+      <ul className="mt-2 divide-y divide-line">
         {lots.map((l) => (
           <li key={l.id} className="flex items-center justify-between gap-2 py-2">
             <span className="min-w-0">
@@ -25,7 +29,7 @@ export function UnsoldList({ snap, disabled, onRequeue }: Props) {
                 {snap.state.lots[l.id].status} · back at {fmt(requeueBase(snap.config, l.base))}
               </span>
             </span>
-            <button type="button" disabled={disabled} onClick={() => onRequeue(l.id)} className="btn-outline min-h-10 shrink-0 px-3 text-sm">
+            <button type="button" disabled={disabled} onClick={() => onRequeue(l.id)} className="btn-outline min-h-11 shrink-0 px-3 text-base">
               Back to pool
             </button>
           </li>

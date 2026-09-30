@@ -8,10 +8,10 @@ export function Rules({ config }: { config: AuctionConfig }) {
   const guardExample = Math.max(0, 10000 - (config.minSquad - 6 - 1) * lowestBase(config));
   return (
     <section aria-labelledby="rules-h" className="space-y-3">
-      <h2 id="rules-h" className="text-2xl font-black">
+      <h2 id="rules-h" className="font-display text-3xl leading-tight font-extrabold uppercase">
         How the auction works
       </h2>
-      <ul className="list-disc space-y-2 pl-5">
+      <ul className="card space-y-3 p-4 pl-9 marker:text-pitch [&>li]:list-disc [&>li]:pl-1">
         <li>
           Every team starts with <strong>{fmt(config.purseLakhs)}</strong>. Squads are <strong>{config.minSquad}</strong> to{" "}
           <strong>{config.maxSquad}</strong> players.

@@ -1,28 +1,28 @@
 import type { Snapshot } from "@/lib/auction/types";
 import { soldFeed, teamById } from "@/lib/auction/view";
 import { fmt } from "@/lib/money";
-import { TeamDot } from "./TeamBar";
+import { TeamChip } from "./TeamBar";
 
 /** Every sale, latest first. */
 export function SoldFeed({ snap, limit }: { snap: Snapshot; limit?: number }) {
-  const sold = soldFeed(snap).slice(0, limit);
+  const all = soldFeed(snap);
+  const sold = all.slice(0, limit);
   return (
-    <section aria-labelledby="sold-h">
-      <h2 id="sold-h" className="text-lg font-black">
-        Sold ({soldFeed(snap).length})
+    <section aria-labelledby="sold-h" className="space-y-2">
+      <h2 id="sold-h" className="font-display text-2xl font-extrabold uppercase">
+        Sold <span className="num text-muted">({all.length})</span>
       </h2>
       {sold.length === 0 ? (
-        <p className="text-muted">Nobody yet.</p>
+        <p className="rounded-md border-2 border-dashed border-line bg-paper p-4 text-center font-semibold text-muted">Nobody yet.</p>
       ) : (
-        <ol className="divide-y divide-zinc-200">
+        <ol className="card divide-y divide-line">
           {sold.map((l) => {
             const team = teamById(snap, l.live.soldTo);
             return (
-              <li key={l.id} className="flex items-center gap-2 py-2">
-                {team && <TeamDot team={team} />}
+              <li key={l.id} className="flex min-h-12 items-center gap-3 px-3 py-2">
+                {team && <TeamChip team={team} teams={snap.teams} />}
                 <span className="min-w-0 flex-1 truncate font-bold">{l.playerName}</span>
-                <span className="text-sm text-muted">{team?.short}</span>
-                <span className="w-20 text-right font-black tabular-nums">{fmt(l.live.price ?? 0)}</span>
+                <span className="num font-display text-2xl font-extrabold">{fmt(l.live.price ?? 0)}</span>
               </li>
             );
           })}

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { OwnerView } from "@/components/auction/OwnerView";
 import { SignInGate } from "@/components/auction/SignInGate";
 import { NotConfigured } from "@/components/NotConfigured";
+import { PageShell } from "@/components/ui/PageShell";
 import { getViewer } from "@/lib/auth/roles";
 import { ownedTeamIds } from "@/lib/auction/access";
 import { getPublicSnapshot } from "@/lib/auction/snapshot";
@@ -20,9 +21,9 @@ export default async function OwnerPage({ params, searchParams }: Props) {
   const viewer = await getViewer();
   if (!isDbConfigured() || !isSupabaseConfigured()) {
     return (
-      <main className="mx-auto max-w-xl px-4 py-6">
+      <PageShell current="auction">
         <NotConfigured>The owner view works once the database and Supabase sign-in are connected.</NotConfigured>
-      </main>
+      </PageShell>
     );
   }
   if (!z.uuid().safeParse(id).success) notFound();
@@ -37,9 +38,9 @@ export default async function OwnerPage({ params, searchParams }: Props) {
   const wanted = typeof query.team === "string" ? query.team : "";
   const teamId = allowed.includes(wanted) ? wanted : allowed[0];
   return (
-    <>
+    <PageShell current="auction" className="space-y-4 py-4">
       {allowed.length > 1 && (
-        <nav aria-label="Pick a team" className="mx-auto flex max-w-xl flex-wrap gap-2 px-4 pt-4">
+        <nav aria-label="Pick a team" className="flex flex-wrap gap-2">
           {snap.teams
             .filter((t) => allowed.includes(t.id))
             .map((t) => (
@@ -47,7 +48,7 @@ export default async function OwnerPage({ params, searchParams }: Props) {
                 key={t.id}
                 href={`${next}?team=${t.id}`}
                 aria-current={t.id === teamId ? "page" : undefined}
-                className={`rounded-full border-2 border-ink px-4 py-2 font-bold ${t.id === teamId ? "bg-ink text-white" : "bg-white"}`}
+                className={`inline-flex min-h-11 items-center rounded-full border-2 px-4 font-display text-lg font-extrabold uppercase ${t.id === teamId ? "border-ink bg-ink text-white" : "border-edge bg-paper text-ink hover:border-ink"}`}
               >
                 {t.short}
               </Link>
@@ -55,6 +56,6 @@ export default async function OwnerPage({ params, searchParams }: Props) {
         </nav>
       )}
       <OwnerView key={teamId} initial={snap} teamId={teamId} />
-    </>
+    </PageShell>
   );
 }
