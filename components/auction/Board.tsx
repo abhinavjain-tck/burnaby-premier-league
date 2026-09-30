@@ -1,6 +1,7 @@
 "use client";
 
 import { Pause } from "lucide-react";
+import { useState } from "react";
 import type { Snapshot } from "@/lib/auction/types";
 import { lotView, remainingCount, soldFeed, statusText, teamById, type LotView } from "@/lib/auction/view";
 import { fmt } from "@/lib/money";
@@ -10,6 +11,7 @@ import { LiveStatus } from "./LiveStatus";
 import { LotCard } from "./LotCard";
 import { Purses } from "./Purses";
 import { SoldFeed } from "./SoldFeed";
+import { SquadSheet } from "./SquadSheet";
 import { TeamBar } from "./TeamBar";
 import { useAuctionLive } from "./useAuctionLive";
 
@@ -22,6 +24,7 @@ type Props = {
 /** The public board every phone on the ground shows. Phones: one column. Laptops: lot on the left, purses and sales on the right. */
 export function Board({ initial, sponsors = [] }: Props) {
   const { snap, connected, clock } = useAuctionLive(initial);
+  const [squadTeam, setSquadTeam] = useState<string | null>(null);
   const lot = lotView(snap, snap.onBlock);
   const leader = teamById(snap, lot?.live.currentTeamId);
   const lastSale = !lot ? soldFeed(snap)[0] : undefined;
@@ -66,10 +69,12 @@ export function Board({ initial, sponsors = [] }: Props) {
         </div>
 
         <div className="space-y-5">
-          <Purses snap={snap} leaderId={leader?.id} />
+          <Purses snap={snap} leaderId={leader?.id} onOpen={setSquadTeam} />
           <SoldFeed snap={snap} />
         </div>
       </div>
+
+      <SquadSheet snap={snap} teamId={squadTeam} onClose={() => setSquadTeam(null)} />
     </div>
   );
 }
