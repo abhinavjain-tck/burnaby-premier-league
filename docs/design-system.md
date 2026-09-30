@@ -91,7 +91,8 @@ sit on top of prices or compete with them.
 ## Screens
 
 - **Board:** lot card (photo, name, role, band, base, stats) → huge current bid → leading team bar →
-  countdown bar. Purse cards 2×2 (leader outlined). Sold feed. Between lots: a SOLD stamp.
+  countdown bar. Purse cards 2×2 (leader outlined, captain photo + name). Tap a card for the squad
+  sheet (`SquadSheet`: bottom sheet on phones, side panel on laptops). Sold feed. Between lots: a SOLD stamp.
   Laptops: lot on the left, purses and sales on the right.
 - **Owner view:** team bar, then purse left (biggest), max bid, slots left, per-player budget. Live lot, next 5.
 - **Console:** sticky dark status bar. Bid buttons 2×2 in team colours (leader ringed). Big green SOLD,

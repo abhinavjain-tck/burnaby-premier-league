@@ -3,7 +3,7 @@
  * with rows it loaded, tests call it with plain objects.
  */
 import type { AuctionConfig } from "./config";
-import { activeEvents, redoTarget, undoTarget } from "./log";
+import { activeEvents, redoTarget, undoTarget, type LogRow } from "./log";
 import { replay, type AuctionState } from "./reducer";
 import type { AuctionInfo, CardSnapshot, EventRow, LiveSnapshot, LotMeta, Snapshot, TeamMeta } from "./types";
 
@@ -76,6 +76,15 @@ export type SnapshotInput = {
   withActor?: boolean;
 };
 
+/**
+ * Lots placed on a team by a live PRESOLD event, oldest first. The first one per
+ * team is its owner/captain (the admin pre-sells owners before lot 1).
+ */
+export const presoldLots = (events: LogRow[]): string[] =>
+  activeEvents(events)
+    .map((r) => r.event)
+    .flatMap((e) => (e.type === "PRESOLD" ? [e.lotId] : []));
+
 export function buildSnapshot(input: SnapshotInput): Snapshot {
   const { auction, config, teams, lots, events, eventLimit = 10, withActor = false } = input;
   const state = input.state ?? stateFrom(teams, lots, events);
@@ -87,6 +96,7 @@ export function buildSnapshot(input: SnapshotInput): Snapshot {
     lots: byOrder(lots).map(lotMeta),
     state,
     onBlock: state.onBlockLotId ?? null,
+    presold: presoldLots(events),
     lastEvents: newestFirst.slice(0, eventLimit).map((e) => eventRow(e, withActor)),
     undoSeq: undoTarget(events),
     redoSeq: redoTarget(events),
@@ -98,6 +108,7 @@ export const liveOf = (s: Snapshot): LiveSnapshot => ({
   auction: s.auction,
   state: s.state,
   onBlock: s.onBlock,
+  presold: s.presold,
   lastEvents: s.lastEvents,
   undoSeq: s.undoSeq,
   redoSeq: s.redoSeq,

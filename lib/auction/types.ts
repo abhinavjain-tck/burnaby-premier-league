@@ -43,6 +43,8 @@ export type Snapshot = {
   state: AuctionState;
   /** Lot on the block, if any. Same as state.onBlockLotId. */
   onBlock: string | null;
+  /** Lot ids placed by a live PRESOLD event, oldest first. The first per team is its captain. */
+  presold: string[];
   /** Newest first. */
   lastEvents: EventRow[];
   undoSeq: number | null;
@@ -50,7 +52,7 @@ export type Snapshot = {
 };
 
 /** The small part that changes on every event. What the polling fallback fetches. */
-export type LiveSnapshot = Pick<Snapshot, "auction" | "state" | "onBlock" | "lastEvents" | "undoSeq" | "redoSeq">;
+export type LiveSnapshot = Pick<Snapshot, "auction" | "state" | "onBlock" | "presold" | "lastEvents" | "undoSeq" | "redoSeq">;
 
 /**
  * Realtime message on channel auction:{id}, event "event". `event: null` means

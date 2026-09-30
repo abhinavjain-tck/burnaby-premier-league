@@ -1,8 +1,9 @@
 import Image from "next/image";
 import { cx } from "./cx";
 
-type Size = "sm" | "md" | "lg" | "xl";
+type Size = "xs" | "sm" | "md" | "lg" | "xl";
 const BOX: Record<Size, { px: number; cls: string }> = {
+  xs: { px: 32, cls: "size-8 text-sm rounded-full" },
   sm: { px: 48, cls: "size-12 text-lg rounded-md" },
   md: { px: 80, cls: "size-20 text-2xl rounded-lg" },
   lg: { px: 112, cls: "size-28 text-4xl rounded-lg" },
@@ -24,8 +25,8 @@ export function PlayerPhoto({ name, url, size = "md", alt = "", className }: { n
     return <Image src={url} alt={alt} width={box.px * 2} height={box.px * 2} unoptimized className={cx(box.cls, "shrink-0 bg-canvas object-cover", className)} />;
   }
   return (
-    <div aria-hidden className={cx(box.cls, "grid shrink-0 place-items-center bg-pitch font-display font-extrabold text-white", className)}>
+    <span aria-hidden className={cx(box.cls, "grid shrink-0 place-items-center bg-pitch font-display font-extrabold text-white", className)}>
       {initials(name) || "?"}
-    </div>
+    </span>
   );
 }

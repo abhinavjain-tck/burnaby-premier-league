@@ -84,3 +84,74 @@ export async function adminSession(page: Page) {
     })),
   );
 }
+
+/** Put a file in the public photos bucket and return its public URL. */
+export async function uploadPhoto(path: string, body: Buffer, contentType = "image/png"): Promise<string> {
+  const storage = serviceClient().storage.from("photos");
+  const { error } = await storage.upload(path, body, { contentType, upsert: true });
+  if (error) throw error;
+  return storage.getPublicUrl(path).data.publicUrl;
+}
+
+/** 8x8 pitch-green PNG, enough to prove a photo renders. */
+export const TINY_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEUlEQVR4nGPg9tXBihiGlgQA3TwhAcpzi+YAAAAASUVORK5CYII=",
+  "base64",
+);
+
+type SeedLot = { name: string; role: string; tier: string; photoUrl?: string | null; stats?: Record<string, number | string> };
+type SeedTeam = { name: string; short: string; colour: string; captain?: SeedLot; bought?: Array<SeedLot & { price: number }> };
+
+/**
+ * A test auction built straight in the DB: teams, lots and an event log
+ * (captains pre-sold, some players sold). The board replays the log, so it
+ * sees exactly what the console would have made. Returns the share token.
+ */
+export async function seedTestAuction(name: string, teams: SeedTeam[], extra: SeedLot[] = []): Promise<{ id: string; token: string }> {
+  // Clear an earlier run of the same auction.
+  const old = await db<{ id: string }[]>`select id from auctions where name = ${name}`;
+  for (const { id } of old) {
+    await db`delete from auction_events where auction_id = ${id}`;
+    await db`delete from auction_lots where auction_id = ${id}`;
+    await db`delete from auction_teams where auction_id = ${id}`;
+    await db`delete from auction_admins where auction_id = ${id}`;
+    await db`delete from auctions where id = ${id}`;
+  }
+
+  const token = (name.replace(/[^A-Za-z0-9]/g, "") + "00000000000000000000").slice(0, 20);
+  const [auction] = await db<{ id: string }[]>`
+    insert into auctions (season_id, name, mode, status, share_token)
+    values (1, ${name}, 'test', 'open', ${token}) returning id`;
+
+  const events: Array<{ type: string; payload: Record<string, string | number> }> = [];
+  let order = 0;
+  const addLot = async (l: SeedLot) => {
+    const card = { battingStyle: "Right-hand bat", bowlingStyle: null, stats: l.stats ?? {} };
+    const [row] = await db<{ id: string }[]>`
+      insert into auction_lots (auction_id, player_name, role, tier, photo_url, card, set_name, sort_order, base_lakhs)
+      values (${auction.id}, ${l.name}, ${l.role}, ${l.tier}, ${l.photoUrl ?? null}, ${db.json(card)}, 'Batters', ${++order}, 500)
+      returning id`;
+    return row.id;
+  };
+
+  for (const t of teams) {
+    const [team] = await db<{ id: string }[]>`
+      insert into auction_teams (auction_id, name, short, colour, purse_start_lakhs, purse_left_lakhs)
+      values (${auction.id}, ${t.name}, ${t.short}, ${t.colour}, 30000, 30000) returning id`;
+    if (t.captain) events.push({ type: "PRESOLD", payload: { lotId: await addLot(t.captain), teamId: team.id, amount: 2500 } });
+    for (const b of t.bought ?? []) {
+      const lotId = await addLot(b);
+      events.push({ type: "START_LOT", payload: { lotId } }, { type: "SOLD", payload: { lotId, teamId: team.id, amount: b.price } });
+    }
+  }
+  for (const l of extra) await addLot(l);
+
+  // Pre-sales first, then open, then the sales in order.
+  const ordered = [...events.filter((e) => e.type === "PRESOLD"), { type: "START", payload: {} }, ...events.filter((e) => e.type !== "PRESOLD")];
+  for (const [i, e] of ordered.entries()) {
+    await db`insert into auction_events (auction_id, seq, type, payload, actor_email)
+             values (${auction.id}, ${i + 1}, ${e.type}, ${db.json(e.payload)}, 'e2e@example.com')`;
+  }
+  await db`update auctions set version = ${ordered.length} where id = ${auction.id}`;
+  return { id: auction.id, token };
+}

@@ -1,22 +1,28 @@
 "use client";
 
 import { Radio } from "lucide-react";
+import { useState } from "react";
 import { RoleChip } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { PlayerPhoto } from "@/components/ui/PlayerPhoto";
 import { Stat } from "@/components/ui/Stat";
 import { teamColour } from "@/components/ui/team";
+import { squadOf } from "@/lib/auction/squad";
 import type { Snapshot } from "@/lib/auction/types";
 import { lotView, ROLE_SHORT, teamById, teamStats, upcoming } from "@/lib/auction/view";
 import { fmt } from "@/lib/money";
 import { LiveStatus } from "./LiveStatus";
+import { SquadList, SquadSheet } from "./SquadSheet";
 import { TeamBar, TeamChip } from "./TeamBar";
 import { useAuctionLive } from "./useAuctionLive";
 
 /** Read-only view for one team owner: money, squad, what's on the block and what's next. */
 export function OwnerView({ initial, teamId }: { initial: Snapshot; teamId: string }) {
   const { snap, connected } = useAuctionLive(initial);
+  const [otherTeam, setOtherTeam] = useState<string | null>(null);
   const team = teamById(snap, teamId);
-  if (!team) return <p className="p-4">That team isn&apos;t in this auction.</p>;
+  const squad = squadOf(snap, teamId);
+  if (!team || !squad) return <p className="p-4">That team isn&apos;t in this auction.</p>;
   const stats = teamStats(snap, team);
   const lot = lotView(snap, snap.onBlock);
   const leader = teamById(snap, lot?.live.currentTeamId);
@@ -39,6 +45,14 @@ export function OwnerView({ initial, teamId }: { initial: Snapshot; teamId: stri
         <TeamBar team={team} teams={snap.teams} className="rounded-none px-4 py-3 text-4xl">
           {team.name}
         </TeamBar>
+        {squad.captain && (
+          <p className="flex items-center gap-2 border-b border-line px-4 py-2">
+            <PlayerPhoto name={squad.captain.name} url={squad.captain.photoUrl} size="xs" />
+            <span className="min-w-0 truncate font-bold">
+              <span className="text-muted">Capt.</span> {squad.captain.name}
+            </span>
+          </p>
+        )}
         <dl className="grid grid-cols-2 gap-x-4 gap-y-5 p-4">
           <Stat label="Purse left" value={fmt(stats.purseLeft)} size="xl" className="col-span-2" />
           <Stat label="Max bid now" value={full ? "—" : fmt(stats.maxBid)} size="lg" />
@@ -93,6 +107,12 @@ export function OwnerView({ initial, teamId }: { initial: Snapshot; teamId: stri
         )}
       </Card>
 
+      <Card title="Your squad" aside={<span className="num font-bold text-muted">{squad.size}/{squad.maxSquad}</span>} pad={false}>
+        <div className="border-t border-line">
+          <SquadList squad={squad} />
+        </div>
+      </Card>
+
       <Card title="Coming up" pad={false}>
         {next.length === 0 ? (
           <p className="px-4 pb-4 text-muted">No more lots queued.</p>
@@ -108,6 +128,27 @@ export function OwnerView({ initial, teamId }: { initial: Snapshot; teamId: stri
           </ol>
         )}
       </Card>
+
+      <Card title="Other squads">
+        <div className="grid grid-cols-3 gap-2">
+          {snap.teams
+            .filter((t) => t.id !== team.id)
+            .map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setOtherTeam(t.id)}
+                aria-haspopup="dialog"
+                aria-label={`${t.name} squad`}
+                className="btn-outline min-h-12 px-2"
+              >
+                <TeamChip team={t} teams={snap.teams} />
+              </button>
+            ))}
+        </div>
+      </Card>
+
+      <SquadSheet snap={snap} teamId={otherTeam} onClose={() => setOtherTeam(null)} />
     </div>
   );
 }
