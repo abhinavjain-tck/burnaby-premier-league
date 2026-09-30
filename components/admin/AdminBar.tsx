@@ -2,9 +2,12 @@ import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { signOut } from "@/app/admin/actions";
 import { LogoMark } from "@/components/ui/Logo";
+import { getViewer } from "@/lib/auth/roles";
 import { AdminNav } from "./AdminNav";
 
-export function AdminBar({ email }: { email: string }) {
+/** Header and tabs. Reads the viewer itself (cached per request) so only super admins see the Admins tab. */
+export async function AdminBar({ email }: { email: string }) {
+  const viewer = await getViewer();
   return (
     <header className="bg-pitch text-white">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 pt-2">
@@ -24,7 +27,7 @@ export function AdminBar({ email }: { email: string }) {
         </form>
       </div>
       <div className="mx-auto max-w-5xl px-2">
-        <AdminNav />
+        <AdminNav showAdmins={viewer?.role === "super_admin"} />
       </div>
     </header>
   );

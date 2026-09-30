@@ -48,16 +48,16 @@ const MAX_CHUNK = 3180; // same as @supabase/ssr
  * row, mints a magic link with the admin API, redeems it, and stores the
  * resulting session in the cookie format @supabase/ssr reads.
  */
-export async function adminSession(page: Page) {
+export async function adminSession(page: Page, email = ADMIN_EMAIL, role: "admin" | "super_admin" = "super_admin") {
   const admin = serviceClient();
 
-  const created = await admin.auth.admin.createUser({ email: ADMIN_EMAIL, email_confirm: true });
+  const created = await admin.auth.admin.createUser({ email, email_confirm: true });
   if (created.error && !/already|registered|exists/i.test(created.error.message)) throw created.error;
 
-  await db`insert into user_roles (email, role) values (${ADMIN_EMAIL}, 'super_admin')
-           on conflict (email) do update set role = 'super_admin'`;
+  await db`insert into user_roles (email, role) values (${email}, ${role})
+           on conflict (email) do update set role = ${role}`;
 
-  const { data: link, error } = await admin.auth.admin.generateLink({ type: "magiclink", email: ADMIN_EMAIL });
+  const { data: link, error } = await admin.auth.admin.generateLink({ type: "magiclink", email });
   if (error || !link.properties) throw error ?? new Error("generateLink returned no properties");
 
   // Redeem the link's token server-side. Following action_link in the browser would hand
