@@ -22,7 +22,8 @@ export function applyLive(snap: Snapshot, msg: LiveMessage, eventLimit = 10): Li
   const row = msg.event;
   if (msg.version !== local + 1 || !row || row.seq !== msg.version || isMarker(row.type)) return { kind: "refetch" };
   try {
-    const state = apply(snap.state, toEvent(row));
+    const event = toEvent(row);
+    const state = apply(snap.state, event);
     return {
       kind: "applied",
       snapshot: {
@@ -30,6 +31,7 @@ export function applyLive(snap: Snapshot, msg: LiveMessage, eventLimit = 10): Li
         auction: { ...snap.auction, version: msg.version },
         state,
         onBlock: state.onBlockLotId ?? null,
+        presold: event.type === "PRESOLD" ? [...snap.presold, event.lotId] : snap.presold,
         lastEvents: [row, ...snap.lastEvents].slice(0, eventLimit),
         undoSeq: row.seq,
         redoSeq: null, // any new action clears redo
@@ -44,7 +46,7 @@ export function applyLive(snap: Snapshot, msg: LiveMessage, eventLimit = 10): Li
 /** Put a freshly polled live part on top of what we have. Ignores anything older. */
 export function mergeLive(snap: Snapshot, live: LiveSnapshot): Snapshot {
   if (live.auction.version < snap.auction.version) return snap;
-  return { ...snap, ...live };
+  return { ...snap, ...live, presold: live.presold ?? snap.presold };
 }
 
 /** True when the lots or teams in `live` don't match our metadata, so we need a full fetch. */
