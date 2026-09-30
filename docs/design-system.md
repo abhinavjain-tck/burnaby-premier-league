@@ -95,7 +95,12 @@ sit on top of prices or compete with them.
   countdown bar. Purse cards 2×2 (leader outlined, captain photo + name). Tap a card for the squad
   sheet (`SquadSheet`: bottom sheet on phones, side panel on laptops). Sold feed. Between lots: a SOLD stamp.
   Laptops: lot on the left, purses and sales on the right.
-- **Owner view:** team bar, then purse left (biggest), max bid, slots left, per-player budget. Live lot, next 5.
+- **Owner view:** team bar, then purse left (biggest), max bid, slots left, per-player budget. Then the lot carousel.
+- **Lot carousel** (`LotCarousel`, console and owner view): Prev · Live · Next cards on a CSS scroll-snap strip.
+  Up to 5 past results (SOLD · team · price, or UNSOLD), the live card with a red-dot LIVE tag (or a state card
+  between lots), and the next 3 lots. 44px arrows, arrow keys, swipe. A fixed green "Back to live" shows while off
+  the live card; it snaps back by itself when a new lot opens or a result lands, never on a bid. Looking only:
+  console commands always use the lot on the block, and the console says "Bidding: <name>" above the bid buttons.
 - **Console:** sticky dark status bar. Bid buttons 2×2 in team colours (leader ringed). Big green SOLD,
   red-outline UNSOLD, SKIP, then Undo / Redo / Pause. Full-screen confirm before a sale.
   Laptops: console on the left (42rem), the public board on the right, each scrolling on its own.

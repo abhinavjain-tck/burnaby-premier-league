@@ -1,17 +1,17 @@
 "use client";
 
-import { Radio } from "lucide-react";
 import { useState } from "react";
-import { RoleChip } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { PlayerPhoto } from "@/components/ui/PlayerPhoto";
 import { Stat } from "@/components/ui/Stat";
 import { teamColour } from "@/components/ui/team";
 import { squadOf } from "@/lib/auction/squad";
 import type { Snapshot } from "@/lib/auction/types";
-import { lotView, ROLE_SHORT, teamById, teamStats, upcoming } from "@/lib/auction/view";
+import { lotView, ROLE_SHORT, teamById, teamStats } from "@/lib/auction/view";
 import { fmt } from "@/lib/money";
 import { LiveStatus } from "./LiveStatus";
+import { LotCard } from "./LotCard";
+import { LotCarousel } from "./LotCarousel";
 import { SquadList, SquadSheet } from "./SquadSheet";
 import { TeamBar, TeamChip } from "./TeamBar";
 import { useAuctionLive } from "./useAuctionLive";
@@ -26,7 +26,6 @@ export function OwnerView({ initial, teamId }: { initial: Snapshot; teamId: stri
   const stats = teamStats(snap, team);
   const lot = lotView(snap, snap.onBlock);
   const leader = teamById(snap, lot?.live.currentTeamId);
-  const next = upcoming(snap, 5);
   const full = stats.squadSize >= snap.config.maxSquad;
   const slotsLeft = Math.max(0, snap.config.maxSquad - stats.squadSize);
   const needed = Math.max(0, snap.config.minSquad - stats.squadSize);
@@ -75,58 +74,34 @@ export function OwnerView({ initial, teamId }: { initial: Snapshot; teamId: stri
         </div>
       </section>
 
-      <Card
-        title={
-          <span className="flex items-center gap-2">
-            <Radio aria-hidden className="size-6 text-ball" /> Live now
-          </span>
+      <LotCarousel
+        snap={snap}
+        liveAccent={youLead ? teamColour(team, snap.teams) : undefined}
+        live={
+          lot && (
+            <div className="space-y-3">
+              <LotCard lot={lot} />
+              {lot.live.currentBid !== undefined && leader ? (
+                <p className="flex flex-wrap items-center gap-3">
+                  <span className="num font-display text-5xl leading-none font-extrabold">{fmt(lot.live.currentBid)}</span>
+                  {youLead ? (
+                    <span className="rounded-sm bg-pitch px-2 py-1 font-bold text-white uppercase">You lead</span>
+                  ) : (
+                    <TeamChip team={leader} teams={snap.teams} className="min-h-8 text-lg" />
+                  )}
+                </p>
+              ) : (
+                <p className="text-lg font-semibold text-muted">No bid yet</p>
+              )}
+            </div>
+          )
         }
-        accent={youLead ? teamColour(team, snap.teams) : undefined}
-      >
-        {lot ? (
-          <div className="space-y-2">
-            <p className="font-display text-3xl leading-tight font-extrabold uppercase">{lot.playerName}</p>
-            <RoleChip role={lot.role} />
-            {lot.live.currentBid !== undefined && leader ? (
-              <p className="flex flex-wrap items-center gap-3">
-                <span className="num font-display text-5xl leading-none font-extrabold">{fmt(lot.live.currentBid)}</span>
-                {youLead ? (
-                  <span className="rounded-sm bg-pitch px-2 py-1 font-bold text-white uppercase">You lead</span>
-                ) : (
-                  <TeamChip team={leader} teams={snap.teams} className="min-h-8 text-lg" />
-                )}
-              </p>
-            ) : (
-              <p className="text-lg font-semibold text-muted">
-                Base <span className="num">{fmt(lot.live.base)}</span>, no bid yet
-              </p>
-            )}
-          </div>
-        ) : (
-          <p className="text-muted">Nothing on the block.</p>
-        )}
-      </Card>
+      />
 
       <Card title="Your squad" aside={<span className="num font-bold text-muted">{squad.size}/{squad.maxSquad}</span>} pad={false}>
         <div className="border-t border-line">
           <SquadList squad={squad} />
         </div>
-      </Card>
-
-      <Card title="Coming up" pad={false}>
-        {next.length === 0 ? (
-          <p className="px-4 pb-4 text-muted">No more lots queued.</p>
-        ) : (
-          <ol className="divide-y divide-line border-t border-line">
-            {next.map((l) => (
-              <li key={l.id} className="flex min-h-12 items-center gap-2 px-4 py-2">
-                <span className="min-w-0 flex-1 truncate font-bold">{l.playerName}</span>
-                <RoleChip role={l.role} short />
-                <span className="num w-16 shrink-0 text-right font-display text-xl font-extrabold">{fmt(l.live.base)}</span>
-              </li>
-            ))}
-          </ol>
-        )}
       </Card>
 
       <Card title="Other squads">
