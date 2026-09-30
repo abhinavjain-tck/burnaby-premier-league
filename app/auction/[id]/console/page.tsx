@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Console } from "@/components/auction/console/Console";
+import { lotSponsors } from "@/components/auction/lotSponsors";
 import { SignInGate } from "@/components/auction/SignInGate";
 import { NotConfigured } from "@/components/NotConfigured";
+import { countSponsors, SponsorSlot } from "@/components/sponsors/SponsorSlot";
 import { getViewer } from "@/lib/auth/roles";
 import { canOperate } from "@/lib/auction/access";
 import { testBoardPath } from "@/lib/auction/share";
@@ -16,7 +18,7 @@ export const metadata: Metadata = { title: "Console", robots: { index: false, fo
 
 type Props = { params: Promise<{ id: string }> };
 
-/** Operator's phone. Auction admins for this auction, or any league admin. */
+/** Operator's phone, or a laptop with the public board alongside. Auction admins for this auction, or any league admin. */
 export default async function ConsolePage({ params }: Props) {
   const { id } = await params;
   const viewer = await getViewer(); // also marks the page per-request
@@ -37,5 +39,13 @@ export default async function ConsolePage({ params }: Props) {
   const row = await findAuction(getDb(), id);
   const snap = row ? await getSnapshot(id, { events: 20, withActor: true }) : null;
   if (!row || !snap) notFound();
-  return <Console initial={snap} boardHref={row.mode === "live" ? "/auction" : testBoardPath(row.shareToken)} />;
+  const [sponsors, bandCount] = await Promise.all([lotSponsors(), countSponsors("strip")]);
+  return (
+    <Console
+      initial={snap}
+      boardHref={row.mode === "live" ? "/auction" : testBoardPath(row.shareToken)}
+      sponsors={sponsors}
+      sponsorBand={bandCount > 0 ? <SponsorSlot placement="strip" /> : null}
+    />
+  );
 }

@@ -1,6 +1,6 @@
 import { BandChip, RoleChip } from "@/components/ui/Badge";
 import { PlayerPhoto } from "@/components/ui/PlayerPhoto";
-import type { LotView } from "@/lib/auction/view";
+import { setLabel, type LotView } from "@/lib/auction/view";
 import { fmt } from "@/lib/money";
 
 /** The player on the block. `big` for the board, compact for the console. */
@@ -15,7 +15,7 @@ export function LotCard({ lot, big = false }: { lot: LotView; big?: boolean }) {
   return (
     <article aria-label={`Lot ${lot.order}: ${lot.playerName}`} className="space-y-3">
       <p className="eyebrow">
-        Lot <span className="num">{lot.order}</span> · {lot.setName}
+        Lot <span className="num">{lot.order}</span> · {setLabel(lot.setName)}
       </p>
       <div className="flex gap-3 sm:gap-4">
         <PlayerPhoto name={lot.playerName} url={lot.photoUrl} size={big ? "xl" : "md"} />

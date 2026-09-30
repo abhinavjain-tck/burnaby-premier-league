@@ -2,6 +2,7 @@
 import { fmt } from "../money";
 import type { AuctionState } from "./reducer";
 import type { LotMeta, TeamMeta } from "./types";
+import { setLabel } from "./view";
 
 type Cell = string | number | boolean | null | undefined;
 
@@ -61,7 +62,7 @@ export function lotsCsv(lots: LotMeta[], state: AuctionState, teams: TeamMeta[])
       const price = s?.price;
       return [
         l.order,
-        l.setName,
+        setLabel(l.setName),
         l.playerName,
         l.role,
         l.tier,

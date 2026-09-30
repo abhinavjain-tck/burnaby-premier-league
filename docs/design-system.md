@@ -24,7 +24,8 @@ Picked with the ui-ux-pro-max skill ("Sports/Fitness" pairing, vibrant block sty
 
 **Teams** use their colour from settings (`teams.colour`). Text on a team colour is picked by `textOn()`.
 If a colour is missing or invalid, `components/ui/team.ts` gives a fixed one by team order
-(blue, red, purple, orange, …). Always use `teamStyle()` / `teamColour()`, never raw `team.colour`.
+(blue, red, purple, ochre, …). If a team's colour is too close to an earlier team's (ΔE under 25), the later
+one gets a fallback too, so the teams never look alike side by side. Always use `teamStyle()` / `teamColour()`, never raw `team.colour`.
 
 Rules:
 - Never put gold text on white. Gold is a fill with ink text.
@@ -97,6 +98,8 @@ sit on top of prices or compete with them.
 - **Owner view:** team bar, then purse left (biggest), max bid, slots left, per-player budget. Live lot, next 5.
 - **Console:** sticky dark status bar. Bid buttons 2×2 in team colours (leader ringed). Big green SOLD,
   red-outline UNSOLD, SKIP, then Undo / Redo / Pause. Full-screen confirm before a sale.
+  Laptops: console on the left (42rem), the public board on the right, each scrolling on its own.
+  Phones: a sticky Console | Board toggle. The board reads the console's live state (no second channel).
 - **Admin:** green header with tabs. Cards on phones, tables on laptops.
 
 ## Do / don't

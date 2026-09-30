@@ -13,17 +13,33 @@ import { Purses } from "./Purses";
 import { SoldFeed } from "./SoldFeed";
 import { SquadSheet } from "./SquadSheet";
 import { TeamBar } from "./TeamBar";
-import { useAuctionLive } from "./useAuctionLive";
+import { useAuctionLive, type AuctionLive } from "./useAuctionLive";
 
-type Props = {
-  initial: Snapshot;
+type Sponsors = {
   /** Server-rendered "presented by" rows; one is shown per lot, rotating by lot order. */
   sponsors?: React.ReactNode[];
 };
 
-/** The public board every phone on the ground shows. Phones: one column. Laptops: lot on the left, purses and sales on the right. */
-export function Board({ initial, sponsors = [] }: Props) {
-  const { snap, connected, clock } = useAuctionLive(initial);
+/** The public board every phone on the ground shows. Keeps itself live. */
+export function Board({ initial, sponsors }: Sponsors & { initial: Snapshot }) {
+  return <BoardView live={useAuctionLive(initial)} sponsors={sponsors} />;
+}
+
+/**
+ * The board, drawn from a live state someone else keeps current (the console passes its own,
+ * so there's one channel and one poller per page). Two columns once there's room for them:
+ * lot on the left, purses and sales on the right.
+ */
+export function BoardView({
+  live,
+  sponsors = [],
+  header = true,
+}: Sponsors & {
+  live: Pick<AuctionLive, "snap" | "connected" | "clock">;
+  /** Auction name, status and the Live pill. The console turns it off: its own bar already says all that. */
+  header?: boolean;
+}) {
+  const { snap, connected, clock } = live;
   const [squadTeam, setSquadTeam] = useState<string | null>(null);
   const lot = lotView(snap, snap.onBlock);
   const leader = teamById(snap, lot?.live.currentTeamId);
@@ -31,16 +47,18 @@ export function Board({ initial, sponsors = [] }: Props) {
   const status = snap.state.status;
 
   return (
-    <div className="space-y-5">
-      <header className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="eyebrow truncate">{snap.auction.name}</p>
-          <p className="font-display text-xl leading-tight font-extrabold uppercase sm:text-2xl">
-            {statusText(snap)} · <span className="num">{remainingCount(snap)}</span> lots to go
-          </p>
-        </div>
-        <LiveStatus connected={connected} />
-      </header>
+    <div className="@container space-y-5">
+      {header && (
+        <header className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="eyebrow truncate">{snap.auction.name}</p>
+            <p className="font-display text-xl leading-tight font-extrabold uppercase sm:text-2xl">
+              {statusText(snap)} · <span className="num">{remainingCount(snap)}</span> lots to go
+            </p>
+          </div>
+          <LiveStatus connected={connected} />
+        </header>
+      )}
 
       {status === "paused" && (
         <p className="flex items-center justify-center gap-2 rounded-md bg-gold p-3 text-center font-display text-2xl font-extrabold text-ink uppercase">
@@ -48,7 +66,7 @@ export function Board({ initial, sponsors = [] }: Props) {
         </p>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start">
+      <div className="grid gap-5 @min-[62rem]:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] @min-[62rem]:items-start">
         <div className="space-y-5">
           {lot ? (
             <section aria-label="On the block" className="card overflow-hidden">
