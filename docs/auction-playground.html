@@ -1,0 +1,650 @@
+<title>BPL Auction Playground</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one phone-width column; every rule is a card with a plain-words explainer, option toggles, and a "try it" box that uses those options. */
+:root{
+  --bg:#f5f6f2; --surface:#ffffff; --surface-2:#eceee7; --line:#d3d7cc;
+  --ink:#171f1b; --ink-2:#4a554f; --ink-3:#5f6a64;
+  --accent:#0e6b4a; --accent-ink:#ffffff; --accent-soft:#dcefe5;
+  --sold:#a3212f; --sold-soft:#f6dfe1; --gold:#8a6212; --gold-soft:#f5ead0;
+  --t1:#1d4ed8; --t2:#b91c1c; --t3:#15803d; --t4:#6d28d9; --onteam:#ffffff;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#111614; --surface:#181f1c; --surface-2:#1f2824; --line:#2d3833;
+    --ink:#e8ece9; --ink-2:#b4bdb7; --ink-3:#7f8a84;
+    --accent:#4fbf93; --accent-ink:#0b1a13; --accent-soft:#173327;
+    --sold:#ef7a86; --sold-soft:#3a1a1f; --gold:#e0b45a; --gold-soft:#332a14;
+    --t1:#6d9cff; --t2:#ff7a7a; --t3:#5ad48a; --t4:#b58cff; --onteam:#0b1410;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#111614; --surface:#181f1c; --surface-2:#1f2824; --line:#2d3833;
+  --ink:#e8ece9; --ink-2:#b4bdb7; --ink-3:#7f8a84;
+  --accent:#4fbf93; --accent-ink:#0b1a13; --accent-soft:#173327;
+  --sold:#ef7a86; --sold-soft:#3a1a1f; --gold:#e0b45a; --gold-soft:#332a14;
+  --t1:#6d9cff; --t2:#ff7a7a; --t3:#5ad48a; --t4:#b58cff; --onteam:#0b1410;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+.wrap{max-width:720px;margin:0 auto;padding-inline:18px;padding-block:0 140px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(30px,7vw,46px);font-weight:900;letter-spacing:-.02em}
+h2{font-size:22px;font-weight:700}
+h3{font-size:15px;font-weight:700;margin:0 0 6px}
+p{margin:10px 0;max-width:66ch}
+ul{padding-left:20px;max-width:66ch}li{margin:4px 0}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+header{padding-block:40px 20px;border-bottom:1px solid var(--line)}
+header p.lede{font-size:17px;color:var(--ink-2)}
+.glossary{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:18px 0}
+.glossary div{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:14px}
+.glossary b{display:block;font-family:var(--display);margin-bottom:2px}
+section.rule{margin-top:40px;padding-top:22px;border-top:2px solid var(--ink)}
+.plain{background:var(--gold-soft);border-radius:8px;padding:12px 14px;margin:12px 0;font-size:15px}
+.plain .eyebrow{color:var(--gold);margin-bottom:4px}
+.opts{display:grid;gap:8px;margin:12px 0}
+.opt{display:grid;grid-template-columns:24px 1fr;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer}
+.opt:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--accent-soft)}
+.opt input{margin:3px 0 0;accent-color:var(--accent);width:18px;height:18px}
+.opt .t{font-weight:600;font-size:15px}
+.opt .d{font-size:14px;color:var(--ink-2);margin-top:2px}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 8px;border-radius:999px;background:var(--gold-soft);color:var(--gold);vertical-align:middle;margin-left:6px}
+.pill.rec{background:var(--accent);color:var(--accent-ink)}
+.try{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;margin:14px 0}
+.try .eyebrow{color:var(--accent);margin-bottom:8px}
+.money{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 10px;font-size:14px}
+.stat span b{display:block;font-family:var(--display);font-size:20px;line-height:1.1}
+.stat .res b{color:var(--gold)}
+.stat .lock{color:var(--ink-3)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chip{font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);color:var(--ink);cursor:pointer}
+.chip:disabled{opacity:.4;cursor:not-allowed}
+.chip.tM{border-color:var(--gold)}.chip.tA{border-color:var(--t1)}.chip.tB{border-color:var(--t3)}.chip.tC{border-color:var(--ink-3)}
+.msg{font-size:14px;margin-top:8px;min-height:20px;color:var(--ink-2)}
+.msg.bad{color:var(--sold)}.msg.good{color:var(--accent)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+button.b{font:inherit;font-weight:700;padding:10px 14px;border:none;border-radius:6px;background:var(--ink);color:var(--bg);cursor:pointer}
+button.b.acc{background:var(--accent);color:var(--accent-ink)}
+button.b.sold{background:var(--sold);color:#fff}
+button.b.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.b:disabled{opacity:.35;cursor:not-allowed}
+button:focus-visible,.opt:focus-within,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tablewrap{overflow-x:auto;margin:10px 0;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;min-width:380px;font-size:14px;background:var(--surface)}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);background:var(--surface-2)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:none}
+.big{font-family:var(--display);font-size:34px;font-weight:900;line-height:1;margin:6px 0 2px}
+.sub{font-family:var(--mono);font-size:13px;color:var(--ink-2)}
+.teams4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.teams4 button{font:inherit;font-weight:700;padding:12px 4px;border:none;border-radius:6px;color:var(--onteam);cursor:pointer;font-size:13px}
+.teams4 button:disabled{opacity:.35;cursor:not-allowed}
+.c1{background:var(--t1)}.c2{background:var(--t2)}.c3{background:var(--t3)}.c4{background:var(--t4)}
+.log{font-family:var(--mono);font-size:12px;color:var(--ink-2);margin-top:10px;max-height:120px;overflow:auto;border-top:1px dashed var(--line);padding-top:6px}
+.clock{font-family:var(--display);font-size:56px;font-weight:900;line-height:1;text-align:center;margin:8px 0}
+.clock.warn{color:var(--sold)}
+.seq{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}
+.seq span{font-family:var(--mono);font-size:12px;padding:4px 7px;border-radius:4px;background:var(--surface-2)}
+.seq span.M{background:var(--gold-soft);color:var(--gold)}.seq span.A{background:var(--accent-soft)}
+.ballot{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 18px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:5}
+.ballot .in{max-width:720px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ballot .prog{font-family:var(--mono);font-size:12px;color:var(--ink-2);flex:1;min-width:140px}
+#summary{margin-top:40px;padding-top:22px;border-top:2px solid var(--ink)}
+#summary textarea{width:100%;min-height:220px;font-family:var(--mono);font-size:13px;padding:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);resize:vertical}
+.name{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);margin:8px 0}
+.note{font-size:13px;color:var(--ink-3)}
+
+/* three-phone simulation */
+.phones{display:grid;grid-template-columns:repeat(3,340px);justify-content:center;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;margin:12px 0;position:relative;left:50%;transform:translateX(-50%);width:min(1060px,calc(100vw - 36px))}
+.ph{scroll-snap-align:start;border:1px solid var(--line);border-radius:18px;background:var(--surface);padding:12px 14px 16px;min-height:560px;display:flex;flex-direction:column;gap:9px;font-size:14px}
+.ph .top{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--line);padding-bottom:6px}
+.ph .top b{color:var(--ink)}
+.ph .card{background:var(--surface-2);border-radius:8px;padding:8px 10px}
+.ph .card .nm{font-family:var(--display);font-size:18px;font-weight:700;line-height:1.15}
+.ph .card .meta{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+.ph .price{font-family:var(--display);font-size:38px;font-weight:900;line-height:1;margin:4px 0 0;font-variant-numeric:tabular-nums}
+.ph .hold{height:6px;border-radius:3px;background:var(--line);margin:6px 0 2px}
+.ph .holdtxt{font-family:var(--mono);font-size:12px}
+.ph .tb{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.ph .tb button{font:inherit;font-weight:700;font-size:12px;padding:10px 2px;border:none;border-radius:6px;color:var(--onteam);cursor:pointer;line-height:1.15}
+.ph .tb button:disabled{opacity:.3;cursor:not-allowed}
+.ph .act{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.ph .act button,.ph .one{font:inherit;font-weight:700;font-size:12px;padding:9px 4px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.ph .act button.sold{background:var(--sold);color:#fff;border-color:var(--sold)}
+.ph .act button:disabled,.ph .one:disabled{opacity:.35;cursor:not-allowed}
+.ph .one.acc{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.ph .kv{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px}
+.ph .kv div{background:var(--surface-2);border-radius:6px;padding:6px 8px}
+.ph .kv b{display:block;font-family:var(--display);font-size:16px;line-height:1.1}
+.ph .kv .res b{color:var(--gold)}
+.ph .kv .max b{color:var(--accent)}
+.ph .kv .max.lock b{color:var(--ink-3)}
+.ph .list{font-family:var(--mono);font-size:12px;color:var(--ink-2);display:grid;gap:2px}
+.ph .list div{display:flex;justify-content:space-between;gap:6px}
+.ph .list .undone{text-decoration:line-through;opacity:.5}
+.ph .list .you{color:var(--accent);font-weight:600}
+.ph .cd{font-family:var(--display);font-size:30px;font-weight:900;text-align:center;line-height:1;min-height:32px}
+.ph .cd.warn{color:var(--sold)}
+.ph .spons{font-family:var(--mono);font-size:11px;text-align:center;color:var(--gold);background:var(--gold-soft);border-radius:5px;padding:4px}
+.ph .hint{font-size:12px;color:var(--ink-3);margin-top:auto}
+.ph .me{background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:12px}
+.ph .purses div{display:grid;grid-template-columns:70px 1fr auto;gap:6px;align-items:center;font-family:var(--mono);font-size:11px}
+.ph .purses i{display:block;height:8px;border-radius:4px}
+.ph h4{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:4px 0 0}
+.simhead{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0;position:relative;left:50%;transform:translateX(-50%);width:min(1060px,calc(100vw - 36px))}
+.simhead .sub{flex:1;min-width:200px}
+@media (max-width:1100px){.phones{justify-content:start}}
+@media (max-width:640px){.phones{grid-template-columns:repeat(3,86vw);width:calc(100vw - 36px)}.simhead{width:auto;left:auto;transform:none}}
+
+/* overview graphics */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:12px 0}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.tile b{display:block;font-family:var(--display);font-size:24px;line-height:1.05;font-variant-numeric:tabular-nums}
+.tile span{font-size:12px;color:var(--ink-2)}
+.tile.gold{background:var(--gold-soft);border-color:transparent}.tile.gold b{color:var(--gold)}
+.bands{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0 4px}
+.bands[data-n="1"]{grid-template-columns:1fr}.bands[data-n="2"]{grid-template-columns:repeat(2,1fr)}
+.band{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 10px 8px;text-align:center}
+.band .bw{height:110px;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch}
+.band .pv{font-family:var(--display);font-weight:900;font-size:18px;line-height:1;margin-bottom:4px;font-variant-numeric:tabular-nums}
+.band i{display:block;width:100%;border-radius:6px 6px 2px 2px;background:var(--accent);opacity:.85}
+.band.star i{background:var(--gold)}.band.star .pv{color:var(--gold)}
+.band b{display:block;font-family:var(--display);font-size:15px;margin-top:8px}
+.band .sub2{font-size:11px;color:var(--ink-3);margin-top:1px}
+.band .caps{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:6px}
+.band .caps span{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
+.band .caps span.min{background:var(--gold-soft);color:var(--gold)}
+@media (max-width:480px){.bands,.bands[data-n="4"]{grid-template-columns:repeat(2,1fr)}}
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:12px 0 4px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 8px;text-align:center;font-size:12px;line-height:1.3;position:relative}
+.step svg{width:34px;height:34px;display:block;margin:0 auto 6px}
+.step b{display:block;font-family:var(--display);font-size:13px;margin-bottom:2px}
+.step em{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--accent);display:block}
+.step:not(:last-child)::after{content:"›";position:absolute;right:-7px;top:38%;font-size:18px;color:var(--ink-3)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin:10px 0}
+.mini{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px}
+.mini h3{margin-bottom:4px}
+.mini ul{margin:0;padding-left:16px}
+.mini.gold{background:var(--gold-soft);border-color:transparent}
+.legend{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.legend div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.35}
+.legend b{display:block;font-family:var(--display);font-size:13px}
+.legend div:first-child{border-color:var(--accent);background:var(--accent-soft)}
+@media (max-width:560px){.flow{grid-template-columns:repeat(5,minmax(96px,1fr));overflow-x:auto}.step:not(:last-child)::after{display:none}.legend{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Burnaby Premier League · Season 4 · auction Sunday 4 Oct</div>
+  <h1>BPL Auction Playground</h1>
+  <p class="lede">How Sunday's auction works, with demos you can tap. Pick an option under each rule, then send your picks to the group.</p>
+  <div class="glossary">
+    <div><b>Wallet</b>Pretend money each team spends. Counted in crores (cr) like the IPL. 1 cr = 100 lakh (L).</div>
+    <div><b>Starting price</b>Where bidding begins for a player.</div>
+    <div><b>Band</b>Players grouped by starting price: Star, 10 cr, 5 cr, 2 cr.</div>
+    <div><b>Lot</b>The player being auctioned right now.</div>
+    <div><b>Squad</b>A team's players. Must end with 11 to 13.</div>
+    <div><b>Locked wallet</b>Extra money with strings attached. See Rule 1.</div>
+  </div>
+  <p class="note">Already decided: 4 teams. Owners play, placed on their own team for 25 cr. Bids are shouted; one person taps them in. The player list is public this week. The full bid history is shared after. Nobody buys past 11 while another team is still short.</p>
+</header>
+
+<!-- OVERVIEW -->
+<section class="rule" id="overview" style="margin-top:28px">
+  <div class="eyebrow">In one minute</div>
+  <h2>How Sunday's auction works</h2>
+  <div class="tiles" id="ov-tiles"></div>
+  <h3 style="margin-top:14px">Players are grouped by starting price</h3>
+  <div class="bands" id="ov-bands"></div>
+  <p class="note" id="ov-bandnote"></p>
+  <h3 style="margin-top:14px">One player, start to finish</h3>
+  <div class="flow" id="ov-flow"></div>
+  <div class="two" id="ov-cards"></div>
+  <p class="note">Follows the options you pick below.</p>
+</section>
+
+<!-- GAME -->
+<section class="rule" id="game">
+  <div class="eyebrow">Try it first</div>
+  <h2>Sunday, on three phones</h2>
+  <div class="legend">
+    <div><b>Operator's phone</b>The only one with buttons. An owner shouts, the operator taps that team.</div>
+    <div><b>Captain's phone</b>Wallet, most they can bid, squad, who's next.</div>
+    <div><b>Player's phone</b>Price, who holds, wallets, what sold, when you're up.</div>
+  </div>
+  <p class="plain" style="margin-top:0"><b>You're the operator.</b> Tap <b>Owners shout</b>, then <b>SOLD</b>. Undo takes anything back. This demo has 26 players, so squads are 7 or 8: two spare players, and nobody gets an 8th while someone is below 7.</p>
+
+  <div class="simhead"><button class="b acc" id="s-new">New auction</button><span class="sub" id="s-status" aria-live="polite"></span></div>
+  <div class="phones" tabindex="0" aria-label="Three phone screens, scroll sideways">
+
+    <div class="ph" id="ph-admin">
+      <div class="top"><span><b>Operator</b> · console</span><span id="s-lotno">—</span></div>
+      <div class="card"><div class="nm" id="s-nm">—</div><div class="meta" id="s-meta"></div><div class="price" id="s-price">—</div><div class="hold" id="s-holdbar"></div><div class="holdtxt" id="s-holdtxt"></div></div>
+      <div class="cd" id="s-cd"></div>
+      <div class="tb" id="s-teams"></div>
+      <button class="one acc" id="s-shout">Owners shout</button>
+      <div class="act"><button class="sold" id="s-sold">SOLD</button><button id="s-unsold">Unsold</button><button id="s-skip">Skip</button></div>
+      <div class="act"><button id="s-next">Next lot</button><button id="s-clock">Going once</button><button id="s-undo">↶ Undo</button></div>
+      <h4>Last actions</h4>
+      <div class="list" id="s-events"></div>
+      <div class="hint">Every tap is saved. Undo works on anything, even SOLD.</div>
+    </div>
+
+    <div class="ph" id="ph-captain">
+      <div class="top"><span><b>Captain</b> · Strikers</span><span>read only</span></div>
+      <div class="kv">
+        <div>Wallet<b class="money" id="c2-main">—</b></div>
+        <div class="res">Locked wallet<b class="money" id="c2-res">—</b></div>
+        <div>Squad<b id="c2-squad">—</b></div>
+        <div>Per player still needed<b class="money" id="c2-avg">—</b></div>
+        <div class="max" id="c2-maxbox" style="grid-column:1/-1">Most you can bid on this player<b class="money" id="c2-max">—</b><span id="c2-why" style="font-size:11px"></span></div>
+      </div>
+      <div class="cd" id="c2-cd"></div>
+      <div class="card"><div class="meta">On the block</div><div class="nm" id="c2-nm">—</div><div class="meta" id="c2-meta"></div><div class="price" id="c2-price">—</div><div class="holdtxt" id="c2-hold"></div></div>
+      <h4>Your squad</h4>
+      <div class="list" id="c2-counts"></div>
+      <h4>Coming up next</h4>
+      <div class="list" id="c2-next"></div>
+      <div class="hint">Captains shout. No buttons here on purpose.</div>
+    </div>
+
+    <div class="ph" id="ph-player">
+      <div class="top"><span><b>Player</b> · public board</span><span>anyone with the link</span></div>
+      <div class="me" id="p-me">—</div>
+      <div class="card"><div class="nm" id="p-nm">—</div><div class="meta" id="p-meta"></div><div class="price" id="p-price">—</div><div class="hold" id="p-holdbar"></div><div class="holdtxt" id="p-hold"></div></div>
+      <div class="cd" id="p-cd"></div>
+      <div class="spons">Lot brought to you by · Title Sponsor</div>
+      <h4>Team wallets</h4>
+      <div class="purses" id="p-purses"></div>
+      <h4>Just sold</h4>
+      <div class="list" id="p-feed"></div>
+      <div class="hint">Updates by itself, even after a signal drop.</div>
+    </div>
+
+  </div>
+  <div class="tablewrap" id="g-final" hidden><table><thead><tr><th>Team</th><th class="num">Players</th><th class="num">Spent</th><th class="num">Left</th><th>Squad</th></tr></thead><tbody id="g-final-rows"></tbody></table></div>
+</section>
+
+
+
+<!-- RULE 1 -->
+<section class="rule" id="A">
+  <div class="eyebrow">Rule 1</div>
+  <h2>Money</h2>
+  <div class="plain"><div class="eyebrow">In plain words</div>One wallet, or a wallet plus a locked one. The locked wallet opens only when your team is short of a must-have (Rule 3). Never for a Star. It works for one band only: the first time you use it picks the band. Leftover locked money is lost.</div>
+  <div class="opts">
+    <label class="opt"><input type="radio" name="A" value="A1"><div><div class="t">One wallet: 300 cr</div><div class="d">Simplest. Overspend early and you finish with cheap players.</div></div></label>
+    <label class="opt"><input type="radio" name="A" value="A2" checked><div><div class="t">300 cr wallet + 50 cr locked wallet<span class="pill rec">recommended</span></div><div class="d">A safety net if you overspend and still need, say, a 5 cr band player.</div></div></label>
+    <label class="opt"><input type="radio" name="A" value="A3"><div><div class="t">250 cr wallet + 50 cr locked wallet</div><div class="d">Same idea, total stays 300.</div></div></label>
+  </div>
+  <div class="example" style="background:var(--surface-2);border-radius:8px;padding:12px 14px;margin:14px 0;font-size:14px">
+    <div class="eyebrow">Example</div>
+    <ol style="margin:6px 0;padding-left:20px">
+      <li>Kings: <span class="money">40 cr</span> left, <span class="money">50 cr</span> locked, short in the 5 cr band.</li>
+      <li>A 5 cr band bowler comes up. Locked wallet opens. They win at <span class="money">55 cr</span>: 40 from the wallet, 15 from locked. Locked wallet is now tied to the 5 cr band.</li>
+      <li>Next up, a 2 cr band player they also need. Locked wallet stays shut: wrong band.</li>
+    </ol>
+  </div>
+  <div class="try" id="tryA">
+    <div class="eyebrow" id="a-eyebrow">Try it: you are Kings</div>
+    <div class="stat"><span>Wallet<b class="money" id="a-main"></b></span><span class="res">Locked wallet<b class="money" id="a-res"></b></span><span>Players<b id="a-squad"></b></span></div>
+    <p class="sub" id="a-need"></p>
+    <p style="font-size:14px;margin:6px 0">Tap to buy:</p>
+    <div class="chips" id="a-chips"></div>
+    <div class="msg" id="a-msg" aria-live="polite"></div>
+    <div class="btnrow"><button class="b ghost" id="a-reset">Start again</button></div>
+  </div>
+</section>
+
+<!-- RULE 2 -->
+<section class="rule" id="B">
+  <div class="eyebrow">Rule 2</div>
+  <h2>Starting prices</h2>
+  <div class="plain"><div class="eyebrow">In plain words</div>Organisers sort players into bands on Saturday, like seeding. The band sets where bidding starts. Higher starts for stars means fewer shouts to reach their real price.</div>
+  <div class="opts">
+    <label class="opt"><input type="radio" name="B" value="B1" checked><div><div class="t">Star at 20 cr, then 10 · 5 · 2 cr bands<span class="pill rec">recommended</span></div><div class="d">Like the IPL.</div></div></label>
+    <label class="opt"><input type="radio" name="B" value="B2"><div><div class="t">Two bands: 10 · 3 cr</div><div class="d">Less sorting to argue about.</div></div></label>
+    <label class="opt"><input type="radio" name="B" value="B3"><div><div class="t">Everyone starts at 5 cr</div><div class="d">No sorting. Stars take many more shouts.</div></div></label>
+  </div>
+  <div class="try">
+    <div class="eyebrow">Same three players, your option</div>
+    <div class="tablewrap"><table><thead><tr><th>Player</th><th>Band</th><th class="num">Starts at</th><th class="num">Likely sells at</th><th class="num">Shouts to get there</th></tr></thead><tbody id="b-rows"></tbody></table></div>
+    <p class="note">Shouts = raises of the hand, using Rule 4 steps.</p>
+  </div>
+</section>
+
+<!-- RULE 3 -->
+<section class="rule" id="C">
+  <div class="eyebrow">Rule 3</div>
+  <h2>Limits</h2>
+  <div class="plain"><div class="eyebrow">In plain words</div>"At most" stops one owner buying every star. "At least" makes sure every team can field a side, and is what opens the locked wallet. The screen greys out a team that can't bid.</div>
+  <div class="opts">
+    <label class="opt"><input type="radio" name="C" value="C1" checked><div><div class="t">Limits by band<span class="pill rec">recommended</span></div><div class="d">At most: 2 Star, 3 × 10 cr, 4 × 5 cr. At least: 1 × 10 cr, 2 × 5 cr, 2 × 2 cr. Needs the four bands from Rule 2.</div></div></label>
+    <label class="opt"><input type="radio" name="C" value="C2"><div><div class="t">Limits by role</div><div class="d">At least 4 bowlers and 1 keeper. At most 6 pure batters.</div></div></label>
+    <label class="opt"><input type="radio" name="C" value="C3"><div><div class="t">No limits, just show the counts</div><div class="d">Owners balance their own squads. No locked wallet either.</div></div></label>
+  </div>
+  <div class="try">
+    <div class="eyebrow">Try it: tap players to build a squad</div>
+    <div class="stat"><span>Squad<b id="c-count"></b></span><span id="c-lM">Star<b id="c-M"></b></span><span id="c-lA">10 cr<b id="c-A"></b></span><span id="c-lB">5 cr<b id="c-B"></b></span><span id="c-lC">2 cr<b id="c-C"></b></span><span>Bowl<b id="c-bowl"></b></span><span>Keep<b id="c-wk"></b></span></div>
+    <div class="chips" id="c-chips"></div>
+    <div class="msg" id="c-msg" aria-live="polite"></div>
+    <div class="btnrow"><button class="b ghost" id="c-reset">Clear squad</button></div>
+  </div>
+</section>
+
+<!-- RULE 4 -->
+<section class="rule" id="D">
+  <div class="eyebrow">Rule 4</div>
+  <h2>Bid steps</h2>
+  <div class="plain"><div class="eyebrow">In plain words</div>Each shout raises the price by a fixed step. A ladder means small steps for cheap players, big steps for expensive ones.</div>
+  <div class="opts">
+    <label class="opt"><input type="radio" name="D" value="D1" checked><div><div class="t">Ladder<span class="pill rec">recommended</span></div><div class="d">Under 10 cr +50 L · to 50 +1 cr · to 100 +2.5 cr · above +5 cr</div></div></label>
+    <label class="opt"><input type="radio" name="D" value="D2"><div><div class="t">Always +1 cr</div><div class="d">Easy to remember, slow for stars.</div></div></label>
+  </div>
+  <div class="try" id="walk">
+    <div class="eyebrow">Try it: shout for any team</div>
+    <div class="sub" id="walk-name">R. Sharma · Bowler · 10 cr band</div>
+    <div class="big" id="walk-cur"></div>
+    <div class="sub" id="walk-team"></div>
+    <div class="teams4">
+      <button class="c1" data-team="Strikers">Strikers</button>
+      <button class="c2" data-team="Kings">Kings</button>
+      <button class="c3" data-team="Titans">Titans</button>
+      <button class="c4" data-team="Royals">Royals</button>
+    </div>
+    <div class="log" id="walk-log"></div>
+    <div class="btnrow"><button class="b sold" id="walk-sold">SOLD</button><button class="b ghost" id="walk-reset">Reset</button></div>
+  </div>
+</section>
+
+<!-- RULE 5 -->
+<section class="rule" id="E">
+  <div class="eyebrow">Rule 5</div>
+  <h2>Order</h2>
+  <div class="plain"><div class="eyebrow">In plain words</div>Stars first sets the market early. A lucky dip is fair, but a star can come up when wallets are empty.</div>
+  <div class="opts">
+    <label class="opt"><input type="radio" name="E" value="E1" checked><div><div class="t">Stars first, then groups by role<span class="pill rec">recommended</span></div><div class="d">Star, then the 10 cr, 5 cr and 2 cr bands. Inside a band: all-rounders, batters, keepers, bowlers. Shuffled within each group, on screen.</div></div></label>
+    <label class="opt"><input type="radio" name="E" value="E2"><div><div class="t">Lucky dip</div><div class="d">One shuffle of everyone.</div></div></label>
+    <label class="opt"><input type="radio" name="E" value="E3"><div><div class="t">Owners take turns picking who's next</div><div class="d">More tactics, slower.</div></div></label>
+  </div>
+  <div class="try">
+    <div class="eyebrow">Try it: shuffle 16 players</div>
+    <div class="btnrow"><button class="b acc" id="e-shuffle">Shuffle</button></div>
+    <div class="seq" id="e-seq"></div>
+    <p class="note">Gold = Star, green = 10 cr band.</p>
+  </div>
+</section>
+
+<!-- RULE 6 -->
+<section class="rule" id="F">
+  <div class="eyebrow">Rule 6</div>
+  <h2>Unsold players</h2>
+  <div class="plain"><div class="eyebrow">In plain words</div>Nobody is left out. Unsold players come back at the end. Still unsold? The organisers place them, starting with the team that has the most money left.</div>
+  <div class="opts">
+    <label class="opt"><input type="radio" name="F" value="F1" checked><div><div class="t">Second go at the same price, then organisers place the rest<span class="pill rec">recommended</span></div></div></label>
+    <label class="opt"><input type="radio" name="F" value="F2"><div><div class="t">Second go at half price, then organisers place the rest</div><div class="d">A bit harsh on the player.</div></div></label>
+  </div>
+  <div class="try">
+    <div class="eyebrow">Try it: five unsold players</div>
+    <div class="btnrow"><button class="b acc" id="f-round">Run the second go</button><button class="b" id="f-alloc" disabled>Organisers place the rest</button><button class="b ghost" id="f-reset">Reset</button></div>
+    <div class="log" id="f-log" aria-live="polite" style="max-height:200px"></div>
+  </div>
+</section>
+
+<!-- RULE 7 -->
+<section class="rule" id="G">
+  <div class="eyebrow">Rule 7</div>
+  <h2>Price ceiling</h2>
+  <div class="plain"><div class="eyebrow">In plain words</div>Should one player have a maximum price? There is already a brake: a team can never bid so much that it can't fill its squad at the cheapest price. A second brake: a team can only go past 11 if there are spare players in the pool once everyone can reach 11.</div>
+  <div class="opts">
+    <label class="opt"><input type="radio" name="G" value="G1" checked><div><div class="t">No ceiling<span class="pill rec">recommended</span></div><div class="d">The brake is enough.</div></div></label>
+    <label class="opt"><input type="radio" name="G" value="G2"><div><div class="t">Ceiling of 100 cr for any one player</div></div></label>
+  </div>
+  <div class="try">
+    <div class="eyebrow">How high can Titans go?</div>
+    <div class="stat"><span>Wallet left<b class="money">120 cr</b></span><span>Players so far<b>5</b></span><span>Still needed<b>6</b></span></div>
+    <p class="sub">Brake: keep 2 cr for each of the 5 players still needed, so 120 − 10 = <b class="money">110 cr</b>.</p>
+    <div class="big money" id="g-max"></div>
+    <div class="sub" id="g-why"></div>
+  </div>
+</section>
+
+<!-- RULE 8 -->
+<section class="rule" id="H">
+  <div class="eyebrow">Rule 8</div>
+  <h2>Countdown</h2>
+  <div class="plain"><div class="eyebrow">In plain words</div>"Going once" starts a 10-second countdown on every phone. Does the sale happen by itself at zero, or when the operator taps SOLD? Auto is faster. Manual avoids "but I shouted!" arguments.</div>
+  <div class="opts">
+    <label class="opt"><input type="radio" name="H" value="H1" checked><div><div class="t">Operator taps SOLD<span class="pill rec">recommended</span></div></div></label>
+    <label class="opt"><input type="radio" name="H" value="H2"><div><div class="t">Sold by itself at zero</div></div></label>
+  </div>
+  <div class="try">
+    <div class="eyebrow">Try it</div>
+    <div class="sub">Current: 24 cr · Kings hold</div>
+    <div class="clock" id="h-clock">10</div>
+    <div class="btnrow"><button class="b acc" id="h-go">Going once</button><button class="b" id="h-bid">Late shout: Titans 25 cr</button><button class="b sold" id="h-sold">SOLD</button></div>
+    <div class="msg" id="h-msg" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- SUMMARY -->
+<section id="summary">
+  <div class="eyebrow">Your picks</div>
+  <h2>Your picks</h2>
+  <input class="name" id="voter" placeholder="Your name (optional)" aria-label="Your name">
+  <textarea id="ballot" readonly aria-label="Your picks"></textarea>
+  <p class="note">Select all, copy, paste into WhatsApp.</p>
+</section>
+</div>
+
+<div class="ballot">
+  <div class="in">
+    <div class="prog" id="prog"></div>
+    <button class="b ghost" id="reset-all">Reset to recommended</button>
+    <button class="b acc" id="to-summary">See my picks</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---------- shared rules ----------
+  var LABELS={A:{A1:"One wallet 300 cr",A2:"300 cr + 50 cr locked (rec)",A3:"250 cr + 50 cr locked"},B:{B1:"Star 20 cr, then 10/5/2 cr bands (rec)",B2:"Two bands 10/3 cr",B3:"Everyone starts at 5 cr"},C:{C1:"Limits by band (rec)",C2:"Limits by role",C3:"No limits"},D:{D1:"Ladder (rec)",D2:"Always +1 cr"},E:{E1:"Stars first, role groups (rec)",E2:"Lucky dip",E3:"Owners pick who's next"},F:{F1:"Second go at same price, then organisers place (rec)",F2:"Second go at half price, then organisers place"},G:{G1:"No ceiling (rec)",G2:"100 cr ceiling"},H:{H1:"Operator taps SOLD (rec)",H2:"Auto-sold at zero"}};
+  var TITLES={A:"Money",B:"Starting prices",C:"Limits",D:"Increments",E:"Order",F:"Unsold",G:"Ceiling",H:"Countdown"};
+  var REC={A:"A2",B:"B1",C:"C1",D:"D1",E:"E1",F:"F1",G:"G1",H:"H1"};
+  function R(k){ var el=document.querySelector('input[name="'+k+'"]:checked'); return el?el.value:REC[k]; }
+  function fmt(c){ if(c===0) return "0 cr"; if(c>=100) return (Number.isInteger(c)?c:c.toFixed(1))+" cr"; if(c<1) return Math.round(c*100)+" L"; return (Number.isInteger(c)?c:(c*10%1===0?c.toFixed(1):c.toFixed(2)))+" cr"; }
+  function bandsOff(){ return R("C")==="C3"||(R("C")==="C1"&&R("B")!=="B1"); }
+  function wallet(){ var a=R("A"); if(bandsOff()) a="A1"; return a==="A1"?{main:300,res:0}:a==="A2"?{main:300,res:50}:{main:250,res:50}; }
+  function base(t){ var b=R("B"); if(b==="B3") return 5; if(b==="B2") return (t==="M"||t==="A")?10:3; return {M:20,A:10,B:5,C:2}[t]; }
+  function lowestBase(){ return Math.min(base("M"),base("A"),base("B"),base("C")); }
+  function step(cur){ if(R("D")==="D2") return 1; return cur<10?0.5:cur<50?1:cur<100?2.5:5; }
+  var CAPS={M:{max:2,min:0},A:{max:3,min:1},B:{max:4,min:2},C:{max:99,min:2}};
+  function counts(squad){ var c={M:0,A:0,B:0,C:0,bowl:0,wk:0,bat:0}; squad.forEach(function(p){ if(c[p.tier]!==undefined) c[p.tier]++; if(p.role==="bowler"||p.role==="all-rounder") c.bowl++; if(p.wk) c.wk++; if(p.role==="batter"&&!p.wk) c.bat++; }); return c; }
+  // can this team add player p? returns reason string if not
+  function capBlock(squad,p){ var m=R("C"); if(m==="C1"&&R("B")!=="B1") return null; var c=counts(squad); if(m==="C1"&&c[p.tier]>=CAPS[p.tier].max) return "already has the most "+tierName(p.tier)+" players allowed ("+CAPS[p.tier].max+")"; if(m==="C2"&&p.role==="batter"&&!p.wk&&c.bat>=6) return "already has 6 pure batters"; return null; }
+  // is the team short in what p provides?
+  function shortFor(squad,p){ var m=R("C"); if(m==="C1"&&R("B")!=="B1") return false; var c=counts(squad); if(m==="C1") return c[p.tier]<CAPS[p.tier].min; if(m==="C2") return ((p.role==="bowler"||p.role==="all-rounder")&&c.bowl<4)||(p.wk&&c.wk<1); return false; }
+  function tierName(t){ return t==="M"&&R("B")==="B1"?"Star":fmt(base(t))+" band"; }
+  /** Which category the locked wallet would be spent on for this player (band under C1, role need under C2). */
+  function catKey(squad,p){ if(R("C")==="C1") return p.tier; if(R("C")==="C2"){ var c=counts(squad); if(p.wk&&c.wk<1) return "keeper"; if((p.role==="bowler"||p.role==="all-rounder")&&c.bowl<4) return "bowlers"; } return null; }
+  function catName(k){ return k==="keeper"?"a keeper":k==="bowlers"?"bowlers":k?tierName(k):""; }
+  /** Locked wallet: only when short, never for Star, and only on the one category it was first used on. */
+  function reserveOk(team,p){ if(!shortFor(team.squad,p)) return false; if(p.tier==="M") return false; var k=catKey(team.squad,p); if(!k) return false; if(team.resBand&&team.resBand!==k) return false; return true; }
+  /** Pool guard: a team may bid only if every other team can still reach the minimum squad from the players left. Returns a reason or null. */
+  function poolBlock(team,p,st,min,placing){ var left=st.lots.filter(function(l){ return l!==p&&(l.status==="queued"||(placing&&(l.status==="unsold"||l.status==="skipped"))); }).length; var need=0; st.teams.forEach(function(t){ if(t!==team) need+=Math.max(0,min-t.squad.length); }); return left>=need?null:"would leave another team unable to reach "+min; }
+  function maxBid(team,p,minSquad){ var guard=Math.max(0,minSquad-team.squad.length-1)*lowestBase(); var ok=reserveOk(team,p); var mx=Math.max(0,team.main-guard)+(ok?team.res:0); if(R("G")==="G2") mx=Math.min(mx,100); return {max:mx,short:ok,guard:guard,lockedTo:team.resBand||null}; }
+  function pay(team,amount,p){ var ok=reserveOk(team,p); var fromMain=Math.min(team.main,amount); var rest=amount-fromMain; if(rest>0&&ok){ team.res-=rest; team.resBand=catKey(team.squad,p); } else if(rest>0){ return false; } team.main-=fromMain; team.squad.push(p); return {main:fromMain,res:rest}; }
+
+  // ---------- Rule 1 demo ----------
+  var A_PL=[{n:"R. Verma",tier:"M",role:"batter",price:60},{n:"S. Khan",tier:"A",role:"bowler",price:32},{n:"D. Gill",tier:"B",role:"batter",price:14},{n:"M. Rao",tier:"B",role:"bowler",price:18},{n:"P. Nair",tier:"C",role:"batter",price:4},{n:"T. Bains",tier:"C",role:"bowler",price:6},{n:"A. Joshi",tier:"A",role:"batter",price:28}];
+  var aT;
+  function aReset(){ var w=wallet(); aT={main:Math.max(0,w.main-288),res:w.res,resBand:null,squad:[{tier:"own",role:"batter"},{tier:"M",role:"bowler"},{tier:"A",role:"batter"},{tier:"A",role:"all-rounder"},{tier:"A",role:"bowler"},{tier:"C",role:"batter",wk:true}]}; aT.bought=[]; aPaint(""); }
+  function aPaint(msg,cls){ document.getElementById('a-eyebrow').textContent="Try it: you are Kings, "+fmt(aT.main)+" left"+(bandsOff()?"":", still short in some bands"); document.getElementById('a-main').textContent=fmt(aT.main); document.getElementById('a-res').textContent=wallet().res?fmt(aT.res):"—"; document.getElementById('a-squad').textContent=aT.squad.length+" / 11";
+    var c=counts(aT.squad), need=[]; if(R("C")==="C1"&&R("B")==="B1"){ ["A","B","C"].forEach(function(t){ if(c[t]<CAPS[t].min) need.push((CAPS[t].min-c[t])+" more "+tierName(t)); }); } else if(R("C")==="C2"){ if(c.bowl<4) need.push((4-c.bowl)+" more who can bowl"); if(c.wk<1) need.push("a keeper"); }
+    document.getElementById('a-need').textContent = bandsOff() ? "No must-haves under Rule 3, so the locked wallet never opens." : (need.length? "Your team still needs: "+need.join(", ")+". The locked wallet opens for those"+(aT.resBand?", but it is now locked to "+catName(aT.resBand)+" only":"")+"." : "Your team has everything it must have. The locked wallet stays shut.");
+    var box=document.getElementById('a-chips'); box.innerHTML=""; A_PL.forEach(function(p,i){ if(aT.bought.indexOf(i)>=0) return; var b=document.createElement('button'); b.className="chip t"+p.tier; var mb=maxBid(aT,p,11); var blk=capBlock(aT.squad,p); var poor=p.price>mb.max; b.textContent=p.n+" · "+tierName(p.tier)+" "+p.role+" · "+fmt(p.price)+(blk?" · not allowed (limit)":poor?(p.tier==="M"?" · can't afford (locked wallet never for Star)":aT.resBand&&aT.resBand!==catKey(aT.squad,p)?" · can't afford (locked wallet is on "+catName(aT.resBand)+")":" · can't afford"):(mb.short&&wallet().res?" · locked wallet opens":"")); b.disabled=poor||!!blk; b.addEventListener('click',function(){ var r=pay(aT,p.price,p); aT.bought.push(i); aPaint(r.res>0? "Bought "+p.n+": "+fmt(r.main)+" from the wallet and "+fmt(r.res)+" from the locked wallet. From now on the locked wallet only works for "+catName(aT.resBand)+"." : "Bought "+p.n+" for "+fmt(r.main)+" from the wallet.","good"); }); box.appendChild(b); });
+    var m=document.getElementById('a-msg'); m.textContent=msg; m.className="msg "+(cls||""); }
+  document.getElementById('a-reset').addEventListener('click',aReset);
+
+  // ---------- Rule 2 demo ----------
+  function shouts(from,to){ var n=1,c=from; while(c<to&&n<500){ c+=step(c); n++; } return n; }
+  function bPaint(){ var rows=[{n:"The best player in the league",tier:"M",sell:90},{n:"A solid regular",tier:"B",sell:16},{n:"A newcomer",tier:"C",sell:3}]; document.getElementById('b-rows').innerHTML=rows.map(function(r){ var b=base(r.tier), s=Math.max(b,r.sell); return "<tr><td>"+r.n+"</td><td>"+tierName(r.tier)+"</td><td class='num money'>"+fmt(b)+"</td><td class='num money'>"+fmt(s)+"</td><td class='num'>"+shouts(b,s)+"</td></tr>"; }).join(""); }
+
+  // ---------- Rule 3 demo ----------
+  var C_PL=[{n:"Star bat",tier:"M",role:"batter"},{n:"Star bowler",tier:"M",role:"bowler"},{n:"Star AR",tier:"M",role:"all-rounder"},{n:"A bat",tier:"A",role:"batter"},{n:"A bat (keeps)",tier:"A",role:"batter",wk:true},{n:"A bowler",tier:"A",role:"bowler"},{n:"A AR",tier:"A",role:"all-rounder"},{n:"B bat",tier:"B",role:"batter"},{n:"B bat",tier:"B",role:"batter"},{n:"B bowler",tier:"B",role:"bowler"},{n:"B bowler",tier:"B",role:"bowler"},{n:"B AR",tier:"B",role:"all-rounder"},{n:"C bat",tier:"C",role:"batter"},{n:"C bat (keeps)",tier:"C",role:"batter",wk:true},{n:"C bowler",tier:"C",role:"bowler"},{n:"C bowler",tier:"C",role:"bowler"}];
+  var cS=[];
+  function cPaint(msg,cls){ var c=counts(cS); document.getElementById('c-count').textContent=cS.length+" / 13"; ["M","A","B","C"].forEach(function(t){ var el=document.getElementById('c-'+t); var lim=R("C")==="C1"&&R("B")==="B1"; el.textContent=c[t]+(lim?" / "+(CAPS[t].max>90?"∞":CAPS[t].max):""); var lb=document.getElementById('c-l'+t); lb.firstChild.textContent=tierName(t); }); document.getElementById('c-bowl').textContent=c.bowl+(R("C")==="C2"?" (min 4)":""); document.getElementById('c-wk').textContent=c.wk+(R("C")==="C2"?" (min 1)":"");
+    var box=document.getElementById('c-chips'); box.innerHTML=""; C_PL.forEach(function(p,i){ if(cS.indexOf(p)>=0) return; var b=document.createElement('button'); b.className="chip t"+p.tier; b.textContent=p.n; b.addEventListener('click',function(){ if(cS.length>=13){ cPaint("Squad is full at 13.","bad"); return; } var why=capBlock(cS,p); if(why){ cPaint("Not allowed: your team "+why+".","bad"); return; } cS.push(p); var need=[]; var cc=counts(cS); if(R("C")==="C1"&&R("B")==="B1"){["A","B","C"].forEach(function(t){ if(cc[t]<CAPS[t].min) need.push(tierName(t)); });} if(R("C")==="C2"){ if(cc.bowl<4) need.push("bowlers"); if(cc.wk<1) need.push("a keeper"); } cPaint("Added "+p.n+"."+(need.length?" Still must get: "+need.join(", ")+".":" All must-haves covered."),"good"); }); box.appendChild(b); });
+    var m=document.getElementById('c-msg'); m.textContent=msg; m.className="msg "+(cls||""); }
+  document.getElementById('c-reset').addEventListener('click',function(){ cS=[]; cPaint(""); });
+
+  // ---------- Rule 4 demo ----------
+  var wCur, wTeam, wHas, wLog, wDone;
+  function wReset(){ wCur=base("A"); wTeam=null; wHas=false; wDone=false; wLog=[]; wPaint(); }
+  function wPaint(){ document.getElementById('walk-name').textContent="R. Sharma · Bowler · "+tierName("A")+" · starts at "+fmt(base("A")); document.getElementById('walk-cur').textContent=fmt(wCur); document.getElementById('walk-team').textContent=wHas? wTeam+" holds · next shout takes it to "+fmt(wCur+step(wCur)) : "no bids yet · first shout takes it at the starting price"; document.getElementById('walk-log').innerHTML=wLog.slice().reverse().map(function(s){return "<div>"+s+"</div>";}).join(""); document.querySelectorAll('#walk .teams4 button').forEach(function(b){ b.disabled=wDone||(wHas&&b.dataset.team===wTeam); }); document.getElementById('walk-sold').disabled=wDone||!wHas; }
+  document.querySelectorAll('#walk .teams4 button').forEach(function(b){ b.addEventListener('click',function(){ if(!wHas){ wHas=true; wTeam=b.dataset.team; wLog.push(wTeam+" opens at "+fmt(wCur)); } else { wCur+=step(wCur); wTeam=b.dataset.team; wLog.push(wTeam+" "+fmt(wCur)); } wPaint(); }); });
+  document.getElementById('walk-sold').addEventListener('click',function(){ if(wHas&&!wDone){ wDone=true; wLog.push("SOLD to "+wTeam+" for "+fmt(wCur)+" after "+(wLog.length)+" shouts"); wPaint(); } });
+  document.getElementById('walk-reset').addEventListener('click',wReset);
+
+  // ---------- Rule 5 demo ----------
+  var E_PL=[["Aman","M","batter"],["Bikram","M","bowler"],["Chetan","M","all-rounder"],["Dev","M","all-rounder"],["Eshan","A","batter"],["Faiz","A","keeper"],["Gagan","A","bowler"],["Hitesh","A","bowler"],["Irfan","A","all-rounder"],["Jeet","B","batter"],["Kabir","B","keeper"],["Lalit","B","bowler"],["Mohit","B","bowler"],["Naveen","C","batter"],["Onkar","C","keeper"],["Pranav","C","bowler"]];
+  function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+  function ePaint(){ var m=R("E"), seq; if(m==="E2") seq=shuffle(E_PL); else if(m==="E3"){ var pool=E_PL.slice(), order=["M","A","B","C"]; seq=[]; var owners=["Strikers","Kings","Titans","Royals"], k=0; while(pool.length){ pool.sort(function(x,y){ return order.indexOf(x[1])-order.indexOf(y[1]); }); var pick=pool.shift(); pick=pick.concat([owners[k%4]+" picks"]); seq.push(pick); k++; } } else { var groups=[["M",null],["A","all-rounder"],["A","batter"],["A","keeper"],["A","bowler"],["B","all-rounder"],["B","batter"],["B","keeper"],["B","bowler"],["C","all-rounder"],["C","batter"],["C","keeper"],["C","bowler"]]; seq=[]; groups.forEach(function(g){ seq=seq.concat(shuffle(E_PL.filter(function(p){ return p[1]===g[0]&&(g[1]===null||p[2]===g[1]); }))); }); }
+    document.getElementById('e-seq').innerHTML=seq.map(function(p,i){ return "<span class='"+p[1]+"'>"+(i+1)+". "+p[0]+(p[3]?" ("+p[3]+")":"")+"</span>"; }).join(""); }
+  document.getElementById('e-shuffle').addEventListener('click',ePaint);
+
+  // ---------- Rule 6 demo ----------
+  var fState;
+  function fReset(){ fState={teams:[{n:"Strikers",left:41},{n:"Kings",left:12},{n:"Titans",left:66},{n:"Royals",left:9}],unsold:[{n:"V. Mehta",tier:"B"},{n:"K. Sandhu",tier:"C"},{n:"R. Iyer",tier:"C"},{n:"O. Dhillon",tier:"B"},{n:"J. Toor",tier:"C"}],log:[],phase:0}; fPaint(); document.getElementById('f-alloc').disabled=true; }
+  function fPaint(){ document.getElementById('f-log').innerHTML=fState.log.map(function(s){return "<div>"+s+"</div>";}).join("")||"<div>Unsold so far: "+fState.unsold.map(function(p){return p.n;}).join(", ")+"</div>"; }
+  document.getElementById('f-round').addEventListener('click',function(){ if(fState.phase!==0) return; fState.phase=1; var mult=R("F")==="F2"?0.5:1; fState.log.push("Second go, prices "+(mult===1?"same as before":"halved")+":"); var left=[]; fState.unsold.forEach(function(p){ var price=base(p.tier)*mult; var bidders=fState.teams.filter(function(t){ return t.left>=price&&Math.random()<0.5; }); if(bidders.length){ var t=bidders[Math.floor(Math.random()*bidders.length)]; t.left-=price; fState.log.push("· "+p.n+" sold to "+t.n+" for "+fmt(price)); } else { fState.log.push("· "+p.n+": still nobody"); left.push(p); } }); fState.unsold=left; if(left.length) document.getElementById('f-alloc').disabled=false; else fState.log.push("Everyone sold. Done."); fPaint(); });
+  document.getElementById('f-alloc').addEventListener('click',function(){ if(fState.phase!==1) return; fState.phase=2; var mult=R("F")==="F2"?0.5:1; fState.log.push("Organisers place the rest, most money left goes first:"); fState.unsold.forEach(function(p){ fState.teams.sort(function(a,b){ return b.left-a.left; }); var t=fState.teams[0]; var price=base(p.tier)*mult; t.left-=price; fState.log.push("· "+p.n+" → "+t.n+" at "+fmt(price)+" ("+t.n+" had the most left)"); }); fState.unsold=[]; fState.log.push("Everyone has a team."); document.getElementById('f-alloc').disabled=true; fPaint(); });
+  document.getElementById('f-reset').addEventListener('click',fReset);
+
+  // ---------- Rule 7 demo ----------
+  function gPaint(){ var mx=110; var why="Built-in brake: 110 cr."; if(R("G")==="G2"){ mx=Math.min(mx,100); why="Built-in brake says 110 cr, the ceiling says 100 cr. The lower one wins."; } document.getElementById('g-max').textContent=fmt(mx); document.getElementById('g-why').textContent=why; }
+
+  // ---------- Rule 8 demo ----------
+  var hT=null, hN=10, hHolder="Kings", hPrice=24;
+  function hReset(){ if(hT){ clearInterval(hT); hT=null; } hN=10; hHolder="Kings"; hPrice=24; hPaint(); document.getElementById('h-msg').textContent=""; var sb=document.querySelector('#H .sub'); if(sb) sb.textContent="Current: 24 cr · Kings hold"; }
+  function hPaint(){ var c=document.getElementById('h-clock'); c.textContent=hN; c.className="clock"+(hN<=3&&hT?" warn":""); }
+  function hStop(){ if(hT){ clearInterval(hT); hT=null; } }
+  function hMsg(s){ document.getElementById('h-msg').textContent=s; }
+  document.getElementById('h-go').addEventListener('click',function(){ hStop(); hN=10; hPaint(); hMsg("Going once… every phone shows this countdown."); hT=setInterval(function(){ hN--; hPaint(); if(hN<=0){ hStop(); if(R("H")==="H2"){ hMsg("Zero. SOLD automatically to "+hHolder+" for "+fmt(hPrice)+". No tap needed."); } else { hMsg("Zero. Nothing happens by itself. The operator still has to tap SOLD, so a late shout can still be taken."); } } },1000); });
+  document.getElementById('h-bid').addEventListener('click',function(){ if(!hT&&hN<=0&&R("H")==="H2"){ hMsg("Too late. It was sold automatically at zero."); return; } hStop(); hHolder="Titans"; hPrice=25; hN=10; hPaint(); hMsg("Titans shouted 25 cr. The countdown resets. Tap Going once to start it again."); document.querySelector('#H .sub').textContent="Current: 25 cr · Titans hold"; });
+  document.getElementById('h-sold').addEventListener('click',function(){ hStop(); hMsg("SOLD to "+hHolder+" for "+fmt(hPrice)+". (The console can undo this if it was a mistake.)"); });
+
+  // ---------- Three-phone simulation ----------
+  var G_NAMES=["Arjun","Bilal","Chirag","Deep","Ehsan","Farhan","Gurpreet","Harsh","Ishan","Jas","Karan","Lakshya","Manav","Nikhil","Om","Parth","Qasim","Rohan","Sahil","Tarun","Uday","Vansh","Yash","Zain","Aarav","Bhavin"];
+  var MIN=7, MAX=8, TEAMS=[["Strikers","STR","c1",1],["Kings","KNG","c2",1.25],["Titans","TTN","c3",1],["Royals","RYL","c4",0.8]];
+  var S=null, cdT=null, cdN=0;
+  function mkPlayers(){ var spec=[]; var i; for(i=0;i<4;i++) spec.push("M"); for(i=0;i<6;i++) spec.push("A"); for(i=0;i<8;i++) spec.push("B"); for(i=0;i<8;i++) spec.push("C"); var roles=["batter","bowler","all-rounder","batter","bowler"]; return spec.map(function(t,i){ var r=roles[i%roles.length]; var mult={M:4.5,A:3.2,B:2.6,C:1.8}[t]; return {id:i,n:G_NAMES[i],tier:t,role:r,wk:(i%6===0),base:base(t),value:+(base(t)*mult*(0.7+Math.random()*0.7)).toFixed(1)}; }); }
+  function orderPlayers(ps){ if(R("E")==="E2") return shuffle(ps); if(R("E")==="E3"){ var ord={M:0,A:1,B:2,C:3}; return ps.slice().sort(function(a,b){ return ord[a.tier]-ord[b.tier]; }); } var groups=[["M",null],["A","all-rounder"],["A","batter"],["A","bowler"],["B","all-rounder"],["B","batter"],["B","bowler"],["C","all-rounder"],["C","batter"],["C","bowler"]]; var out=[]; groups.forEach(function(gr){ out=out.concat(shuffle(ps.filter(function(p){ return p.tier===gr[0]&&(gr[1]===null||p.role===gr[1]); }))); }); return out; }
+  function fresh(){ var w=wallet(); return {teams:TEAMS.map(function(t){ return {n:t[0],s:t[1],cls:t[2],mood:t[3],main:w.main,res:w.res,squad:[],spent:0}; }), lots:S.lotsRef.map(function(p){ return Object.assign({},p,{status:"queued",soldTo:null,price:null}); }), i:-1, cur:0, holder:null, has:false, feed:[], secondGo:false, done:false}; }
+  function apply(st,e){ var lot=st.i>=0?st.lots[st.i]:null;
+    if(e.t==="PRESOLD"){ var tm=st.teams[e.team]; tm.squad.push({n:"Owner ("+tm.n+")",tier:"own",role:"batter",wk:false,price:e.amount}); tm.main-=e.amount; tm.spent+=e.amount; }
+    else if(e.t==="START"){ st.i=e.i; var l=st.lots[e.i]; l.status="on_block"; st.cur=l.base; st.has=false; st.holder=null; }
+    else if(e.t==="BID"){ st.cur=e.amount; st.holder=e.team; st.has=true; }
+    else if(e.t==="SOLD"){ if(lot&&st.has){ var tm2=st.teams[st.holder]; if(!pay(tm2,st.cur,lot)) return; tm2.spent+=st.cur; lot.status="sold"; lot.soldTo=st.holder; lot.price=st.cur; st.feed.unshift({n:lot.n,team:tm2,price:st.cur}); } }
+    else if(e.t==="UNSOLD"){ if(lot){ lot.status="unsold"; } }
+    else if(e.t==="SKIP"){ if(lot){ lot.status="skipped"; } }
+    else if(e.t==="REQUEUE"){ st.secondGo=true; st.i=-1; var mult=R("F")==="F2"?0.5:1; st.lots.forEach(function(l2){ if(l2.status==="unsold"||l2.status==="skipped"){ l2.status="queued"; l2.base=l2.base*mult; l2.again=true; } }); }
+    else if(e.t==="PLACE"){ st.lots.forEach(function(l3){ if(l3.status!=="queued"&&l3.status!=="unsold"&&l3.status!=="skipped") return; var cands=st.teams.filter(function(t){ return t.squad.length<MAX&&!capBlock(t.squad,l3)&&!poolBlock(t,l3,st,MIN,true)&&maxBid(t,l3,MIN).max>=l3.base; }); if(!cands.length) return; cands.sort(function(a,b){ return b.main-a.main; }); var t=cands[0]; if(!pay(t,l3.base,l3)) return; t.spent+=l3.base; l3.status="sold"; l3.soldTo=st.teams.indexOf(t); l3.price=l3.base; st.feed.unshift({n:l3.n,team:t,price:l3.base,placed:true}); }); st.done=true; }
+  }
+  function replay(){ var st=fresh(); S.events.forEach(function(e){ if(!e.undone) apply(st,e); }); S.st=st; }
+  function dispatch(e){ S.events.push(e); replay(); simPaint(); }
+  function onBlock(){ var st=S.st; return st.i>=0&&st.lots[st.i].status==="on_block"; }
+  function nextQueued(){ return S.st.lots.findIndex(function(l){ return l.status==="queued"; }); }
+  function simNew(){ S={lotsRef:orderPlayers(mkPlayers()),events:[],st:null}; replay(); TEAMS.forEach(function(t,i){ S.events.push({t:"PRESOLD",team:i,amount:25}); }); replay(); S.events.push({t:"START",i:0}); replay(); S.meIdx=13; stopCd(); document.getElementById('g-final').hidden=true; simPaint(); }
+  function botShout(){ if(!onBlock()) return; stopCd(); var st=S.st, p=st.lots[st.i], changed=true, rounds=0, any=false; while(changed&&rounds<30){ changed=false; rounds++; st.teams.forEach(function(t,ti){ if(ti===st.holder) return; if(t.squad.length>=MAX||capBlock(t.squad,p)||poolBlock(t,p,st,MIN)) return; var price=st.has?st.cur+step(st.cur):p.base; var mb=maxBid(t,p,MIN); if(price>mb.max) return; var want=p.value*t.mood; if(shortFor(t.squad,p)) want*=1.4; var remaining=st.lots.filter(function(l){return l.status==="queued";}).length; var need=Math.max(0,MIN-t.squad.length); if(need>0&&remaining<=need+1) want=Math.max(want,mb.max); if(price<=want&&Math.random()<0.85){ S.events.push({t:"BID",team:ti,amount:price}); replay(); st=S.st; changed=true; any=true; } }); } simPaint(); if(!any) setStatus("Nobody shouted. Wait for a shout, or tap Unsold."); else setStatus("The owners shouted. "+st.teams[st.holder].n+" hold at "+fmt(st.cur)+". Say going once, then SOLD."); }
+  function setStatus(t){ document.getElementById('s-status').textContent=t; }
+  function stopCd(){ cdWas=!!cdT; if(cdT){ clearInterval(cdT); cdT=null; } cdN=0; paintCd(); }
+  function paintCd(){ ['s-cd','c2-cd','p-cd'].forEach(function(id){ var el=document.getElementById(id); el.textContent=cdN>0?cdN:""; el.className="cd"+(cdN>0&&cdN<=3?" warn":""); }); }
+  function startCd(){ if(!onBlock()||!S.st.has) return; stopCd(); cdN=10; paintCd(); cdT=setInterval(function(){ cdN--; paintCd(); if(cdN<=0){ stopCd(); if(R("H")==="H2"){ dispatch({t:"SOLD"}); setStatus("Zero: sold automatically (Rule 8, auto). Tap Next lot."); } else setStatus("Zero. Under Rule 8 (manual) nothing happens until you tap SOLD."); } },1000); }
+  function bar(el,team){ el.style.background=team?("var(--t"+team.cls.slice(1)+")"):"var(--line)"; }
+  var cdWas=false;
+  function simPaint(){ if(!S) return; var st=S.st, lot=st.i>=0?st.lots[st.i]:null, live=onBlock(), holder=st.has?st.teams[st.holder]:null, you=st.teams[0];
+    // operator
+    document.getElementById('s-lotno').textContent=lot?("Lot "+(st.i+1)+" / "+st.lots.length+(lot.again?" · 2nd go":"")):"—";
+    document.getElementById('s-nm').textContent=lot?lot.n:"—";
+    document.getElementById('s-meta').textContent=lot?(tierName(lot.tier)+" · "+lot.role+(lot.wk?" · keeps":"")+" · starts "+fmt(lot.base)):"";
+    document.getElementById('s-price').textContent=lot?fmt(st.cur):"—";
+    bar(document.getElementById('s-holdbar'),holder); document.getElementById('s-holdtxt').textContent=live?(holder?holder.n+" hold · next shout "+fmt(st.cur+step(st.cur)):"No bids yet · first shout takes it at "+fmt(st.cur)):(lot?("Lot closed: "+lot.status.toUpperCase()+(lot.soldTo!==null?" to "+st.teams[lot.soldTo].n+" for "+fmt(lot.price):"")):"");
+    var tb=document.getElementById('s-teams'); tb.innerHTML=""; st.teams.forEach(function(t,ti){ var b=document.createElement('button'); b.className=t.cls; var price=st.has?st.cur+step(st.cur):(lot?lot.base:0); var mb=lot?maxBid(t,lot,MIN):{max:0}; var block=lot?capBlock(t.squad,lot):null; var pb=lot?poolBlock(t,lot,st,MIN):null; var off=!live||ti===st.holder||price>mb.max||!!block||!!pb||t.squad.length>=MAX; b.disabled=off; b.innerHTML=t.n+"<br>"+(live?(ti===st.holder?"holds":off?(block?"not allowed":t.squad.length>=MAX?"full":pb?"others short":"can't afford"):fmt(price)):"—"); b.title=block||(pb&&off?pb:""); b.addEventListener('click',function(){ stopCd(); dispatch({t:"BID",team:ti,amount:price}); setStatus(t.n+" shouted "+fmt(price)+(cdWas?". The countdown resets.":".")); }); tb.appendChild(b); });
+    document.getElementById('s-shout').disabled=!live; document.getElementById('s-sold').disabled=!live||!st.has; document.getElementById('s-unsold').disabled=!live||st.has; document.getElementById('s-skip').disabled=!live; document.getElementById('s-clock').disabled=!live||!st.has; document.getElementById('s-undo').disabled=S.events.filter(function(e){return !e.undone&&e.t!=="PRESOLD";}).length<=1;
+    var nq=nextQueued(), nextBtn=document.getElementById('s-next'); var hasUnsold=st.lots.some(function(l){return l.status==="unsold"||l.status==="skipped";});
+    nextBtn.disabled=live||st.done; nextBtn.textContent = nq>=0?"Next lot":(hasUnsold&&!st.secondGo?"Second go":(hasUnsold?"Place the rest":"Finish"));
+    document.getElementById('s-events').innerHTML=S.events.slice(-8).reverse().map(function(e){ var txt=e.t==="BID"?st.teams[e.team].s+" "+fmt(e.amount):e.t==="START"?"Lot "+(e.i+1)+" up":e.t==="PRESOLD"?st.teams[e.team].s+" owner pre-placed 25 cr":e.t; return "<div class='"+(e.undone?"undone":"")+"'><span>"+txt+"</span><span>"+(e.undone?"undone":"")+"</span></div>"; }).join("");
+    // captain
+    document.getElementById('c2-main').textContent=fmt(you.main); document.getElementById('c2-res').textContent=wallet().res?fmt(you.res):"—"; document.getElementById('c2-squad').textContent=you.squad.length+" / "+MAX; var slotsLeft=Math.max(1,MIN-you.squad.length); document.getElementById('c2-avg').textContent=you.squad.length>=MIN?"minimum met":fmt(Math.floor(you.main/slotsLeft*10)/10);
+    var mbx=document.getElementById('c2-maxbox'); if(lot&&live){ var mb2=maxBid(you,lot,MIN), blk=capBlock(you.squad,lot), pb2=poolBlock(you,lot,st,MIN); document.getElementById('c2-max').textContent=blk||pb2||you.squad.length>=MAX?"0 cr":fmt(mb2.max); document.getElementById('c2-why').textContent=blk?"Not allowed: your team "+blk:(you.squad.length>=MAX?"Squad full":pb2?"Not allowed: this buy "+pb2:((mb2.short&&wallet().res?"Locked wallet open: you're short here"+(you.resBand?" (locked to "+catName(you.resBand)+")":""):(mb2.guard?"Keeping "+fmt(mb2.guard)+" back to fill the squad":"")))); mbx.className="max"+(mb2.short&&wallet().res?"":" "+(blk?"lock":"")); } else { document.getElementById('c2-max').textContent="—"; document.getElementById('c2-why').textContent="No lot on the block"; }
+    document.getElementById('c2-nm').textContent=lot?lot.n:"—"; document.getElementById('c2-meta').textContent=lot?(tierName(lot.tier)+" · "+lot.role+(lot.wk?" · keeps":"")):""; document.getElementById('c2-price').textContent=lot?fmt(st.cur):"—"; document.getElementById('c2-hold').textContent=live?(holder?(st.holder===0?"YOU hold":holder.n+" hold"):"No bids yet"):(lot?"Closed":"");
+    var cc=counts(you.squad); document.getElementById('c2-counts').innerHTML="<div><span>Star / 10 cr / 5 cr / 2 cr</span><span>"+cc.M+" / "+cc.A+" / "+cc.B+" / "+cc.C+"</span></div><div><span>Can bowl / keep</span><span>"+cc.bowl+" / "+cc.wk+"</span></div>"+you.squad.map(function(p){ return "<div><span>"+p.n+"</span><span>"+(p.price?fmt(p.price):"")+"</span></div>"; }).join("");
+    document.getElementById('c2-next').innerHTML=st.lots.filter(function(l){return l.status==="queued";}).slice(0,5).map(function(l){ return "<div><span>"+l.n+" · "+tierName(l.tier)+" "+l.role+"</span><span>"+fmt(l.base)+"</span></div>"; }).join("")||"<div><span>Nothing left in the pool</span></div>";
+    // player
+    var me=st.lots[S.meIdx]; var pos=st.lots.filter(function(l){return l.status==="queued";}).indexOf(me); document.getElementById('p-me').textContent= me.status==="sold"?"Hi "+me.n+". You're a "+st.teams[me.soldTo].n.replace(/s$/,"")+"! Sold for "+fmt(me.price)+"." : me.status==="on_block"?"Hi "+me.n+". You're up right now!" : me.status==="queued"?"Hi "+me.n+". You're lot "+(st.lots.indexOf(me)+1)+", about "+(pos+1)+" lots away (~"+((pos+1)*2)+" min)." : (st.secondGo?"Hi "+me.n+". Unsold twice. The organisers will place you on a team.":"Hi "+me.n+". You went unsold; you'll come back in the second go.");
+    document.getElementById('p-nm').textContent=lot?lot.n:"—"; document.getElementById('p-meta').textContent=lot?(tierName(lot.tier)+" · "+lot.role+(lot.wk?" · keeps":"")+" · started "+fmt(lot.base)):""; document.getElementById('p-price').textContent=lot?fmt(st.cur):"—"; bar(document.getElementById('p-holdbar'),holder); document.getElementById('p-hold').textContent=live?(holder?holder.n+" hold":"Waiting for the first shout"):(lot&&lot.status==="sold"?"SOLD · "+st.teams[lot.soldTo].n:(lot?lot.status.toUpperCase():""));
+    var sorted=st.teams.slice().sort(function(a,b){return b.main-a.main;}); var mx=Math.max.apply(null,st.teams.map(function(t){return t.main;}))||1; document.getElementById('p-purses').innerHTML=sorted.map(function(t){ return "<div><span>"+t.n+"</span><i style='width:"+Math.max(4,Math.round(t.main/mx*100))+"%;background:var(--t"+t.cls.slice(1)+")'></i><span>"+fmt(t.main)+" · "+t.squad.length+"</span></div>"; }).join("");
+    document.getElementById('p-feed').innerHTML=st.feed.slice(0,6).map(function(f){ return "<div><span>"+f.n+(f.placed?" (placed)":"")+"</span><span>"+fmt(f.price)+" · "+f.team.s+"</span></div>"; }).join("")||"<div><span>Nothing sold yet</span></div>";
+    document.getElementById('g-final').hidden=!st.done;
+    if(st.done){ document.getElementById('g-final').hidden=false; document.getElementById('g-final-rows').innerHTML=st.teams.map(function(t){ return "<tr><td>"+t.n+(t.s==="STR"?" (captain view)":"")+"</td><td class='num'>"+t.squad.length+"</td><td class='num money'>"+fmt(t.spent)+"</td><td class='num money'>"+fmt(t.main)+(wallet().res?" (+"+fmt(t.res)+" locked, lost)":"")+"</td><td>"+t.squad.map(function(p){return p.n;}).join(", ")+"</td></tr>"; }).join(""); setStatus("Auction over. The table below is what the app publishes to the site."); }
+  }
+  document.getElementById('s-new').addEventListener('click',function(){ simNew(); setStatus("Lot 1 is on the block. Tap a team to record a shout, or Owners shout to let them bid."); });
+  document.getElementById('s-shout').addEventListener('click',botShout);
+  document.getElementById('s-sold').addEventListener('click',function(){ stopCd(); dispatch({t:"SOLD"}); setStatus("Sold. Tap Next lot."); });
+  document.getElementById('s-unsold').addEventListener('click',function(){ stopCd(); dispatch({t:"UNSOLD"}); setStatus("Unsold. They come back in the second go."); });
+  document.getElementById('s-skip').addEventListener('click',function(){ stopCd(); dispatch({t:"SKIP"}); setStatus("Skipped (owner not ready, dispute, etc). Comes back later."); });
+  document.getElementById('s-clock').addEventListener('click',function(){ startCd(); setStatus("Going once… the countdown shows on every phone."); });
+  document.getElementById('s-undo').addEventListener('click',function(){ stopCd(); for(var i=S.events.length-1;i>=0;i--){ if(!S.events[i].undone&&S.events[i].t!=="PRESOLD"){ S.events[i].undone=true; break; } } replay(); simPaint(); setStatus("Undone. The board on every phone went back too."); });
+  document.getElementById('s-next').addEventListener('click',function(){ stopCd(); var nq=nextQueued(); if(nq>=0){ dispatch({t:"START",i:nq}); setStatus("Lot "+(nq+1)+" is up."); return; } var hasUnsold=S.st.lots.some(function(l){return l.status==="unsold"||l.status==="skipped";}); if(hasUnsold&&!S.st.secondGo){ dispatch({t:"REQUEUE"}); setStatus("Second go: unsold players are back in the queue"+(R("F")==="F2"?" at half price":"")+". Tap Next lot."); return; } dispatch({t:"PLACE"}); });
+  function simRefresh(){ if(S) { simNew(); setStatus("Rules changed, so the auction restarted. Lot 1 is on the block."); } }
+
+  // ---------- picks summary ----------
+  var ICON={
+    call:'<svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><circle cx="17" cy="11" r="5"/><path d="M7 30c1-6 5-9 10-9s9 3 10 9"/><path d="M26 6l3 3M29 12l4-1" stroke-linecap="round"/></svg>',
+    shout:'<svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 14v6h5l9 6V8l-9 6H6z"/><path d="M24 12c2 2 2 8 0 10M27 9c4 4 4 12 0 16" stroke-linecap="round"/></svg>',
+    clock:'<svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><circle cx="17" cy="18" r="11"/><path d="M17 11v7l4 3M13 4h8" stroke-linecap="round"/></svg>',
+    sold:'<svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="9" width="24" height="16" rx="3"/><path d="M11 17l4 4 8-8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    phones:'<svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="8" height="18" rx="2"/><rect x="13" y="5" width="8" height="24" rx="2"/><rect x="23" y="8" width="8" height="18" rx="2"/></svg>'
+  };
+  function overview(){ var w=wallet(), A=R("A"), C=R("C"), c1=C==="C1"&&R("B")==="B1", c2=C==="C2", hasRes=!(A==="A1"||bandsOff());
+    // tiles
+    var tiles=[["4","teams"],["11 – 13","players per team"],[fmt(w.main),"wallet per team"]];
+    if(hasRes) tiles.push([fmt(w.res),"locked wallet (one band, not Star)",1]);
+    tiles.push(["25 cr","each owner, pre-placed on their own team"]);
+    document.getElementById('ov-tiles').innerHTML=tiles.map(function(t){ return "<div class='tile"+(t[2]?" gold":"")+"'><b>"+t[0]+"</b><span>"+t[1]+"</span></div>"; }).join("");
+    // bands
+    var bandList = R("B")==="B3" ? [["5 cr","M"]] : R("B")==="B2" ? [["10 cr","M"],["3 cr","B"]] : [["Star","M"],["10 cr","A"],["5 cr","B"],["2 cr","C"]];
+    var maxP=Math.max.apply(null,bandList.map(function(b){return base(b[1]);}));
+    document.getElementById('ov-bands').setAttribute('data-n',bandList.length);
+    document.getElementById('ov-bands').innerHTML=bandList.map(function(b){ var pr=base(b[1]); var h=Math.max(16,Math.round(pr/maxP*100)); var caps=c1?("<div class='caps'><span>max "+(CAPS[b[1]].max>90?"any":CAPS[b[1]].max)+" per team</span>"+(CAPS[b[1]].min?"<span class='min'>need "+CAPS[b[1]].min+"</span>":"")+"</div>"):""; return "<div class='band"+(b[1]==="M"&&R("B")==="B1"?" star":"")+"'><div class='bw'><span class='pv'>"+fmt(pr)+"</span><i style='height:"+h+"%'></i></div><b>"+b[0]+(b[1]==="M"&&R("B")==="B1"?" players":" band")+"</b><div class='sub2'>bidding starts here</div>"+caps+"</div>"; }).join("");
+    document.getElementById('ov-bandnote').textContent = R("B")==="B3" ? "Everyone starts at the same price, so there is really one band." : (c1 ? "The organisers sort players on Saturday. \"Max\" stops one team buying all the Stars. \"Need\" is the minimum a team must end with, and what the locked wallet keys off." : c2 ? "The organisers sort players on Saturday. Limits are by role instead: at least 4 who bowl, 1 keeper, at most 6 pure batters." : "The organisers sort players on Saturday. No limits on who a team can buy.");
+    // flow
+    var stepTxt = R("D")==="D2" ? "+1 cr every time" : "50 L to 5 cr, growing with the price";
+    var clockTxt = R("H")==="H2" ? "sold by itself at zero" : "operator taps SOLD";
+    var flow=[["call","Called",R("E")==="E2"?"lucky-dip order":R("E")==="E3"?"owners pick who's next":"Stars first, then by role"],["shout","Shout to bid","each shout adds a step",stepTxt],["clock","Going once","10 s on every phone"],["sold","SOLD",clockTxt],["phones","Everyone sees it","board, captains, players"]];
+    document.getElementById('ov-flow').innerHTML=flow.map(function(f,i){ return "<div class='step'>"+ICON[f[0]]+"<b>"+(i+1)+". "+f[1]+"</b>"+f[2]+(f[3]?"<em>"+f[3]+"</em>":"")+"</div>"; }).join("");
+    // cards
+    var cant="<div class='mini'><h3>A team can't bid when…</h3><ul><li>the price would leave it unable to fill its squad at "+fmt(lowestBase())+" each</li>"+(c1?"<li>it already has the most allowed from that band</li>":c2?"<li>it already has 6 pure batters</li>":"")+"<li>another team could no longer reach 11 from the players left</li><li>its squad is full (13)</li>"+(R("G")==="G2"?"<li>the price would pass 100 cr</li>":"")+"</ul></div>";
+    var res= hasRes ? "<div class='mini gold'><h3>Locked wallet opens when…</h3><ul><li>the player would help fill "+(c1?"a band the team is below the minimum in":"a bowler or keeper gap")+"</li><li>never for a Star player</li><li>only for one "+(c1?"band":"need")+": the first use decides which, for the rest of the auction</li><li>anything left at the end is lost</li></ul></div>" : "<div class='mini'><h3>Nobody bid?</h3><ul><li>they come back at the end"+(R("F")==="F2"?" at half price":"")+"</li><li>still unsold: organisers place them on the team with the most money</li></ul></div>";
+    var unsold= hasRes ? "<div class='mini'><h3>Nobody bid?</h3><ul><li>they come back at the end"+(R("F")==="F2"?" at half price":"")+"</li><li>still unsold: organisers place them on the team with the most money</li></ul></div>" : "";
+    var fair="<div class='mini'><h3>Kept fair</h3><ul><li>every tap is recorded and can be undone</li><li>the auction admin's ruling on a dispute is final</li><li>the full list is shared with everyone after</li></ul></div>";
+    document.getElementById('ov-cards').innerHTML=cant+res+unsold+fair; }
+  function render(){ overview(); var lines=["BPL auction picks"]; var who=document.getElementById('voter').value.trim(); if(who) lines[0]+=" — "+who; var changed=0; Object.keys(LABELS).forEach(function(k){ var v=R(k); if(v!==REC[k]) changed++; lines.push((Object.keys(LABELS).indexOf(k)+1)+". "+TITLES[k]+": "+LABELS[k][v]); }); if(bandsOff()&&R("A")!=="A1") lines.push(R("C")==="C3"?"Note: with no limits, the locked wallet has nothing to unlock for, so it's off.":"Note: band limits need the four bands from Rule 2, so they and the locked wallet are off."); document.getElementById('ballot').value=lines.join("\n"); document.getElementById('prog').textContent=changed?"8 rules · "+changed+" changed from recommendation":"8 rules · all on recommendation"; }
+  function repaintAll(){ aReset(); bPaint(); cS=[]; cPaint(""); wReset(); ePaint(); fReset(); gPaint(); hReset(); simRefresh(); render(); }
+  document.querySelectorAll('.opts input').forEach(function(i){ i.addEventListener('change',repaintAll); });
+  document.getElementById('voter').addEventListener('input',render);
+  document.getElementById('reset-all').addEventListener('click',function(){ Object.keys(REC).forEach(function(k){ var el=document.querySelector('input[name="'+k+'"][value="'+REC[k]+'"]'); if(el) el.checked=true; }); repaintAll(); });
+  document.getElementById('to-summary').addEventListener('click',function(){ render(); document.getElementById('summary').scrollIntoView(); });
+  repaintAll(); hPaint(); simNew(); setStatus("Lot 1 is on the block. Tap a team to record a shout, or Owners shout to let them bid.");
+})();
+</script>

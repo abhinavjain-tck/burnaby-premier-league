@@ -131,7 +131,7 @@ details .body{padding:0 14px 14px;font-size:15px}
 
 <div class="wrap">
 <header class="hero">
-  <div class="eyebrow">Design doc · Season 4 · draft 2 (auction Sunday)</div>
+  <div class="eyebrow">Design doc · Season 4 · draft 3 (bands named by price)</div>
   <h1>Burnaby Premier League Platform</h1>
   <p class="lede">A phone-only site for about 50 players, 4 owners, a couple of admins and one auctioneer standing on a cricket ground. Registration this week, an IPL-style auction in crores on Sunday, a full undo log, and nothing that does not need to exist by then. Free to run.</p>
   <div class="meta">
@@ -205,7 +205,7 @@ details .body{padding:0 14px 14px;font-size:15px}
 
 <h3>Auction</h3>
 <div class="q"><div class="n">Q9</div><div><div class="ask">Is the auction in a physical room with a projector, fully online, or a mix?</div><div class="assume"><b>Answered:</b> <b>on a cricket ground, everyone on phones, no projector</b>. Owners bid by voice, the auctioneer or an operator records on a phone, every other phone is the board. Format 1 below, tuned for sunlight and cellular.</div></div></div>
-<div class="q"><div class="n">Q10</div><div><div class="ask">What is the purse and are base prices tiered?</div><div class="assume"><b>Answered in part:</b> purse is in crores, around <b>300 cr per team</b>. Proposed tiers below: Marquee 20 cr, A 10 cr, B 5 cr, C 2 cr. Stored as lakhs internally.</div></div></div>
+<div class="q"><div class="n">Q10</div><div><div class="ask">What is the purse and are base prices tiered?</div><div class="assume"><b>Answered in part:</b> purse is in crores, around <b>300 cr per team</b>. Proposed bands below: Star 20 cr, then 10 / 5 / 2 cr bands, named by starting price so nobody is a "C". Stored as lakhs internally.</div></div></div>
 <div class="q"><div class="n">Q11</div><div><div class="ask">Are owners also players? Do they get auto-placed in their team? Is there an icon or retained player per team?</div><div class="assume">Assumed: <b>owner is a player, pre-sold to their own team at a fixed price</b> (say 25 cr) before lot 1. No retentions or Right-to-Match in Season 4.</div></div></div>
 <div class="q"><div class="n">Q12</div><div><div class="ask">Are there squad composition rules (minimum bowlers, one wicketkeeper, women's or junior slots)?</div><div class="assume">Assumed: <b>no hard quotas</b>, but the console shows role counts per team so the room can see imbalance.</div></div></div>
 <div class="q"><div class="n">Q13</div><div><div class="ask">What happens to unsold players? Second round, then random allocation?</div><div class="assume">Assumed: <b>unsold go back to the pool; an accelerated round at the end at base price; anyone still unsold is distributed by admin</b>.</div></div></div>
@@ -507,13 +507,15 @@ create table auction_events (
 <thead><tr><th>Rule</th><th>Proposed</th><th>Why</th></tr></thead>
 <tbody>
 <tr><td>Purse</td><td class="num">300 cr per team</td><td>Your number. 4 teams × 300 cr = 1,200 cr chasing ~48 players, so the average player goes for about 25 cr.</td></tr>
+<tr><td>Locked reserve</td><td class="num">50 cr per team</td><td>Proposed by the league. Spendable only when the team is below the minimum in a band, never on a Star player, and only on one band: the first use decides which band for the rest of the auction. Unused reserve is lost. The console shows a different colour when a bid draws on it.</td></tr>
 <tr><td>Squad size</td><td>min 11 · max 13</td><td>Your number. With ~48 in the pool and 4 teams, expect 12 each; the max stops one owner hoarding.</td></tr>
 <tr><td>Owner pre-sold</td><td class="num">25 cr</td><td>Owner is in their own team at a fixed cost so purses start equal. Set to 0 if owners are not playing.</td></tr>
-<tr><td>Base prices</td><td>Marquee 20 cr · A 10 cr · B 5 cr · C 2 cr</td><td>Tier set by admin on Saturday from known form, not self-selected, to avoid sandbagging. Roughly 6 / 12 / 18 / 12 players per tier.</td></tr>
-<tr><td>Marquee set</td><td>4 to 6 players</td><td>Goes first. Sets the market and gets the ground loud early.</td></tr>
-<tr><td>Set order</td><td>Marquee → All-rounders → Batters → Keepers → Pace → Spin, then tier C in the same role order</td><td>Alternating roles keeps every owner engaged the whole time.</td></tr>
+<tr><td>Base prices</td><td>Star 20 cr · then 10 cr, 5 cr and 2 cr bands (internal codes M/A/B/C)</td><td>Tier set by admin on Saturday from known form, not self-selected, to avoid sandbagging. Roughly 6 / 12 / 18 / 12 players per tier.</td></tr>
+<tr><td>Star set</td><td>4 to 6 players</td><td>Goes first. Sets the market and gets the ground loud early.</td></tr>
+<tr><td>Set order</td><td>Star → All-rounders → Batters → Keepers → Pace → Spin, then the 2 cr band in the same role order</td><td>Alternating roles keeps every owner engaged the whole time.</td></tr>
 <tr><td>Order in set</td><td>Random, shuffled in the console at set start, visible on every phone</td><td>Visible shuffle = trust.</td></tr>
 <tr><td>Squad guard</td><td>max bid = purse_left − (11 − squad_size − 1) × 2 cr</td><td>Console greys out a team that cannot afford the current bid. Example: 100 cr left with 6 players means max bid 92 cr.</td></tr>
+<tr><td>Pool guard</td><td>A bid is allowed only if every other team can still reach 11 from the remaining pool</td><td>Stops a team buying a 12th or 13th player while someone else cannot fill 11. With exactly 44 players nobody passes 11.</td></tr>
 <tr><td>Unsold</td><td>Back to pool; accelerated round at base (config: 100% or 50% of base); leftovers allocated by admin round-robin, largest purse first</td><td>Nobody goes home without a team.</td></tr>
 <tr><td>Right to Match</td><td>Off</td><td>Needs last-season rosters in the DB. Revisit for S5.</td></tr>
 <tr><td>Clock</td><td>Auctioneer's voice ("going once, twice"). The console has a 10-second visual countdown the operator starts on "going once"; every phone shows it.</td><td>Gives the ground a shared sense of when a lot closes without automating the sale.</td></tr>

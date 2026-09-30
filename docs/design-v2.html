@@ -1,0 +1,1514 @@
+<title>BPL Platform Design v2</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (~68ch) with a sticky chip nav; wide tables/diagrams scroll in their own box. Same tokens as v1. */
+:root{
+  --bg:#f5f6f2; --surface:#ffffff; --surface-2:#eceee7; --line:#d3d7cc;
+  --ink:#171f1b; --ink-2:#4a554f; --ink-3:#7a857f;
+  --accent:#0e6b4a; --accent-ink:#ffffff; --accent-soft:#dcefe5;
+  --sold:#a3212f; --sold-soft:#f6dfe1; --gold:#a9781a; --gold-soft:#f5ead0;
+  --warn:#8a5a00; --warn-soft:#fbeccc;
+  --code-bg:#1d2622; --code-ink:#e6ebe7;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#111614; --surface:#181f1c; --surface-2:#1f2824; --line:#2d3833;
+    --ink:#e8ece9; --ink-2:#b4bdb7; --ink-3:#7f8a84;
+    --accent:#4fbf93; --accent-ink:#0b1a13; --accent-soft:#173327;
+    --sold:#ef7a86; --sold-soft:#3a1a1f; --gold:#e0b45a; --gold-soft:#332a14;
+    --warn:#e8b34a; --warn-soft:#332a14;
+    --code-bg:#0c110f; --code-ink:#dfe6e1;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#111614; --surface:#181f1c; --surface-2:#1f2824; --line:#2d3833;
+  --ink:#e8ece9; --ink-2:#b4bdb7; --ink-3:#7f8a84;
+  --accent:#4fbf93; --accent-ink:#0b1a13; --accent-soft:#173327;
+  --sold:#ef7a86; --sold-soft:#3a1a1f; --gold:#e0b45a; --gold-soft:#332a14;
+  --warn:#e8b34a; --warn-soft:#332a14;
+  --code-bg:#0c110f; --code-ink:#dfe6e1;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6}
+.wrap{max-width:820px;margin:0 auto;padding-block:0 96px;padding-inline:16px}
+h1,h2,h3,h4{font-family:var(--display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(34px,7vw,56px);font-weight:900;letter-spacing:-.02em}
+h2{font-size:clamp(24px,4.5vw,32px);font-weight:700;margin-top:64px;padding-top:24px;border-top:2px solid var(--ink);scroll-margin-top:56px}
+h3{font-size:20px;font-weight:700;margin-top:36px;scroll-margin-top:56px}
+h4{font-size:16px;font-weight:700;margin-top:24px;color:var(--ink-2)}
+p{margin:12px 0;max-width:68ch}
+ul,ol{padding-left:22px;max-width:70ch}
+li{margin:6px 0}
+li>ul{margin-top:4px}
+a{color:var(--accent)}
+strong{font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:1px 5px;border-radius:3px;overflow-wrap:anywhere}
+pre{background:var(--code-bg);color:var(--code-ink);padding:16px;border-radius:6px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.5}
+pre code{background:none;padding:0;color:inherit;font-size:inherit;overflow-wrap:normal}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+header.hero{padding-block:48px 24px;border-bottom:1px solid var(--line)}
+header.hero p.lede{font-size:18px;color:var(--ink-2);max-width:60ch}
+.meta{display:flex;flex-wrap:wrap;gap:10px 24px;font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-top:16px}
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding:10px 16px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+nav.toc::-webkit-scrollbar{display:none}
+nav.toc a{display:inline-block;font-family:var(--mono);font-size:12px;text-decoration:none;color:var(--ink-2);padding:6px 10px;border:1px solid var(--line);border-radius:999px;margin-right:6px;background:var(--surface)}
+nav.toc a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);padding:14px 16px;border-radius:0 6px 6px 0;margin:20px 0}
+.callout.warn{border-color:var(--warn);background:var(--warn-soft)}
+.callout.sold{border-color:var(--sold);background:var(--sold-soft)}
+.callout p{margin:6px 0}
+.callout ul,.callout ol{margin:6px 0}
+.callout .eyebrow{color:inherit;opacity:.75}
+.tablewrap{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px;background:var(--surface)}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);background:var(--surface-2)}
+tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tr.group td{background:var(--surface-2);font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);padding:6px 12px}
+table.cols td:first-child{font-family:var(--mono);font-size:13px;white-space:nowrap}
+table.cols td:nth-child(2){font-family:var(--mono);font-size:12.5px;color:var(--ink-2);white-space:nowrap}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.pill.rec{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.pill.risk{background:var(--sold-soft);color:var(--sold);border-color:transparent}
+.pill.gold{background:var(--gold-soft);color:var(--gold);border-color:transparent}
+.pill.new{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.pill.chg{background:var(--gold-soft);color:var(--gold);border-color:transparent}
+.pill.later{background:var(--surface-2);color:var(--ink-3);border-color:transparent}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin:18px 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
+.card h4{margin-top:0;color:var(--ink)}
+.card p{font-size:14px;color:var(--ink-2);margin:8px 0 0}
+.card.rec{border-color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
+.stack{display:grid;gap:10px;margin:16px 0}
+.stack .row{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:6px;font-size:14px}
+.stack .row b{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--ink-2);text-transform:uppercase;padding-top:2px}
+@media (max-width:480px){.stack .row{grid-template-columns:1fr}}
+details{border:1px solid var(--line);border-radius:6px;background:var(--surface);margin:10px 0}
+summary{cursor:pointer;padding:12px 14px;font-weight:600;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);display:inline-block;width:18px;color:var(--accent)}
+details[open] summary::before{content:"-"}
+details .body{padding:0 14px 14px;font-size:15px}
+.q{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line)}
+.q:last-child{border-bottom:none}
+.q .n{font-family:var(--mono);font-size:12px;color:var(--ink-3);padding-top:4px}
+.q .ask{font-weight:600}
+.q .assume{font-size:14px;color:var(--ink-2);margin-top:4px}
+.q .assume b{color:var(--accent);font-weight:600}
+.diagram{overflow-x:auto;margin:20px 0;padding:8px 0}
+.diagram svg{display:block;min-width:600px;width:100%;height:auto;font-family:var(--mono);font-size:12px}
+.diagram.wide svg{min-width:900px}
+.diagram .box{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.2}
+.diagram .box.acc{fill:var(--accent-soft);stroke:var(--accent)}
+.diagram .box.sold{fill:var(--sold-soft);stroke:var(--sold)}
+.diagram .box.gold{fill:var(--gold-soft);stroke:var(--gold)}
+.diagram .box.dim{fill:var(--surface-2);stroke:var(--line)}
+.diagram .frame{fill:none;stroke:var(--line);stroke-width:1.2}
+.diagram .frame.sold{fill:var(--sold-soft);stroke:var(--sold);fill-opacity:.35}
+.diagram .frame.dash{stroke-dasharray:5 4}
+.diagram text{fill:var(--ink)}
+.diagram text.sub{fill:var(--ink-3);font-size:10.5px}
+.diagram text.col{fill:var(--ink-2);font-size:10.5px}
+.diagram text.hd{font-weight:700;font-size:12px}
+.diagram text.sec{fill:var(--ink-3);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.diagram line,.diagram path{stroke:var(--ink-2);stroke-width:1.2;fill:none}
+.diagram .rule{stroke:var(--line);stroke-width:1}
+.diagram .fk{stroke:var(--ink-2)}
+.diagram .fk.opt{stroke-dasharray:4 3}
+.diagram circle.dot{fill:var(--ink-2);stroke:none}
+.diagram .arrowhead{fill:var(--ink-2);stroke:none}
+.diagram .lbl{fill:var(--ink-2);font-size:10.5px}
+.cap{font-size:13px;color:var(--ink-3);margin-top:-6px}
+.timeline{display:grid;gap:0;margin:18px 0}
+.day{display:grid;grid-template-columns:110px 1fr;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+.day:last-child{border-bottom:none}
+.day .d{font-family:var(--display);font-weight:700}
+.day .d small{display:block;font-family:var(--mono);font-weight:400;font-size:11px;color:var(--ink-3)}
+.day ul{margin:0;font-size:14px}
+@media (max-width:480px){.day{grid-template-columns:1fr}}
+.ladder{font-family:var(--mono);font-size:13px;display:grid;grid-template-columns:auto auto;gap:4px 18px;width:max-content;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.small{font-size:14px;color:var(--ink-2)}
+ol.checks{list-style:none;padding-left:0}
+ol.checks li{padding-left:26px;position:relative}
+ol.checks li::before{content:"";position:absolute;left:2px;top:6px;width:12px;height:12px;border:1.5px solid var(--ink-2);border-radius:3px}
+@media (prefers-reduced-motion: no-preference){ html{scroll-behavior:smooth} }
+</style>
+
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow">Design doc v2 · Season 4 · written Tue 29 Sep 2026</div>
+  <h1>BPL Platform Design v2</h1>
+  <p class="lede">The rules for Sunday are now fixed: bands as data, a locked 50 cr reserve, pool and squad guards, a fixed bid ladder, a second go and organiser placement. This version says exactly which tables, events, checks and screens carry those rules, what changes in the code we already have, and in what order to ship it before Sunday 4 Oct.</p>
+  <div class="meta">
+    <span>Audience: organiser + 1 or 2 collaborators</span>
+    <span>Auction Sun 4 Oct 2026, on the ground</span>
+    <span>Replaces v1 "draft 3"</span>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <a href="#purpose">1 Purpose</a>
+  <a href="#usecases">2 Use cases</a>
+  <a href="#model">3 Data model</a>
+  <a href="#extend">4 Extensibility</a>
+  <a href="#rules">5 Rules engine</a>
+  <a href="#screens">6 Screens</a>
+  <a href="#api">7 API</a>
+  <a href="#security">8 Security</a>
+  <a href="#migrations">9 Migrations</a>
+  <a href="#testing">10 Testing</a>
+  <a href="#delivery">11 Delivery</a>
+  <a href="#open">12 Open questions</a>
+</nav>
+
+<!-- ============================================================ -->
+<h2 id="purpose">1. Purpose and what changed since v1</h2>
+<p>v1 picked the stack and sketched the auction. Since then the league agreed the auction rules (ballot in <code>bpl-auction-options.html</code>) and most of the code got written. v2 is the build spec for the last five days: it fixes the data model, the rules engine and the migration path, and nothing else.</p>
+
+<h3>What exists today</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Where</th><th>What is there</th></tr></thead>
+<tbody>
+<tr><td><code>main</code></td><td>Registration form with photo and payment-proof upload, private edit link <code>/r/[token]</code>, admin registrations table (mark paid, set tier, withdraw), admin settings (fee line, e-Transfer email, registration open, teams). Schema, RLS policies, Season 4 seed, storage buckets as Supabase CLI migrations.</td></tr>
+<tr><td><code>lib/auction/</code> (merged, PR #4)</td><td>Pure reducer, <code>config.ts</code> (defaults, season and auction layers, M/A/B/C base prices), <code>rules.ts</code> (squad guard, ladder, <code>bidBlocker</code>), <code>engine.ts</code> (plan, version check, projections), <code>commands.ts</code> (one transaction per command, idempotency key, broadcast after commit), undo/redo markers, console, public board, owner view, admin auction pages (create, seed confirmed or fake players, shuffle, pre-sell, admins, share link, promote, CSV export), one-live-auction-per-season index, DB integration tests.</td></tr>
+<tr><td><code>feat/e2e-playwright</code></td><td>Playwright specs for register, edit, duplicate phone, admin paid and tier, settings; CI workflow.</td></tr>
+</tbody></table></div>
+
+<h3>v1 to v2</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Topic</th><th>v1 / current code</th><th>v2</th></tr></thead>
+<tbody>
+<tr><td>Bands</td><td><code>tier char(1)</code> M/A/B/C, base prices in <code>config.basePrices</code></td><td><code>season_bands</code> rows with base, max and min per team, <code>is_star</code>. Lots and registrations point at a band id.</td></tr>
+<tr><td>Keeper</td><td><code>wicket_keeper</code> is a role</td><td>Role is batter, bowler or all_rounder. <code>can_keep</code> is a flag.</td></tr>
+<tr><td>Wallets</td><td>One purse</td><td>Main 300 cr plus locked reserve 50 cr per team, with a per-team band lock.</td></tr>
+<tr><td>Bid checks</td><td>Squad guard, ladder multiples, custom amounts allowed</td><td>Squad guard, pool guard, band caps, band-minimum slot guard, reserve eligibility. One ladder step per shout. <strong>No custom amounts.</strong></td></tr>
+<tr><td>Sets</td><td>Marquee, then one set per role</td><td>One set per band, in band order, shuffled inside the set.</td></tr>
+<tr><td>Unsold</td><td>REQUEUE with optional multiplier</td><td>Second go at the same base (round 2), then <code>PLACE</code> by organisers, most money first.</td></tr>
+<tr><td>Auction config</td><td>Resolved at read time from defaults, season, auction</td><td>Full snapshot written when the auction is created, editable in draft, frozen at START. <code>format</code> column.</td></tr>
+<tr><td>Rosters</td><td>"Publish" mentioned</td><td><code>team_players</code> with price and source. Season pages never read auction tables.</td></tr>
+<tr><td>Admin trail</td><td>None outside the auction log</td><td><code>audit_log</code> for every admin write.</td></tr>
+<tr><td>Content</td><td>Described, no tables</td><td><code>posts</code>, <code>media</code>, <code>pages</code> defined; built after Sunday.</td></tr>
+</tbody></table></div>
+
+<div class="callout">
+  <div class="eyebrow">Decisions</div>
+  <ul>
+    <li>v2 builds on the merged auction engine. It gets changed, not rewritten.</li>
+    <li>Everything in v1 about stack, auth, sponsors placements, realtime transport and ground conditions still stands unless this page says otherwise.</li>
+    <li>The projector screen, owner-phone bidding and RTM stay cut for Season 4.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="usecases">2. Use-case inventory</h2>
+<p>Every thing someone does with the site, now or later. "RT" means the screen updates without a reload. Phase <span class="pill rec">S4</span> ships by Sunday (or Sunday night for post-auction items); <span class="pill later">later</span> is backlog.</p>
+
+<div class="tablewrap"><table style="min-width:900px">
+<thead><tr><th>#</th><th>Use case</th><th>Trigger</th><th>Data touched</th><th>Route / action</th><th>RT</th><th>Phase</th></tr></thead>
+<tbody>
+<tr class="group"><td colspan="7">Visitor (no login)</td></tr>
+<tr><td>V1</td><td>See landing with title sponsor</td><td>Opens site</td><td>seasons, sponsors</td><td><code>/</code></td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>V2</td><td>Browse the player pool by band</td><td>Opens pool before auction</td><td>public_player_cards, season_bands</td><td><code>/auction</code> (pre-auction state)</td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>V3</td><td>Watch the live board</td><td>Link in WhatsApp</td><td>auctions, auction_teams, auction_lots, auction_events (snapshot)</td><td><code>/auction</code>, <code>fetchSnapshot</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>V4</td><td>Watch a test auction</td><td>Private link</td><td>same as V3</td><td><code>/auction/t/[token]</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>V5</td><td>Read the auction rules</td><td>Taps "Rules"</td><td>auctions.config (rendered)</td><td><code>/auction</code> rules panel</td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>V6</td><td>See squads after the auction</td><td>Sunday night link</td><td>teams, team_players, public_player_cards</td><td><code>/teams</code>, <code>/teams/[slug]</code></td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>V7</td><td>Read news</td><td>Opens news</td><td>posts</td><td><code>/news</code>, <code>/news/[slug]</code></td><td>n</td><td><span class="pill later">later</span></td></tr>
+<tr><td>V8</td><td>Watch videos, browse gallery</td><td>Opens media</td><td>media</td><td><code>/videos</code>, <code>/gallery</code></td><td>n</td><td><span class="pill later">later</span></td></tr>
+<tr><td>V9</td><td>Tap a sponsor</td><td>Tap logo</td><td>sponsors (click count)</td><td><code>/go/[id]</code> route handler</td><td>n</td><td><span class="pill later">later</span></td></tr>
+<tr><td>V10</td><td>See fixtures, results, MVP awards</td><td>Opens schedule</td><td>fixtures, results, awards</td><td><code>/fixtures</code></td><td>n</td><td><span class="pill later">later</span></td></tr>
+<tr><td>V11</td><td>Browse past seasons</td><td>Season switcher</td><td>seasons, team_players</td><td><code>/s/[year]/...</code></td><td>n</td><td><span class="pill later">later</span></td></tr>
+
+<tr class="group"><td colspan="7">Player (no login, private edit token)</td></tr>
+<tr><td>P1</td><td>Register</td><td>Public form</td><td>player_registrations, storage <code>photos</code>, <code>payment-proofs</code></td><td><code>/register</code>, <code>saveRegistration</code>, <code>createUploadUrl</code></td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>P2</td><td>Edit own card</td><td>Private link</td><td>player_registrations</td><td><code>/r/[token]</code>, <code>saveRegistration</code></td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>P3</td><td>See "you're up in N lots"</td><td>Opens own link on the day</td><td>auction_lots, snapshot</td><td><code>/r/[token]</code> + live channel</td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>P4</td><td>See own team and price</td><td>After sale</td><td>auction_lots, later team_players</td><td><code>/r/[token]</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>P5</td><td>Recover a lost link</td><td>"Already registered" message</td><td>player_registrations</td><td>Admin copies WhatsApp message</td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>P6</td><td>Get notified (sold, paid, up next)</td><td>System event</td><td>notifications</td><td>inbox on <code>/r/[token]</code>, Web Push</td><td>y</td><td><span class="pill later">later</span></td></tr>
+<tr><td>P7</td><td>Vote in a poll (for example the rules ballot)</td><td>Poll link</td><td>polls, poll_votes</td><td><code>/polls/[slug]</code></td><td>n</td><td><span class="pill later">later</span></td></tr>
+<tr><td>P8</td><td>Pay the fee online</td><td>Registration step</td><td>payments</td><td>Stripe Checkout + webhook</td><td>n</td><td><span class="pill later">later</span></td></tr>
+
+<tr class="group"><td colspan="7">Owner / captain (Google, linked to a team)</td></tr>
+<tr><td>O1</td><td>Sign in</td><td>Google button</td><td>team_owners.user_id</td><td><code>/auth/callback</code></td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>O2</td><td>Watch own wallets, max bid, band needs</td><td>During auction</td><td>snapshot + config</td><td><code>/auction/[id]/owner</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>O3</td><td>Rehearse</td><td>Test link Fri and Sat</td><td>test auction rows</td><td><code>/auction/t/[token]</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>O4</td><td>Edit team blurb and photo</td><td>After auction</td><td>teams</td><td><code>/teams/[slug]/edit</code></td><td>n</td><td><span class="pill later">later</span></td></tr>
+<tr><td>O5</td><td>Bid from own phone</td><td>Owner taps Bid</td><td>auction_events (OWNER_BID)</td><td><code>sendOwnerBid</code></td><td>y</td><td><span class="pill later">later</span></td></tr>
+<tr><td>O6</td><td>Right to Match</td><td>Former player sold</td><td>auction_events, team_players (last season)</td><td>console + owner view</td><td>y</td><td><span class="pill later">later</span></td></tr>
+<tr><td>O7</td><td>Propose or accept a trade</td><td>Mid-season</td><td>trades, team_players</td><td><code>/trades</code></td><td>n</td><td><span class="pill later">later</span></td></tr>
+
+<tr class="group"><td colspan="7">Operator / auction admin (per auction)</td></tr>
+<tr><td>A1</td><td>Start, pause, resume, complete</td><td>Console buttons</td><td>auction_events, auctions</td><td><code>sendCommand</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>A2</td><td>Put the next lot on the block</td><td>Tap Next</td><td>auction_events, auction_lots</td><td><code>sendCommand START_LOT</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>A3</td><td>Record a shout (+1 step for a team)</td><td>Auctioneer calls a team</td><td>auction_events, auction_lots</td><td><code>sendCommand BID</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>A4</td><td>Sold, unsold, skip</td><td>Hammer</td><td>auction_events, auction_lots, auction_teams</td><td><code>sendCommand</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>A5</td><td>Undo, redo</td><td>Wrong tap</td><td>auction_events.undone, projections</td><td><code>sendCommand UNDO/REDO</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>A6</td><td>Start 10 s clock</td><td>"Going once"</td><td>none (broadcast only)</td><td><code>startClock</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>A7</td><td>Run the second go</td><td>First pass done</td><td>auction_events, auction_lots.round</td><td><code>sendCommand REQUEUE</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>A8</td><td>Place leftovers, most money first</td><td>Second go done</td><td>auction_events, auction_lots, auction_teams</td><td><code>sendCommand PLACE</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>A9</td><td>Adjust a wallet, log a ruling</td><td>Dispute or penalty</td><td>auction_events</td><td><code>ADJUST_PURSE</code>, <code>NOTE</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>A10</td><td>Export the log at a break</td><td>Break</td><td>auction_events, auction_lots</td><td><code>/admin/auctions/[id]/export</code></td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+
+<tr class="group"><td colspan="7">Admin (Google allowlist)</td></tr>
+<tr><td>AD1</td><td>Mark paid, withdraw</td><td>e-Transfer arrives</td><td>player_registrations, audit_log</td><td><code>markPaid</code>, <code>withdraw</code></td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>AD2</td><td>Assign a band</td><td>Saturday noon</td><td>player_registrations.band_id, audit_log</td><td><code>setBand</code> (was <code>setTier</code>)</td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>AD3</td><td>Edit league settings and teams</td><td>Settings page</td><td>seasons.config, teams, audit_log</td><td><code>saveLeagueSettings</code>, <code>saveTeams</code></td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>AD4</td><td>Edit bands</td><td>Settings page</td><td>season_bands, audit_log</td><td><code>saveBands</code></td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>AD5</td><td>Create an auction (test or live)</td><td>Auctions page</td><td>auctions (config snapshot), auction_teams</td><td><code>createAuction</code></td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>AD6</td><td>Seed lots, shuffle inside bands</td><td>Setup page</td><td>auction_lots</td><td><code>addConfirmedPlayers</code>, <code>addFakePlayers</code>, <code>shuffleSets</code></td><td>y (reload)</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>AD7</td><td>Pre-place owners at 25 cr</td><td>Before lot 1</td><td>auction_events (PRESOLD)</td><td><code>placeOwners</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>AD8</td><td>Grant auction admin, rotate link, promote test to live</td><td>Setup page</td><td>auction_admins, auctions, audit_log</td><td>existing actions</td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>AD9</td><td>Publish rosters</td><td>After COMPLETE</td><td>team_players, auctions.published_at, audit_log</td><td><code>publishRosters</code></td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>AD10</td><td>Export rosters CSV</td><td>After publish</td><td>team_players</td><td><code>/admin/rosters/export</code></td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>AD11</td><td>Manage sponsors and placements</td><td>New sponsor</td><td>sponsors, storage</td><td><code>/admin/sponsors</code> (SQL editor in S4)</td><td>n</td><td><span class="pill later">later</span></td></tr>
+<tr><td>AD12</td><td>Write posts, add videos and photos, edit pages</td><td>Content</td><td>posts, media, pages</td><td><code>/admin/posts</code>, <code>/admin/media</code>, <code>/admin/pages</code></td><td>n</td><td><span class="pill later">later</span></td></tr>
+<tr><td>AD13</td><td>Enter fixtures, results, MVP</td><td>Match day</td><td>fixtures, results, awards</td><td><code>/admin/fixtures</code></td><td>n</td><td><span class="pill later">later</span></td></tr>
+<tr><td>AD14</td><td>Record a trade</td><td>Owners agree</td><td>trades, team_players</td><td><code>recordTrade</code></td><td>n</td><td><span class="pill later">later</span></td></tr>
+<tr><td>AD15</td><td>Run a poll</td><td>Rule change</td><td>polls, poll_votes</td><td><code>/admin/polls</code></td><td>n</td><td><span class="pill later">later</span></td></tr>
+
+<tr class="group"><td colspan="7">Super admin</td></tr>
+<tr><td>S1</td><td>Add or remove admins</td><td>New volunteer</td><td>user_roles, audit_log</td><td>SQL editor in S4; <code>/admin/people</code> later</td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>S2</td><td>Read the audit log</td><td>"Who changed this?"</td><td>audit_log</td><td>SQL in S4; <code>/admin/audit</code> later</td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>S3</td><td>Start next season (copy bands, teams)</td><td>Season 5</td><td>seasons, season_bands, teams</td><td><code>createSeason</code></td><td>n</td><td><span class="pill later">later</span></td></tr>
+
+<tr class="group"><td colspan="7">System / cron</td></tr>
+<tr><td>C1</td><td>Broadcast after each command</td><td>Commit</td><td>none (Realtime REST)</td><td><code>broadcast()</code></td><td>y</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>C2</td><td>Nightly database dump</td><td>GitHub Actions cron</td><td>all</td><td><code>.github/workflows/backup.yml</code></td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>C3</td><td>Keep the free project awake</td><td>Vercel cron, daily</td><td>seasons (one select)</td><td><code>/api/cron/keepalive</code></td><td>n</td><td><span class="pill rec">S4</span></td></tr>
+<tr><td>C4</td><td>Send notifications</td><td>notifications row</td><td>notifications</td><td>Web Push sender</td><td>n</td><td><span class="pill later">later</span></td></tr>
+</tbody></table></div>
+
+<div class="callout">
+  <div class="eyebrow">Decisions</div>
+  <ul>
+    <li>Sunday scope is the 39 <span class="pill rec">S4</span> rows. Anything else waits, including the sponsor admin form (sponsors are edited in the Supabase SQL editor until then).</li>
+    <li>One public URL for the auction: <code>/auction</code> shows the pool before the live auction starts and the board once it does.</li>
+    <li>Owners are read-only in Season 4. The owner view never fires a command.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="model">3. Domain model and DB design v2</h2>
+<p>Everything hangs off a season. The auction cluster stays isolated: test auctions live there too, and season pages read published rosters (<code>team_players</code>), never auction tables.</p>
+
+<div class="diagram wide">
+<svg viewBox="0 0 1000 860" role="img" aria-label="Entity relationship diagram. Season core: seasons, season_bands, teams, team_owners, user_roles, sponsors, player_registrations, team_players, audit_log. Content: posts, media, pages. Auction cluster: auctions, auction_admins, auction_teams, auction_lots, auction_events. Later: notifications, polls, poll_votes, fixtures, results.">
+  <text class="sec" x="20" y="28">season core, people, rosters</text>
+
+  <!-- seasons -->
+  <rect class="box acc" x="20" y="40" width="200" height="102" rx="6"/>
+  <text class="hd" x="30" y="57">seasons</text><line class="rule" x1="20" y1="64" x2="220" y2="64"/>
+  <text class="col" x="30" y="78">id smallserial PK</text><text class="col" x="30" y="92">name, year, status</text><text class="col" x="30" y="106">purse_lakhs (main wallet)</text><text class="col" x="30" y="120">config jsonb {v: 1, ...}</text><text class="col" x="30" y="134">league_id (later)</text>
+
+  <!-- season_bands -->
+  <rect class="box acc" x="270" y="40" width="210" height="102" rx="6"/>
+  <text class="hd" x="280" y="57">season_bands  NEW</text><line class="rule" x1="270" y1="64" x2="480" y2="64"/>
+  <text class="col" x="280" y="78">id smallserial PK</text><text class="col" x="280" y="92">season_id FK, code (uniq)</text><text class="col" x="280" y="106">label, base_lakhs</text><text class="col" x="280" y="120">max_per_team?, min_per_team</text><text class="col" x="280" y="134">is_star, sort_order</text>
+
+  <!-- teams -->
+  <rect class="box" x="530" y="40" width="190" height="88" rx="6"/>
+  <text class="hd" x="540" y="57">teams</text><line class="rule" x1="530" y1="64" x2="720" y2="64"/>
+  <text class="col" x="540" y="78">id uuid PK, season_id</text><text class="col" x="540" y="92">name, short, slug</text><text class="col" x="540" y="106">colour, logo_url</text><text class="col" x="540" y="120">owner_registration_id?</text>
+
+  <!-- team_owners -->
+  <rect class="box" x="770" y="40" width="210" height="60" rx="6"/>
+  <text class="hd" x="780" y="57">team_owners</text><line class="rule" x1="770" y1="64" x2="980" y2="64"/>
+  <text class="col" x="780" y="78">team_id FK, email (uniq)</text><text class="col" x="780" y="92">user_id</text>
+
+  <!-- user_roles -->
+  <rect class="box" x="770" y="112" width="210" height="60" rx="6"/>
+  <text class="hd" x="780" y="129">user_roles</text><line class="rule" x1="770" y1="136" x2="980" y2="136"/>
+  <text class="col" x="780" y="150">email PK</text><text class="col" x="780" y="164">user_id, role</text>
+
+  <!-- sponsors -->
+  <rect class="box" x="20" y="200" width="200" height="102" rx="6"/>
+  <text class="hd" x="30" y="217">sponsors</text><line class="rule" x1="20" y1="224" x2="220" y2="224"/>
+  <text class="col" x="30" y="238">id uuid PK, season_id</text><text class="col" x="30" y="252">name, tier, url, logo_url</text><text class="col" x="30" y="266">placements jsonb</text><text class="col" x="30" y="280">sort_order, active</text><text class="col" x="30" y="294">clicks (later)</text>
+
+  <!-- player_registrations -->
+  <rect class="box" x="270" y="200" width="210" height="130" rx="6"/>
+  <text class="hd" x="280" y="217">player_registrations</text><line class="rule" x1="270" y1="224" x2="480" y2="224"/>
+  <text class="col" x="280" y="238">id uuid PK, season_id</text><text class="col" x="280" y="252">edit_token (uniq)</text><text class="col" x="280" y="266">phone (uniq per season)</text><text class="col" x="280" y="280">full_name, email, bio</text><text class="col" x="280" y="294">role, can_keep  NEW</text><text class="col" x="280" y="308">band_id FK  NEW</text><text class="col" x="280" y="322">stats, paid_at, status</text>
+
+  <!-- team_players -->
+  <rect class="box acc" x="530" y="200" width="190" height="116" rx="6"/>
+  <text class="hd" x="540" y="217">team_players  NEW</text><line class="rule" x1="530" y1="224" x2="720" y2="224"/>
+  <text class="col" x="540" y="238">id uuid PK, season_id</text><text class="col" x="540" y="252">team_id FK</text><text class="col" x="540" y="266">registration_id FK</text><text class="col" x="540" y="280">band_id, price_lakhs</text><text class="col" x="540" y="294">source, auction_id, lot_id</text><text class="col" x="540" y="308">joined_at, left_at</text>
+
+  <!-- audit_log -->
+  <rect class="box acc" x="770" y="200" width="210" height="88" rx="6"/>
+  <text class="hd" x="780" y="217">audit_log  NEW</text><line class="rule" x1="770" y1="224" x2="980" y2="224"/>
+  <text class="col" x="780" y="238">id bigserial PK</text><text class="col" x="780" y="252">at, actor_email, action</text><text class="col" x="780" y="266">entity, entity_id, season_id</text><text class="col" x="780" y="280">before jsonb, after jsonb</text>
+
+  <text class="sec" x="20" y="362">content (tables defined now, built after Sunday)</text>
+  <rect class="box" x="20" y="372" width="200" height="88" rx="6"/>
+  <text class="hd" x="30" y="389">posts  NEW</text><line class="rule" x1="20" y1="396" x2="220" y2="396"/>
+  <text class="col" x="30" y="410">id uuid PK, season_id</text><text class="col" x="30" y="424">slug, title, body_md</text><text class="col" x="30" y="438">cover_path, pinned</text><text class="col" x="30" y="452">published_at</text>
+  <rect class="box" x="270" y="372" width="210" height="88" rx="6"/>
+  <text class="hd" x="280" y="389">media  NEW</text><line class="rule" x1="270" y1="396" x2="480" y2="396"/>
+  <text class="col" x="280" y="410">id uuid PK, season_id</text><text class="col" x="280" y="424">kind video | photo</text><text class="col" x="280" y="438">youtube_id or image_path</text><text class="col" x="280" y="452">album, caption, sort_order</text>
+  <rect class="box" x="530" y="372" width="190" height="74" rx="6"/>
+  <text class="hd" x="540" y="389">pages  NEW</text><line class="rule" x1="530" y1="396" x2="720" y2="396"/>
+  <text class="col" x="540" y="410">(season_id, slug) PK</text><text class="col" x="540" y="424">title, body_md</text><text class="col" x="540" y="438">updated_by, updated_at</text>
+
+  <!-- auction cluster -->
+  <rect class="frame sold" x="10" y="490" width="980" height="240" rx="8"/>
+  <text class="sec" x="24" y="510">auction cluster (test and live, isolated from rosters)</text>
+  <rect class="box" x="30" y="540" width="190" height="102" rx="6"/>
+  <text class="hd" x="40" y="557">auctions</text><line class="rule" x1="30" y1="564" x2="220" y2="564"/>
+  <text class="col" x="40" y="578">id uuid PK, season_id</text><text class="col" x="40" y="592">mode, status, format</text><text class="col" x="40" y="606">share_token, version</text><text class="col" x="40" y="620">config jsonb (frozen)</text><text class="col" x="40" y="634">published_at  NEW</text>
+  <rect class="box" x="30" y="658" width="190" height="46" rx="6"/>
+  <text class="hd" x="40" y="675">auction_admins</text><line class="rule" x1="30" y1="682" x2="220" y2="682"/>
+  <text class="col" x="40" y="696">auction_id FK, email</text>
+  <rect class="box" x="270" y="540" width="210" height="116" rx="6"/>
+  <text class="hd" x="280" y="557">auction_teams</text><line class="rule" x1="270" y1="564" x2="480" y2="564"/>
+  <text class="col" x="280" y="578">id uuid PK, auction_id</text><text class="col" x="280" y="592">team_id FK? (null = fake)</text><text class="col" x="280" y="606">name, short, colour</text><text class="col" x="280" y="620">purse_start/left_lakhs</text><text class="col" x="280" y="634">reserve_start/left  NEW</text><text class="col" x="280" y="648">reserve_band_id, squad_size</text>
+  <rect class="box" x="530" y="540" width="190" height="130" rx="6"/>
+  <text class="hd" x="540" y="557">auction_lots</text><line class="rule" x1="530" y1="564" x2="720" y2="564"/>
+  <text class="col" x="540" y="578">id uuid PK, auction_id</text><text class="col" x="540" y="592">registration_id FK?</text><text class="col" x="540" y="606">band_id FK, set_name</text><text class="col" x="540" y="620">sort_order, base_lakhs</text><text class="col" x="540" y="634">round, role, can_keep</text><text class="col" x="540" y="648">card jsonb, photo_url</text><text class="col" x="540" y="662">status, sold_via, price</text>
+  <rect class="box acc" x="770" y="540" width="210" height="102" rx="6"/>
+  <text class="hd" x="780" y="557">auction_events</text><line class="rule" x1="770" y1="564" x2="980" y2="564"/>
+  <text class="col" x="780" y="578">id bigserial PK</text><text class="col" x="780" y="592">auction_id, seq (uniq)</text><text class="col" x="780" y="606">type, payload jsonb</text><text class="col" x="780" y="620">undone, idempotency_key</text><text class="col" x="780" y="634">actor_email, at</text>
+  <text class="sub" x="780" y="662">Wallets, squad size and lot</text><text class="sub" x="780" y="676">status are projections of</text><text class="sub" x="780" y="690">auction_events, rebuilt by</text><text class="sub" x="780" y="704">replay. version = last seq.</text>
+
+  <!-- later -->
+  <rect class="frame dash" x="10" y="750" width="980" height="100" rx="8"/>
+  <text class="sec" x="24" y="768">later: sketched, not built</text>
+  <rect class="box dim" x="30" y="778" width="170" height="60" rx="6"/><text class="hd" x="40" y="795">notifications</text><text class="col" x="40" y="812">reg_id or email</text><text class="col" x="40" y="826">kind, payload, read_at</text>
+  <rect class="box dim" x="220" y="778" width="170" height="60" rx="6"/><text class="hd" x="230" y="795">polls</text><text class="col" x="230" y="812">id, season_id, slug</text><text class="col" x="230" y="826">question, options</text>
+  <rect class="box dim" x="410" y="778" width="170" height="60" rx="6"/><text class="hd" x="420" y="795">poll_votes</text><text class="col" x="420" y="812">poll_id FK, voter_key</text><text class="col" x="420" y="826">choice jsonb</text>
+  <rect class="box dim" x="600" y="778" width="170" height="60" rx="6"/><text class="hd" x="610" y="795">fixtures</text><text class="col" x="610" y="812">id, season_id, round</text><text class="col" x="610" y="826">home/away team_id, at</text>
+  <rect class="box dim" x="790" y="778" width="180" height="60" rx="6"/><text class="hd" x="800" y="795">results</text><text class="col" x="800" y="812">fixture_id PK FK</text><text class="col" x="800" y="826">winner, scores, mvp</text>
+
+  <!-- relationships: solid = required FK, dashed = nullable FK, dot = many side -->
+  <path class="fk" d="M220 70 H270"/><circle class="dot" cx="270" cy="70" r="3"/>
+  <path class="fk" d="M120 142 V200"/><circle class="dot" cx="120" cy="200" r="3"/>
+  <path class="fk opt" d="M375 142 V200"/><circle class="dot" cx="375" cy="200" r="3"/>
+  <path class="fk" d="M720 70 H770"/><circle class="dot" cx="770" cy="70" r="3"/>
+  <path class="fk" d="M625 128 V200"/><circle class="dot" cx="625" cy="200" r="3"/>
+  <path class="fk" d="M480 256 H530"/><circle class="dot" cx="530" cy="256" r="3"/>
+  <path class="fk opt" d="M530 110 H495 V600 H480"/><circle class="dot" cx="480" cy="600" r="3"/>
+  <path class="fk opt" d="M480 316 H515 V620 H530"/><circle class="dot" cx="530" cy="620" r="3"/>
+  <path class="fk opt" d="M720 610 H745 V300 H720"/><circle class="dot" cx="720" cy="300" r="3"/>
+  <path class="fk" d="M125 642 V658"/><circle class="dot" cx="125" cy="658" r="3"/>
+  <path class="fk" d="M220 590 H270"/><circle class="dot" cx="270" cy="590" r="3"/>
+  <path class="fk" d="M180 540 V526 H875 V540"/><path class="fk" d="M625 526 V540"/><circle class="dot" cx="625" cy="540" r="3"/><circle class="dot" cx="875" cy="540" r="3"/>
+  <path class="fk" d="M390 808 H410"/><circle class="dot" cx="410" cy="808" r="3"/>
+  <path class="fk" d="M770 808 H790"/><circle class="dot" cx="790" cy="808" r="3"/>
+</svg>
+</div>
+<p class="cap">Solid line: required foreign key. Dashed: nullable. Dot: the many side. Not drawn, to keep it readable: <code>season_id</code> from every season-scoped table to <code>seasons</code>, and <code>band_id</code> / <code>reserve_band_id</code> from lots, teams and rosters to <code>season_bands</code>.</p>
+
+<h3>Tables</h3>
+<p>Legend: <span class="pill new">new</span> table or column, <span class="pill chg">changed</span>, <span class="pill later">later</span>. Money is always <code>integer</code> lakhs. Timestamps are <code>timestamptz</code>.</p>
+
+<h4>seasons <span class="pill chg">changed</span></h4>
+<div class="tablewrap"><table class="cols">
+<thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>id</td><td>smallserial PK</td><td>Season 4 is id 1.</td></tr>
+<tr><td>name, year</td><td>text, int</td><td></td></tr>
+<tr><td>status</td><td>text</td><td>registration | locked | auction | live | done. Text, not enum, so adding a state is not a migration.</td></tr>
+<tr><td>purse_lakhs</td><td>int, default 30000</td><td>Main wallet per team.</td></tr>
+<tr><td>config</td><td>jsonb, default '{}'</td><td>Scalar settings only, with a <code>v</code> version key. Keys listed below. Relational data (bands) lives in its own table.</td></tr>
+</tbody></table></div>
+<p class="small"><strong>Why:</strong> the one root every other row points at. Later, <code>league_id</code> would go here and nowhere else (section 4).</p>
+
+<h4>season_bands <span class="pill new">new</span></h4>
+<div class="tablewrap"><table class="cols">
+<thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>id</td><td>smallserial PK</td><td></td></tr>
+<tr><td>season_id</td><td>smallint FK seasons</td><td></td></tr>
+<tr><td>code</td><td>text</td><td>Stable key: <code>star</code>, <code>10cr</code>, <code>5cr</code>, <code>2cr</code>. Used in CSV and URLs.</td></tr>
+<tr><td>label</td><td>text</td><td>What people see: "Star", "10 cr".</td></tr>
+<tr><td>base_lakhs</td><td>int, check &gt; 0</td><td>Starting price. S4: 2000, 1000, 500, 200.</td></tr>
+<tr><td>max_per_team</td><td>smallint, null = no limit</td><td>S4: 2, 3, 4, null.</td></tr>
+<tr><td>min_per_team</td><td>smallint, default 0</td><td>S4: 0, 1, 2, 2. Check <code>min &lt;= max</code> when max is set.</td></tr>
+<tr><td>sort_order</td><td>smallint</td><td>Running order of sets. Star is 1.</td></tr>
+<tr><td>is_star</td><td>boolean, default false</td><td>Reserve can never be spent on a star band.</td></tr>
+</tbody></table></div>
+<p class="small"><strong>Keys and indexes:</strong> unique <code>(season_id, code)</code>; partial unique <code>(season_id) where is_star</code> (at most one star band). <strong>Why:</strong> bands are rows, so a season can add a 15 cr band or rename "2 cr" without a deploy or an enum migration. Auctions copy the rows into their frozen config, so editing bands never changes an auction that already exists.</p>
+
+<h4>teams <span class="pill chg">changed</span></h4>
+<div class="tablewrap"><table class="cols">
+<thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>id</td><td>uuid PK</td><td></td></tr>
+<tr><td>season_id</td><td>smallint FK</td><td></td></tr>
+<tr><td>name, short, colour, logo_url</td><td>text, char(3), text, text</td><td>As today.</td></tr>
+<tr><td>slug <span class="pill new">new</span></td><td>text not null</td><td>For <code>/teams/[slug]</code>. Backfilled from <code>lower(short)</code>.</td></tr>
+<tr><td>owner_registration_id <span class="pill new">new</span></td><td>uuid FK player_registrations, null</td><td>The owner's own player row. Drives "pre-place owners".</td></tr>
+</tbody></table></div>
+<p class="small"><strong>Keys:</strong> unique <code>(season_id, short)</code>, unique <code>(season_id, slug)</code>. <strong>Why:</strong> teams are per season, so a renamed or new franchise in Season 5 is a new row and history stays intact.</p>
+
+<h4>team_owners, user_roles <span class="pill">unchanged</span></h4>
+<p class="small"><code>team_owners(team_id FK, email, user_id)</code>, unique <code>(team_id, email)</code>. <code>user_roles(email PK, user_id, role app_role)</code> with <code>admin | super_admin</code>. Emails are the allowlist; <code>user_id</code> attaches on first sign-in. Owner and auction admin are scoped grants, not global roles.</p>
+
+<h4>player_registrations <span class="pill chg">changed</span></h4>
+<div class="tablewrap"><table class="cols">
+<thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>id</td><td>uuid PK</td><td></td></tr>
+<tr><td>season_id</td><td>smallint FK</td><td></td></tr>
+<tr><td>edit_token</td><td>text unique</td><td>Private edit link. Never leaves the server except to its owner.</td></tr>
+<tr><td>status</td><td>reg_status</td><td>registered | confirmed | withdrawn.</td></tr>
+<tr><td>full_name, phone, email</td><td>text, text, text null</td><td>Phone stored as digits with country code (E.164 without the plus).</td></tr>
+<tr><td>role <span class="pill chg">changed</span></td><td>player_role</td><td>Enum becomes <code>batter | bowler | all_rounder</code>.</td></tr>
+<tr><td>can_keep <span class="pill new">new</span></td><td>boolean, default false</td><td>Wicketkeeper flag. Old <code>wicket_keeper</code> rows become <code>batter + can_keep</code>.</td></tr>
+<tr><td>batting_style, bowling_style, bio</td><td>text</td><td>Bio max 280, checked in zod.</td></tr>
+<tr><td>stats</td><td>jsonb</td><td><code>{matches, runs, wickets, best}</code>, self-reported.</td></tr>
+<tr><td>photo_url, cricheroes_url</td><td>text</td><td></td></tr>
+<tr><td>band_id <span class="pill new">new</span></td><td>smallint FK season_bands, null</td><td>Set by admin. Replaces <code>tier</code>.</td></tr>
+<tr><td>tier <span class="pill later">dropped after Sunday</span></td><td>char(1)</td><td>Kept read-only until the contract migration, as a rollback path.</td></tr>
+<tr><td>paid_at, paid_marked_by, payment_proof_url</td><td>timestamptz, text, text</td><td>Private. Proof is a path in the private bucket.</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td></td></tr>
+</tbody></table></div>
+<p class="small"><strong>Keys and indexes:</strong> unique <code>edit_token</code>, unique <code>(season_id, phone)</code>, index <code>(season_id, status)</code>, index <code>(band_id)</code>. <strong>Why:</strong> one row per player per season keeps registration history for later seasons, and a player's identity across seasons is the phone number until player login exists.</p>
+
+<h4>sponsors <span class="pill chg">changed</span></h4>
+<div class="tablewrap"><table class="cols">
+<thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>id, season_id</td><td>uuid PK, smallint FK</td><td></td></tr>
+<tr><td>name, tier, logo_url, url</td><td>text</td><td>tier: title | gold | silver | partner.</td></tr>
+<tr><td>placements</td><td>jsonb array</td><td>Keys: <code>hero, strip, reg_step, auction_lot, sold_card, team_page, video</code>. Check <code>jsonb_typeof(placements) = 'array'</code>.</td></tr>
+<tr><td>sort_order</td><td>int</td><td></td></tr>
+<tr><td>active <span class="pill new">new</span></td><td>boolean, default true</td><td>Hide without deleting.</td></tr>
+<tr><td>clicks <span class="pill later">later</span></td><td>int</td><td>Comes with <code>/go/[id]</code>.</td></tr>
+</tbody></table></div>
+<p class="small"><strong>Why jsonb and not a join table:</strong> under 20 sponsors, read whole, filtered in code. A join table buys nothing at this size.</p>
+
+<h4>team_players <span class="pill new">new</span></h4>
+<div class="tablewrap"><table class="cols">
+<thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>id</td><td>uuid PK</td><td></td></tr>
+<tr><td>season_id, team_id</td><td>smallint FK, uuid FK teams</td><td></td></tr>
+<tr><td>registration_id</td><td>uuid FK player_registrations</td><td></td></tr>
+<tr><td>band_id</td><td>smallint FK, null</td><td>Null for owners.</td></tr>
+<tr><td>price_lakhs</td><td>int, check &gt;= 0</td><td></td></tr>
+<tr><td>source</td><td>roster_source enum</td><td><code>auction | presold | placed | trade</code>. <code>rtm</code> gets added when RTM ships.</td></tr>
+<tr><td>auction_id, lot_id</td><td>uuid FK, uuid FK unique, both null</td><td>Where the row came from. Null for trades.</td></tr>
+<tr><td>joined_at, left_at</td><td>timestamptz, null</td><td>A trade closes one row and opens another.</td></tr>
+<tr><td>note</td><td>text null</td><td></td></tr>
+</tbody></table></div>
+<p class="small"><strong>Keys and indexes:</strong> partial unique <code>(season_id, registration_id) where left_at is null</code> (a player is on one team at a time); unique <code>lot_id</code> (publish is idempotent); index <code>(team_id) where left_at is null</code>. <strong>Why:</strong> the published roster is the season's truth. Team pages, fixtures, awards, trades and next season's RTM all read this table, never the auction.</p>
+
+<h4>audit_log <span class="pill new">new</span></h4>
+<div class="tablewrap"><table class="cols">
+<thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>id</td><td>bigserial PK</td><td></td></tr>
+<tr><td>at</td><td>timestamptz default now()</td><td></td></tr>
+<tr><td>actor_email</td><td>text not null</td><td></td></tr>
+<tr><td>action</td><td>text</td><td>Dotted name: <code>registration.mark_paid</code>, <code>band.update</code>, <code>auction.publish</code>.</td></tr>
+<tr><td>entity, entity_id</td><td>text, text</td><td>Table name and row key.</td></tr>
+<tr><td>season_id</td><td>smallint null</td><td></td></tr>
+<tr><td>before, after</td><td>jsonb null</td><td>Only the changed fields.</td></tr>
+</tbody></table></div>
+<p class="small"><strong>Indexes:</strong> <code>(entity, entity_id)</code>, <code>(at desc)</code>. <strong>Why:</strong> the auction has its own log; everything else (paid ticks, band changes, settings, grants, publish) needs one too. Written inside the same transaction as the change, from one helper <code>audit(tx, action, entity, id, before, after)</code>. Append only: no update or delete path in code.</p>
+
+<h4>posts, media, pages <span class="pill new">new, built after Sunday</span></h4>
+<div class="tablewrap"><table class="cols">
+<thead><tr><th>Table</th><th>Columns</th><th>Keys and notes</th></tr></thead>
+<tbody>
+<tr><td>posts</td><td>id uuid, season_id, slug, title, body_md, cover_path, pinned bool, published_at null, created_by, updated_at</td><td>Unique <code>(season_id, slug)</code>; index <code>(season_id, published_at desc) where published_at is not null</code>. Null <code>published_at</code> = draft.</td></tr>
+<tr><td>media</td><td>id uuid, season_id, kind (video | photo), youtube_id, image_path, title, album, caption, sort_order, published bool</td><td>Check: video has <code>youtube_id</code>, photo has <code>image_path</code>. Index <code>(season_id, kind, sort_order)</code>.</td></tr>
+<tr><td>pages</td><td>season_id, slug, title, body_md, updated_by, updated_at</td><td>PK <code>(season_id, slug)</code>. Rules, FAQ, privacy.</td></tr>
+</tbody></table></div>
+
+<h4>auctions <span class="pill chg">changed</span></h4>
+<div class="tablewrap"><table class="cols">
+<thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>id, season_id, name</td><td>uuid PK, smallint FK, text</td><td></td></tr>
+<tr><td>mode</td><td>auction_mode</td><td>test | live. One live per season (partial unique index, exists).</td></tr>
+<tr><td>status</td><td>auction_status</td><td>draft | open | paused | completed. Projection of the log.</td></tr>
+<tr><td>format <span class="pill new">new</span></td><td>auction_format, default voice_ledger</td><td>Picks reducer and rules. Set at creation, never changed.</td></tr>
+<tr><td>share_token</td><td>text unique</td><td>Test board link.</td></tr>
+<tr><td>version</td><td>int</td><td>Last applied <code>seq</code>. Optimistic lock.</td></tr>
+<tr><td>config <span class="pill chg">changed</span></td><td>jsonb</td><td>Full rules snapshot (shape below). Editable in draft, frozen from START.</td></tr>
+<tr><td>published_at <span class="pill new">new</span></td><td>timestamptz null</td><td>Set by publish. After this, commands are refused.</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td></td></tr>
+</tbody></table></div>
+
+<h4>auction_admins <span class="pill">unchanged</span></h4>
+<p class="small"><code>(auction_id FK, email)</code> unique. A per-auction operator grant, so a rehearsal can have a different operator.</p>
+
+<h4>auction_teams <span class="pill chg">changed</span></h4>
+<div class="tablewrap"><table class="cols">
+<thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>id, auction_id</td><td>uuid PK, uuid FK</td><td></td></tr>
+<tr><td>team_id</td><td>uuid FK teams, null</td><td>Null for fake teams in tests.</td></tr>
+<tr><td>name, short, colour</td><td>text</td><td>Copied at creation.</td></tr>
+<tr><td>purse_start_lakhs</td><td>int</td><td>Main wallet start (30000).</td></tr>
+<tr><td>purse_left_lakhs</td><td>int, check &gt;= 0</td><td>Projection.</td></tr>
+<tr><td>reserve_start_lakhs <span class="pill new">new</span></td><td>int default 0</td><td>5000 in S4.</td></tr>
+<tr><td>reserve_left_lakhs <span class="pill new">new</span></td><td>int, check &gt;= 0</td><td>Projection.</td></tr>
+<tr><td>reserve_band_id <span class="pill new">new</span></td><td>smallint FK season_bands, null</td><td>Projection. Set by the first sale that touches the reserve; cleared if that sale is undone.</td></tr>
+<tr><td>squad_size</td><td>int</td><td>Projection. Owner counts.</td></tr>
+</tbody></table></div>
+<p class="small"><strong>Indexes:</strong> <code>(auction_id)</code>; partial unique <code>(auction_id, team_id) where team_id is not null</code>. <strong>Why keep projections at all:</strong> the admin lot table and CSV export read plain columns without replaying, and a check constraint on <code>&gt;= 0</code> is a last line of defence in the database itself.</p>
+
+<h4>auction_lots <span class="pill chg">changed</span></h4>
+<div class="tablewrap"><table class="cols">
+<thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>id, auction_id</td><td>uuid PK, uuid FK</td><td></td></tr>
+<tr><td>registration_id</td><td>uuid FK, null</td><td>Null for fake players.</td></tr>
+<tr><td>player_name, photo_url, card</td><td>text, text, jsonb</td><td>Snapshot at seeding. Card never includes phone or email.</td></tr>
+<tr><td>role, can_keep <span class="pill new">new</span></td><td>player_role, boolean</td><td></td></tr>
+<tr><td>band_id <span class="pill new">new</span></td><td>smallint FK season_bands, null</td><td>Null only for owner lots (pre-placed, never bid on).</td></tr>
+<tr><td>tier <span class="pill later">dropped after Sunday</span></td><td>char(1)</td><td></td></tr>
+<tr><td>set_name, sort_order</td><td>text, int</td><td>Set = band label. Order = band order, then shuffled.</td></tr>
+<tr><td>base_lakhs</td><td>int</td><td>Copied from the band at seeding.</td></tr>
+<tr><td>round <span class="pill new">new</span></td><td>smallint default 1</td><td>Projection. 2 after REQUEUE.</td></tr>
+<tr><td>status</td><td>lot_status</td><td>Projection: queued | on_block | sold | unsold | skipped.</td></tr>
+<tr><td>sold_via <span class="pill new">new</span></td><td>sold_via enum null</td><td>Projection: auction | presold | placed.</td></tr>
+<tr><td>current_bid_lakhs, current_team_id, sold_to_team_id, price_lakhs</td><td>int, uuid, uuid, int</td><td>Projections.</td></tr>
+</tbody></table></div>
+<p class="small"><strong>Indexes:</strong> <code>(auction_id, sort_order)</code>; partial unique <code>(auction_id, registration_id) where registration_id is not null</code> (a player is seeded once).</p>
+
+<h4>auction_events <span class="pill">unchanged columns</span></h4>
+<p class="small"><code>id bigserial, auction_id, seq int, type text, payload jsonb, undone bool, idempotency_key text, actor_email text, at</code>. Unique <code>(auction_id, seq)</code> and <code>(auction_id, idempotency_key)</code>; the first one is also the replay index. Rows are never updated except the <code>undone</code> flag, and never deleted.</p>
+
+<h4>notifications <span class="pill later">later</span></h4>
+<p class="small">Shape in section 4.</p>
+
+<h3>seasons.config keys (v1)</h3>
+<p>Validated by one zod schema, <code>seasonConfigV1</code>. A row without <code>v</code> is read as v0 (today's shape) and upgraded in code by <code>upgradeSeasonConfig()</code>; saving writes <code>v: 1</code>. Unknown keys are kept, never dropped.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Key</th><th>Type</th><th>S4 value</th><th>Used by</th></tr></thead>
+<tbody>
+<tr><td><code>v</code></td><td>int</td><td>1</td><td>Upgrade path</td></tr>
+<tr><td><code>fee_text</code></td><td>string, max 120</td><td>set by admin</td><td>Registration</td></tr>
+<tr><td><code>etransfer_email</code></td><td>email or ""</td><td>set by admin</td><td>Registration</td></tr>
+<tr><td><code>registration_open</code></td><td>bool, default true</td><td>true until Sat noon</td><td>Registration</td></tr>
+<tr><td><code>edits_lock_at</code></td><td>ISO time or null</td><td>Sat 3 Oct 12:00</td><td>Edit link stops saving</td></tr>
+<tr><td><code>auction_starts_at</code></td><td>ISO time or null</td><td>Sun 4 Oct</td><td>Pre-auction countdown</td></tr>
+<tr><td><code>min_squad</code>, <code>max_squad</code></td><td>int</td><td>11, 13</td><td>New auction snapshot</td></tr>
+<tr><td><code>reserve_lakhs</code></td><td>int</td><td>5000</td><td>New auction snapshot</td></tr>
+<tr><td><code>owner_presold_lakhs</code></td><td>int</td><td>2500</td><td>New auction snapshot</td></tr>
+<tr><td><code>ladder</code></td><td>[{upTo, step}]</td><td>[{1000,50},{5000,100},{10000,250},{null,500}]</td><td>New auction snapshot</td></tr>
+</tbody></table></div>
+
+<h3>auctions.config snapshot (v1)</h3>
+<p>Written by <code>createAuction</code> from <code>seasons.purse_lakhs</code>, <code>seasons.config</code> and <code>season_bands</code>. The runtime reads only this. The admin can "Refresh from season" or edit it while the auction is in draft; once START is in the log, the server refuses edits.</p>
+<pre><code>{
+  "v": 1,
+  "purseLakhs": 30000,          // main wallet
+  "reserveLakhs": 5000,         // locked reserve
+  "minSquad": 11, "maxSquad": 13,
+  "ownerPresoldLakhs": 2500,
+  "ladder": [{"upTo":1000,"step":50},{"upTo":5000,"step":100},{"upTo":10000,"step":250},{"upTo":null,"step":500}],
+  "poolGuard": true,
+  "unsoldBaseMultiplier": 1,    // second go at the same base; fixed in S4
+  "bands": [
+    {"id":1,"code":"star","label":"Star","baseLakhs":2000,"maxPerTeam":2,"minPerTeam":0,"isStar":true,"sortOrder":1},
+    {"id":2,"code":"10cr","label":"10 cr","baseLakhs":1000,"maxPerTeam":3,"minPerTeam":1,"isStar":false,"sortOrder":2},
+    {"id":3,"code":"5cr","label":"5 cr","baseLakhs":500,"maxPerTeam":4,"minPerTeam":2,"isStar":false,"sortOrder":3},
+    {"id":4,"code":"2cr","label":"2 cr","baseLakhs":200,"maxPerTeam":null,"minPerTeam":2,"isStar":false,"sortOrder":4}
+  ]
+}</code></pre>
+<p class="small">Band ids in the snapshot are the <code>season_bands</code> ids, so <code>auction_lots.band_id</code> and <code>reserve_band_id</code> join both ways. The numbers used for rules always come from the snapshot, never from the live band row.</p>
+
+<h3>Event log: source of truth for the auction</h3>
+<p>Every console action appends one <code>auction_events</code> row. State is <code>replay(initialState(teams, lots), liveEvents)</code>. Undo flags the newest live event and appends an <code>UNDO</code> marker; redo clears the flag and appends <code>REDO</code>. Projections on <code>auction_teams</code>, <code>auction_lots</code> and <code>auctions.status</code> are a cache, rewritten in the same transaction and rebuildable at any time with <code>rebuildProjections()</code>.</p>
+<p><strong>Payloads carry the result, not just the intent.</strong> The console sends a thin command (for example <code>SOLD {lotId}</code>); the server fills in team, amount and the wallet split from the current state and stores that. Replay never re-runs rule checks, so changing a rule later can never rewrite an auction that already happened.</p>
+
+<div class="tablewrap"><table style="min-width:760px">
+<thead><tr><th>Event</th><th>Stored payload</th><th>Console sends</th><th>Effect in the reducer</th></tr></thead>
+<tbody>
+<tr><td><code>START</code></td><td>{}</td><td>same</td><td>draft to open</td></tr>
+<tr><td><code>PAUSE</code> / <code>RESUME</code></td><td>{}</td><td>same</td><td>open and paused</td></tr>
+<tr><td><code>COMPLETE</code></td><td>{}</td><td>same</td><td>to completed</td></tr>
+<tr><td><code>PRESOLD</code></td><td>{lotId, teamId, amount, fromMain, fromReserve: 0}</td><td>{lotId, teamId}</td><td>lot sold via presold; main -= amount; squad += 1</td></tr>
+<tr><td><code>START_LOT</code></td><td>{lotId}</td><td>{lotId?} (default: next queued)</td><td>lot on_block</td></tr>
+<tr><td><code>BID</code></td><td>{lotId, teamId, amount}</td><td>{lotId, teamId}</td><td>current bid = amount, leader = team. Amount is always the next ladder step.</td></tr>
+<tr><td><code>SOLD</code></td><td>{lotId, teamId, amount, fromMain, fromReserve, reserveBandId}</td><td>{lotId}</td><td>lot sold via auction; wallets debited by the split; band count += 1; lock reserve band if fromReserve &gt; 0 and no lock yet</td></tr>
+<tr><td><code>UNSOLD</code></td><td>{lotId}</td><td>same</td><td>no bid: lot unsold</td></tr>
+<tr><td><code>SKIP</code></td><td>{lotId}</td><td>same</td><td>lot skipped, bid cleared</td></tr>
+<tr><td><code>REQUEUE</code></td><td>{lotId, base}</td><td>{lotId}</td><td>unsold or skipped in round 1: queued, round 2, base unchanged</td></tr>
+<tr><td><code>PLACE</code> <span class="pill new">new</span></td><td>{lotId, teamId, amount, fromMain, fromReserve, reserveBandId, note?}</td><td>{lotId, teamId, amount?, note?}</td><td>round-2 leftover sold via placed; wallets debited like SOLD</td></tr>
+<tr><td><code>ADJUST_PURSE</code> <span class="pill chg">changed</span></td><td>{teamId, wallet: "main" | "reserve", delta, note}</td><td>same</td><td>wallet += delta</td></tr>
+<tr><td><code>NOTE</code></td><td>{text}</td><td>same</td><td>none (shows in the feed)</td></tr>
+<tr><td><code>UNDO</code> / <code>REDO</code></td><td>{seq}</td><td>{}</td><td>markers; never reach the reducer</td></tr>
+<tr><td><code>CLOCK</code></td><td>not stored</td><td>startClock</td><td>broadcast only: {endsAt, seconds}</td></tr>
+</tbody></table></div>
+
+<h3>Where the rules run</h3>
+<p>Inside <code>runCommand</code>'s transaction, after the auction row is locked and the log replayed, <code>plan()</code> calls <code>fillAndCheck(state, command, config)</code>. That is a pure function in <code>lib/auction/rules.ts</code>: it computes <code>maxBid</code> (squad guard, pool guard, band caps, band-minimum slots, reserve eligibility and lock), fills the ladder amount and wallet split, and throws <code>AuctionRuleError</code> with a plain sentence if the move is not allowed. The console imports the same function to grey out buttons and show the reason. Because the row lock serialises commands for one auction, "check then write" cannot race.</p>
+
+<div class="diagram">
+<svg viewBox="0 0 760 320" role="img" aria-label="Command path: console tap goes to sendCommand, then one Postgres transaction with nine steps, then broadcast after commit to every phone.">
+  <defs><marker id="arrA" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto"><path class="arrowhead" d="M0 0 L8 4 L0 8 z"/></marker></defs>
+  <rect class="box" x="10" y="40" width="152" height="64" rx="6"/><text class="hd" x="20" y="60">Console tap</text><text class="col" x="20" y="78">cmd, expectedVersion,</text><text class="col" x="20" y="92">idempotencyKey</text>
+  <rect class="box" x="180" y="40" width="150" height="64" rx="6"/><text class="hd" x="190" y="60">sendCommand</text><text class="col" x="190" y="78">zod parse</text><text class="col" x="190" y="92">canOperate(viewer)</text>
+  <rect class="box acc" x="350" y="16" width="240" height="268" rx="8"/><text class="hd" x="362" y="38">One Postgres transaction</text>
+  <text class="col" x="362" y="62">1 lock auctions row FOR UPDATE</text>
+  <text class="col" x="362" y="86">2 key seen? return snapshot</text>
+  <text class="col" x="362" y="110">3 version &#8800; expected? conflict</text>
+  <text class="col" x="362" y="134">4 load teams, lots, events, config</text>
+  <text class="col" x="362" y="158">5 replay live events &#8594; state</text>
+  <text class="col" x="362" y="182">6 fill amounts, check maxBid</text>
+  <text class="col" x="362" y="206">7 apply &#8594; next state</text>
+  <text class="col" x="362" y="230">8 insert event, seq = version + 1</text>
+  <text class="col" x="362" y="254">9 write projections, version = seq</text>
+  <rect class="box" x="620" y="40" width="130" height="64" rx="6"/><text class="hd" x="630" y="60">broadcast</text><text class="col" x="630" y="78">after commit</text><text class="col" x="630" y="92">never throws</text>
+  <rect class="box" x="620" y="160" width="130" height="80" rx="6"/><text class="hd" x="630" y="180">Every phone</text><text class="col" x="630" y="198">v = mine+1: apply</text><text class="col" x="630" y="212">else: refetch</text><text class="col" x="630" y="226">no socket: poll 5s</text>
+  <path d="M162 72 H178" marker-end="url(#arrA)"/>
+  <path d="M330 72 H348" marker-end="url(#arrA)"/>
+  <path d="M590 72 H618" marker-end="url(#arrA)"/>
+  <path d="M685 104 V158" marker-end="url(#arrA)"/>
+  <text class="sub" x="10" y="128">retries reuse the key</text>
+  <text class="sub" x="180" y="128">returns snapshot, or</text><text class="sub" x="180" y="142">{code: conflict|rule}</text>
+  <text class="sub" x="10" y="308">Rule checks run only for new commands, never on replay. Payloads store amounts and splits, so history never changes.</text>
+</svg>
+</div>
+
+<div class="callout">
+  <div class="eyebrow">Decisions</div>
+  <ul>
+    <li>Bands are rows in <code>season_bands</code>; <code>tier</code> columns stay read-only until after Sunday, then get dropped.</li>
+    <li><code>seasons.config</code> keeps scalar settings only, with <code>v: 1</code> and the key list above. Bands never go in jsonb at the season level.</li>
+    <li><code>auctions.config</code> is a full snapshot including bands, written at creation, editable in draft, frozen at START. <code>format</code> is a column.</li>
+    <li>The console sends thin commands; the server fills amounts and splits. <code>BID</code> amount is always the next ladder step. Custom amounts are removed from the protocol and the UI.</li>
+    <li>Wallets, squad size, band lock and lot status are projections; the event log is the only truth.</li>
+    <li>Owners are pre-placed with <code>PRESOLD</code> from the main wallet and belong to no band.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="extend">4. Extensibility</h2>
+<p>Seven rules that make the later features small. Each costs little now.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Rule</th><th>What it means in practice</th></tr></thead>
+<tbody>
+<tr><td>Everything is season-scoped</td><td>Every content, roster, band, team, sponsor and auction row has <code>season_id</code>. Season 5 is new rows, not new tables. Past seasons stay readable.</td></tr>
+<tr><td>Bands are data</td><td>Adding, renaming or re-pricing a band is an admin edit. Code never names a band; it asks for <code>isStar</code>, <code>minPerTeam</code>, <code>maxPerTeam</code>.</td></tr>
+<tr><td>Rules are frozen per auction</td><td>An auction carries its own config snapshot and <code>format</code>. Changing season settings affects the next auction only.</td></tr>
+<tr><td>Events carry results</td><td>Amounts and splits live in the payload, so a new rule never breaks replay of an old log.</td></tr>
+<tr><td>Rosters are their own table</td><td><code>team_players</code> with <code>source</code>, <code>joined_at</code>, <code>left_at</code>. Trades, placements, RTM and next season's retentions all write here.</td></tr>
+<tr><td>One notification table, many channels</td><td>Write a row; a sender decides inbox, push or email later.</td></tr>
+<tr><td>Generic polls</td><td>The rules ballot, MVP votes and "which Sunday works" are the same two tables.</td></tr>
+</tbody></table></div>
+
+<h3>Auction formats and how the reducer branches</h3>
+<p><code>auctions.format</code> picks a reducer and a rule checker. Shared events (START, PAUSE, RESUME, COMPLETE, NOTE, ADJUST_PURSE, PRESOLD, UNDO, REDO) live in one common function; each format adds its own.</p>
+<pre><code>type AuctionFormat = "voice_ledger" | "owner_phone_bidding" | "snake_draft";
+
+const formats: Record&lt;AuctionFormat, { apply: Reducer; check: Checker }&gt; = {
+  voice_ledger:        { apply: applyVoice,  check: checkVoice },   // S4: operator taps BID/SOLD
+  owner_phone_bidding: { apply: applyVoice,  check: checkOwnerBid }, // later: OWNER_BID from owner session
+  snake_draft:         { apply: applyDraft,  check: checkDraft },   // later: PICK {lotId, teamId}, no money
+};
+
+function apply(s: State, e: Event, format: AuctionFormat): State {
+  return isCommon(e) ? applyCommon(s, e) : formats[format].apply(s, e);
+}</code></pre>
+<ul>
+  <li><strong>owner_phone_bidding</strong>: owners send <code>OWNER_BID {lotId}</code> from their own session; the server fills the ladder amount exactly as for <code>BID</code>, so <code>maxBid</code> is reused unchanged. The clock stays operator-confirmed (the operator taps SOLD when it hits zero), so no background scheduler is needed on Vercel.</li>
+  <li><strong>snake_draft</strong>: <code>PICK {lotId, teamId}</code>, pick order derived from team order and round. Wallets are ignored; band caps and the pool guard still apply.</li>
+  <li>The snapshot sent to phones includes <code>format</code>, so every phone runs the same reducer the server ran.</li>
+</ul>
+
+<h3>Rosters: <code>team_players.source</code></h3>
+<ul>
+  <li><strong>Trade</strong>: in one transaction, set <code>left_at</code> on the old row and insert a new row with <code>source = 'trade'</code>. A small <code>trades(id, season_id, at, registration_id, from_team_id, to_team_id, fee_lakhs, note, approved_by)</code> table records the deal.</li>
+  <li><strong>RTM</strong>: needs last season's <code>team_players</code> (exists after this Sunday's publish). Adds events <code>RTM_CLAIM {lotId, teamId}</code> and <code>RTM_FINAL_RAISE {lotId, amount}</code>, and <code>'rtm'</code> to the <code>roster_source</code> enum.</li>
+</ul>
+
+<h3>Notifications (later)</h3>
+<div class="tablewrap"><table class="cols">
+<thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>id</td><td>uuid PK</td><td></td></tr>
+<tr><td>season_id</td><td>smallint FK</td><td></td></tr>
+<tr><td>registration_id</td><td>uuid FK, null</td><td>Players (no login): inbox shown on <code>/r/[token]</code>.</td></tr>
+<tr><td>email</td><td>text null</td><td>Owners and admins. Check: exactly one of the two recipient columns is set.</td></tr>
+<tr><td>kind</td><td>text</td><td><code>sold</code>, <code>payment_confirmed</code>, <code>lot_soon</code>, <code>post</code>, <code>fixture</code>.</td></tr>
+<tr><td>payload</td><td>jsonb</td><td>What the template needs: team, price, lot number.</td></tr>
+<tr><td>channels</td><td>text[]</td><td><code>{inbox}</code> by default; <code>push</code>, <code>email</code> when those senders exist.</td></tr>
+<tr><td>created_at, sent_at, read_at</td><td>timestamptz</td><td></td></tr>
+</tbody></table></div>
+<p class="small">Index <code>(registration_id, created_at desc) where read_at is null</code>. Push subscriptions go in a separate <code>push_subscriptions(id, registration_id or email, endpoint, keys jsonb)</code> table when Web Push ships.</p>
+
+<h3>Polls and ballots (later)</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Table</th><th>Columns</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>polls</td><td>id uuid, season_id, slug, title, kind (single | multi | ballot), questions jsonb, audience (public | registered | owners), opens_at, closes_at, results (live | after_close)</td><td>A ballot is a list of questions, each with options. The rules ballot in <code>bpl-auction-options.html</code> is one ballot poll.</td></tr>
+<tr><td>poll_votes</td><td>poll_id FK, voter_key text, choice jsonb, at</td><td>Unique <code>(poll_id, voter_key)</code>. <code>voter_key</code> is the registration id (via edit token) or owner email. Re-voting overwrites until close.</td></tr>
+</tbody></table></div>
+
+<h3>Fixtures and results (sketched, not built)</h3>
+<ul>
+  <li><code>fixtures(id, season_id, round, starts_at, ground, home_team_id, away_team_id, status, cricheroes_url)</code></li>
+  <li><code>results(fixture_id PK FK, winner_team_id null, home_score text, away_score text, margin text, mvp_registration_id null, notes)</code></li>
+  <li><code>awards(id, season_id, kind, registration_id, fixture_id null, note)</code> for match MVP, season MVP, top run-scorer.</li>
+  <li>CricHeroes stays the scoring system. We store the headline result and a link, not ball-by-ball data.</li>
+</ul>
+
+<h3>Multi-league (tenancy): out of scope</h3>
+<p>One league. If another league ever wants the platform, the change is one column: <code>seasons.league_id</code>, plus a <code>leagues</code> table and a hostname lookup. Every other table already reaches a league through <code>season_id</code>. Nothing is built for this now.</p>
+
+<h3>Later features: size</h3>
+<p>S = up to half a day, M = one or two days, L = three to five days, for one developer with agents.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Feature</th><th>Tables touched</th><th class="num">Size</th></tr></thead>
+<tbody>
+<tr><td>News posts</td><td>posts (new), storage</td><td class="num">S</td></tr>
+<tr><td>Videos and gallery</td><td>media (new), storage</td><td class="num">M</td></tr>
+<tr><td>Editable pages (rules, FAQ)</td><td>pages (new)</td><td class="num">S</td></tr>
+<tr><td>Sponsor admin form and click counts</td><td>sponsors (+clicks)</td><td class="num">S</td></tr>
+<tr><td>Team pages with owner blurb</td><td>teams (+blurb, photo), team_players</td><td class="num">S</td></tr>
+<tr><td>Fixtures and results</td><td>fixtures, results (new)</td><td class="num">M</td></tr>
+<tr><td>MVP and awards</td><td>awards (new), optional polls</td><td class="num">S</td></tr>
+<tr><td>Trades</td><td>trades (new), team_players</td><td class="num">M</td></tr>
+<tr><td>Right to Match</td><td>auction_events (new types), roster_source enum, team_players (previous season)</td><td class="num">M</td></tr>
+<tr><td>Owner-phone bidding</td><td>auctions.format, auction_events (OWNER_BID)</td><td class="num">L</td></tr>
+<tr><td>Snake draft</td><td>auctions.format, auction_events (PICK)</td><td class="num">M</td></tr>
+<tr><td>Online payments</td><td>payments (new), player_registrations</td><td class="num">M</td></tr>
+<tr><td>Notifications inbox</td><td>notifications (new)</td><td class="num">M</td></tr>
+<tr><td>Web Push</td><td>push_subscriptions (new), notifications</td><td class="num">M</td></tr>
+<tr><td>Polls and the rules ballot in-app</td><td>polls, poll_votes (new)</td><td class="num">M</td></tr>
+<tr><td>Multi-season archive and season switcher</td><td>none new; season-scoped reads</td><td class="num">S</td></tr>
+<tr><td>Player login (optional)</td><td>player_registrations (+user_id)</td><td class="num">M</td></tr>
+<tr><td>Multi-league</td><td>leagues (new), seasons.league_id</td><td class="num">L</td></tr>
+</tbody></table></div>
+
+<div class="callout">
+  <div class="eyebrow">Decisions</div>
+  <ul>
+    <li><code>format</code> ships now with one value in use (<code>voice_ledger</code>); the enum already lists the other two.</li>
+    <li>Nothing from this section is built before Sunday except <code>team_players</code>, <code>audit_log</code>, <code>season_bands</code> and the <code>format</code> column.</li>
+    <li>Tenancy is out. <code>league_id</code> is not added until a second league exists.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="rules">5. Rules engine spec</h2>
+<p>All of this lives in <code>lib/auction/rules.ts</code> and <code>reducer.ts</code>. Pure functions, no imports from the server, shared by the console, board, owner view and the transaction.</p>
+
+<h3>State the rules read</h3>
+<pre><code>type Band  = { id: number; label: string; base: number; maxPerTeam: number | null;
+               minPerTeam: number; isStar: boolean };
+type Team  = { id: string; main: number; reserve: number; reserveBandId: number | null;
+               squad: number; bandCount: Record&lt;number, number&gt; };  // players bought per band
+type Lot   = { id: string; bandId: number | null; base: number; round: 1 | 2;
+               status: "queued" | "on_block" | "sold" | "unsold" | "skipped";
+               currentBid?: number; currentTeamId?: string };
+type Verdict = { max: number; mainCap: number; reserveOk: boolean; reason: string | null };</code></pre>
+
+<h3><code>maxBid(team, lot, state, config)</code></h3>
+<pre><code>const lowestBase = (c: Config) =&gt; Math.min(...c.bands.map(b =&gt; b.base));   // 2 cr in S4
+const have = (t: Team, b: Band) =&gt; t.bandCount[b.id] ?? 0;
+const inPool = (l: Lot) =&gt; l.status === "queued" || l.status === "unsold" || l.status === "skipped";
+
+function maxBid(team: Team, lot: Lot, s: State, c: Config, opts = { poolGuard: c.poolGuard }): Verdict {
+  const no = (reason: string): Verdict =&gt; ({ max: 0, mainCap: 0, reserveOk: false, reason });
+  if (s.status !== "open") return no("Auction is paused");
+  if (team.squad &gt;= c.maxSquad) return no(`Squad full (${c.maxSquad})`);
+  const band = c.bands.find(b =&gt; b.id === lot.bandId);
+  if (!band) return no("Lot has no band");
+
+  // 1. Band cap
+  if (band.maxPerTeam !== null &amp;&amp; have(team, band) &gt;= band.maxPerTeam)
+    return no(`Has ${have(team, band)} ${band.label}, max ${band.maxPerTeam}`);
+
+  // 2. Band-minimum slots: after this buy, open slots must still cover every unmet minimum
+  const slotsAfter = c.maxSquad - team.squad - 1;
+  const owedAfter = c.bands.reduce((n, b) =&gt;
+    n + Math.max(0, b.minPerTeam - have(team, b) - (b.id === band.id ? 1 : 0)), 0);
+  if (owedAfter &gt; slotsAfter) return no("Open slots are needed for band minimums");
+
+  // 3. Pool guard: every other team can still reach minSquad from what is left
+  if (opts.poolGuard) {
+    const poolAfter = Object.values(s.lots).filter(l =&gt; l.id !== lot.id &amp;&amp; inPool(l)).length;
+    const othersNeed = Object.values(s.teams).filter(t =&gt; t.id !== team.id)
+      .reduce((n, t) =&gt; n + Math.max(0, c.minSquad - t.squad), 0);
+    if (poolAfter &lt; othersNeed) return no(`Would leave another team short of ${c.minSquad}`);
+  }
+
+  // 4. Squad guard, on the main wallet: keep lowest base for every slot still needed after this one
+  const neededAfter = Math.max(0, c.minSquad - team.squad - 1);
+  const mainCap = Math.max(0, team.main - neededAfter * lowestBase(c));
+
+  // 5. Reserve: below this band's minimum, never Star, only the band it is locked to (or none yet)
+  const reserveOk = !band.isStar
+    &amp;&amp; have(team, band) &lt; band.minPerTeam
+    &amp;&amp; team.reserve &gt; 0
+    &amp;&amp; (team.reserveBandId === null || team.reserveBandId === band.id);
+
+  return { max: mainCap + (reserveOk ? team.reserve : 0), mainCap, reserveOk, reason: null };
+}
+
+// 6. Ladder: the only amount a BID can carry. One step per shout.
+function nextBid(lot: Lot, c: Config): number {
+  return lot.currentBid === undefined ? lot.base : lot.currentBid + stepAt(c.ladder, lot.currentBid);
+}
+
+function bidBlocker(team: Team, lot: Lot, s: State, c: Config): string | null {
+  if (s.onBlockLotId !== lot.id) return "That lot is not on the block";
+  if (lot.currentTeamId === team.id) return "Already leading";
+  const v = maxBid(team, lot, s, c);
+  if (v.reason) return v.reason;
+  const amount = nextBid(lot, c);
+  return amount &gt; v.max ? `Max bid ${fmt(v.max)}` : null;
+}
+
+// 7. Paying: main first, down to the squad-guard floor; the rest from reserve.
+function split(team: Team, lot: Lot, amount: number, s: State, c: Config, opts?) {
+  const v = maxBid(team, lot, s, c, opts);
+  if (v.reason) throw new AuctionRuleError(v.reason);
+  if (amount &gt; v.max) throw new AuctionRuleError(`Max bid ${fmt(v.max)}`);
+  const fromMain = Math.min(amount, v.mainCap);
+  const fromReserve = amount - fromMain;            // &gt; 0 only when v.reserveOk
+  return { fromMain, fromReserve, reserveBandId: fromReserve &gt; 0 ? lot.bandId : null };
+}</code></pre>
+
+<h4>Worked example</h4>
+<p>Kings: main 40 cr, reserve 50 cr (no lock), squad 8, one 5 cr player (band min 2), no 10 cr player (min 1). A 5 cr band player is on the block.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Step</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Slots still needed after this one</td><td>11 - 8 - 1 = 2, so keep 2 x 2 cr = 4 cr in main</td></tr>
+<tr><td>mainCap</td><td>40 - 4 = 36 cr</td></tr>
+<tr><td>Reserve eligible?</td><td>Yes: 5 cr band, not Star, has 1 of min 2, no lock yet</td></tr>
+<tr><td>Max bid</td><td>36 + 50 = 86 cr</td></tr>
+<tr><td>Sold at 45 cr</td><td>36 cr from main, 9 cr from reserve. Reserve locks to the 5 cr band.</td></tr>
+<tr><td>After</td><td>Main 4 cr, reserve 41 cr (5 cr band only). Kings now has 2 of min 2 in that band, so the reserve is shut for good. A 10 cr player is now out of reach: main cap is 2 cr and the reserve is locked elsewhere. That is the rule working as agreed.</td></tr>
+</tbody></table></div>
+
+<h3>Command semantics</h3>
+<div class="tablewrap"><table style="min-width:820px">
+<thead><tr><th>Command</th><th>Allowed when</th><th>Server fills / checks</th><th>Undo</th></tr></thead>
+<tbody>
+<tr><td><code>PRESOLD</code></td><td>Auction in draft. Lot queued. Team under max squad.</td><td>amount = <code>ownerPresoldLakhs</code> unless given; from main only; no band, no guards.</td><td>Lot back to queued, main restored.</td></tr>
+<tr><td><code>START</code></td><td>Draft. For live: setup checks pass (section 6).</td><td></td><td>Back to draft.</td></tr>
+<tr><td><code>START_LOT</code></td><td>Open, nothing on the block, lot queued.</td><td>Default lot: next queued by <code>(round, sort_order)</code>.</td><td>Lot back to queued.</td></tr>
+<tr><td><code>BID</code></td><td>Lot on the block, <code>bidBlocker</code> is null.</td><td>amount = <code>nextBid</code>. No custom amounts.</td><td>Previous bid and leader restored.</td></tr>
+<tr><td><code>SOLD</code></td><td>Lot on the block with a bid.</td><td>team = leader, amount = current bid, <code>split()</code> re-run (state cannot have changed since the bid, but it is checked anyway).</td><td>Lot back on the block with the same bid; wallets, band count and lock restored.</td></tr>
+<tr><td><code>UNSOLD</code></td><td>Lot on the block, no bid.</td><td></td><td>Lot back on the block.</td></tr>
+<tr><td><code>SKIP</code></td><td>Lot on the block (bid or not). Player absent, dispute.</td><td>Clears the bid.</td><td>Lot back on the block with its bid.</td></tr>
+<tr><td><code>REQUEUE</code></td><td>Lot unsold or skipped, round 1, auction not completed.</td><td>base = original base (stored). "Start second go" sends one REQUEUE per lot.</td><td>Lot back to unsold or skipped, round 1.</td></tr>
+<tr><td><code>PLACE</code></td><td>Lot unsold or skipped in round 2. Team under max squad and band cap.</td><td>amount = base unless given; <code>split()</code> with pool guard off. If the chosen team cannot pay base, amount may be lowered (to 0 at least) and a note is required.</td><td>Lot back to unsold, wallets restored.</td></tr>
+<tr><td><code>ADJUST_PURSE</code></td><td>Any time before publish. Note required.</td><td>Wallet cannot go below 0.</td><td>Wallet restored.</td></tr>
+<tr><td><code>NOTE</code></td><td>Any time before publish.</td><td>Text required.</td><td>Hidden.</td></tr>
+<tr><td><code>PAUSE</code> / <code>RESUME</code></td><td>Open / paused.</td><td></td><td>Toggles back.</td></tr>
+<tr><td><code>COMPLETE</code></td><td>Open or paused, nothing on the block.</td><td>Warns (does not block) if any team is under 11 or under a band minimum.</td><td>Back to open.</td></tr>
+<tr><td><code>UNDO</code> / <code>REDO</code></td><td>Before publish. Redo only if no new event since the undo.</td><td>Replays the log with the flag flipped; refuses if the result is invalid.</td><td>n/a</td></tr>
+</tbody></table></div>
+<p class="small">Placement suggestion ("most money first"): among teams under max squad and under the lot's band cap, sort by <code>mainCap + eligible reserve</code> descending, then fewer players, then name. The console pre-selects the top team; the operator can pick another.</p>
+
+<div class="diagram">
+<svg viewBox="0 0 760 265" role="img" aria-label="Lot lifecycle: queued to on_block, then sold, unsold or skipped. Unsold and skipped lots are requeued at the same base for round 2. Round 2 unsold lots are placed by organisers. Owners go straight from queued to sold as presold.">
+  <defs><marker id="arrB" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto"><path class="arrowhead" d="M0 0 L8 4 L0 8 z"/></marker></defs>
+  <rect class="box dim" x="20" y="40" width="110" height="36" rx="18"/><text x="75" y="63" text-anchor="middle">queued</text>
+  <rect class="box acc" x="200" y="40" width="110" height="36" rx="18"/><text x="255" y="63" text-anchor="middle">on_block</text>
+  <rect class="box sold" x="420" y="40" width="200" height="36" rx="18"/><text x="520" y="63" text-anchor="middle">sold (auction, presold)</text>
+  <rect class="box dim" x="200" y="110" width="110" height="36" rx="18"/><text x="255" y="133" text-anchor="middle">skipped</text>
+  <rect class="box gold" x="420" y="110" width="110" height="36" rx="18"/><text x="475" y="133" text-anchor="middle">unsold</text>
+  <rect class="box dim" x="20" y="190" width="130" height="36" rx="18"/><text x="85" y="213" text-anchor="middle">queued, round 2</text>
+  <rect class="box acc" x="200" y="190" width="130" height="36" rx="18"/><text x="265" y="213" text-anchor="middle">on_block, r2</text>
+  <rect class="box gold" x="400" y="190" width="120" height="36" rx="18"/><text x="460" y="213" text-anchor="middle">unsold, r2</text>
+  <rect class="box sold" x="580" y="190" width="160" height="36" rx="18"/><text x="660" y="213" text-anchor="middle">sold (placed)</text>
+  <path d="M75 40 C75 6, 520 6, 520 38" stroke-dasharray="4 3" marker-end="url(#arrB)"/><text class="lbl" x="300" y="33" text-anchor="middle">PRESOLD (owners, before lot 1)</text>
+  <path d="M130 58 H198" marker-end="url(#arrB)"/><text class="lbl" x="165" y="52" text-anchor="middle">START_LOT</text>
+  <path d="M310 58 H418" marker-end="url(#arrB)"/><text class="lbl" x="365" y="52" text-anchor="middle">SOLD</text>
+  <path d="M255 76 V108" marker-end="url(#arrB)"/><text class="lbl" x="262" y="97">SKIP</text>
+  <path d="M310 68 H365 V128 H418" marker-end="url(#arrB)"/><text class="lbl" x="370" y="100">UNSOLD</text>
+  <path d="M255 146 V172"/>
+  <path d="M475 146 V172 H85 V188" stroke-dasharray="4 3" marker-end="url(#arrB)"/><text class="lbl" x="485" y="170">REQUEUE, same base (second go)</text>
+  <path d="M150 208 H198" marker-end="url(#arrB)"/>
+  <path d="M330 208 H398" marker-end="url(#arrB)"/><text class="lbl" x="365" y="202" text-anchor="middle">UNSOLD</text>
+  <path d="M520 208 H578" marker-end="url(#arrB)"/><text class="lbl" x="550" y="202" text-anchor="middle">PLACE</text>
+  <text class="sub" x="20" y="252">Round 2 lots can also be SOLD (via auction) or SKIPped. PLACE suggests the team with the most money first.</text>
+</svg>
+</div>
+
+<h3>Invariants to assert in tests</h3>
+<p>Checked after every event in the simulation tests (section 10) and, cheaply, after every command in development builds.</p>
+<ol>
+  <li><strong>Wallets never negative:</strong> <code>main &gt;= 0</code> and <code>reserve &gt;= 0</code> for every team.</li>
+  <li><strong>Money adds up:</strong> for each team, <code>mainStart - main = sum(fromMain) - sum(main adjustments)</code>, and the same for reserve.</li>
+  <li><strong>Reserve never on Star:</strong> no sale with <code>fromReserve &gt; 0</code> is in a band with <code>isStar</code>.</li>
+  <li><strong>Reserve on at most one band:</strong> the set of band ids across a team's sales with <code>fromReserve &gt; 0</code> has size 0 or 1, and equals <code>reserveBandId</code> when 1.</li>
+  <li><strong>Reserve only when short:</strong> every sale with <code>fromReserve &gt; 0</code> happened while the team had fewer than <code>minPerTeam</code> in that band.</li>
+  <li><strong>Main first:</strong> <code>fromReserve &gt; 0</code> implies <code>fromMain = mainCap</code> at that moment.</li>
+  <li><strong>Caps hold:</strong> <code>squad &lt;= maxSquad</code>, and <code>bandCount[b] &lt;= maxPerTeam(b)</code>.</li>
+  <li><strong>Pool covers needs while open:</strong> <code>count(lots in pool or on block) &gt;= sum over teams of max(0, minSquad - squad)</code>.</li>
+  <li><strong>Squad in range at completion:</strong> if at START the pool held at least <code>sum over teams of (minSquad - squad)</code> players, every team ends with <code>minSquad &lt;= squad &lt;= maxSquad</code> once placement is done.</li>
+  <li><strong>Every BID is one ladder step:</strong> first bid = base, each next = previous + <code>stepAt(previous)</code>.</li>
+  <li><strong>Replay is deterministic:</strong> projections in the DB equal <code>replay(log)</code>; undo then redo returns the same state.</li>
+</ol>
+<p class="small">Band minimums are not an invariant: a team can end short in a band (the example above). The console and owner view show "short: 1 x 10 cr" so the room sees it.</p>
+
+<div class="callout">
+  <div class="eyebrow">Decisions</div>
+  <ul>
+    <li>Squad guard applies to the main wallet only; reserve sits on top when eligible.</li>
+    <li>Main is drained first down to the squad-guard floor, then reserve. The split is stored in the event.</li>
+    <li>The pool counts queued, unsold and skipped lots. Round-1 unsold players still count because they get a second go.</li>
+    <li>A band-minimum slot guard blocks a buy that would leave too few open slots for unmet band minimums.</li>
+    <li>Placed players cost their base price; the operator may lower it (with a note) only when the chosen team cannot pay.</li>
+    <li>Unused reserve is shown as "lost" after COMPLETE; nothing else happens to it.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="screens">6. Screens and data per screen</h2>
+<p>What each screen shows and which actions it can fire. No visual design here; v1's sunlight and phone rules still apply.</p>
+
+<h3>Operator console <code>/auction/[id]/console</code></h3>
+<p class="small">Who: <code>canOperate</code> (league admin or <code>auction_admins</code>). Data: <code>fetchConsoleSnapshot</code> (last 20 events with actor) plus the live channel.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Shows</th><th>Fires</th></tr></thead>
+<tbody>
+<tr><td>Lot on the block: name, photo, role, keeper flag, band label, base, round, set position ("Lot 22 of 48, 10 cr set")</td><td><code>START_LOT</code> (Next), <code>UNSOLD</code>, <code>SKIP</code></td></tr>
+<tr><td>Current bid and leader; next bid amount</td><td><code>BID</code>: one "+step" button per team, in team colour</td></tr>
+<tr><td>Per team: main left, reserve left, lock band, squad n/13, band counts vs min/max, max bid for this lot, and the reason when greyed out</td><td></td></tr>
+<tr><td>Wallet split preview on the SOLD sheet: "45 cr: 36 main + 9 reserve, locks reserve to 5 cr"</td><td><code>SOLD</code> (confirm sheet with team colour and amount)</td></tr>
+<tr><td>What Undo would undo, in words ("SOLD R. Sharma to Kings 45 cr")</td><td><code>UNDO</code>, <code>REDO</code></td></tr>
+<tr><td>Clock</td><td><code>startClock</code></td></tr>
+<tr><td>Up next (5 lots); unsold and skipped list</td><td>"Start second go" (one <code>REQUEUE</code> per lot)</td></tr>
+<tr><td>Placement list for round-2 leftovers with the suggested team</td><td><code>PLACE</code></td></tr>
+<tr><td>Event feed (20)</td><td><code>NOTE</code>, <code>ADJUST_PURSE</code> (main or reserve, note required)</td></tr>
+<tr><td>Auction status</td><td><code>START</code>, <code>PAUSE</code>, <code>RESUME</code>, <code>COMPLETE</code></td></tr>
+</tbody></table></div>
+<p class="small">Removed from the current console: <code>CustomBid.tsx</code> and the custom amount field.</p>
+
+<h3>Public board <code>/auction</code> and <code>/auction/t/[token]</code></h3>
+<p class="small">Who: anyone. Data: <code>fetchSnapshot</code> (last 10 events, no actor emails) plus the live channel. Fires nothing.</p>
+<ul>
+  <li>Lot card: photo, name, role, keeper flag, batting and bowling style, stats, band, base, round.</li>
+  <li>Current bid and leading team (largest thing on screen), clock, SOLD / UNSOLD flash.</li>
+  <li>Team strip: main left, reserve left (and lock band once set), squad n/13.</li>
+  <li>Sold list, newest first. Up next (3). Sponsor for this lot.</li>
+  <li>"Find a player": name search, shows lot number and "N lots away".</li>
+  <li>Before START: the pool grouped by band with base prices, teams and owners, countdown, rules panel rendered from <code>auctions.config</code>.</li>
+</ul>
+
+<h3>Owner view <code>/auction/[id]/owner</code></h3>
+<p class="small">Who: signed-in owner whose real team is linked to an <code>auction_teams</code> row, in a live or test auction (<code>ownedTeamIds</code> today allows live only; v2 drops that filter so owners can rehearse). Data: public snapshot plus config. Fires nothing in S4.</p>
+<ul>
+  <li>Own team: main left, reserve left, lock band or "not used yet", squad list with prices and bands.</li>
+  <li>For the lot on the block: "Your max bid: 86 cr (36 main + 50 reserve)" or the reason it is 0.</li>
+  <li>Needs: "Still need: 1 x 10 cr, 1 x 5 cr, 2 more players to reach 11". Caps: "Star 1 of 2".</li>
+  <li>Other teams: main, reserve, squad size.</li>
+</ul>
+
+<h3>Player view <code>/r/[token]</code></h3>
+<p class="small">Who: whoever holds the token. Data: the registration row; during the live auction, the player's lot and the live snapshot (same channel as the board).</p>
+<ul>
+  <li>Registration card fields, editable until <code>edits_lock_at</code>. Status (registered / confirmed) and payment status: visible to this player only.</li>
+  <li>Band once assigned.</li>
+  <li>Auction day: "Lot 31. You're up in 9 lots (about 15 min)", counted as queued lots ahead in <code>(round, sort_order)</code>; estimate uses 100 s per lot. Live bid when on the block.</li>
+  <li>After sale: team and price. After publish: link to the team page.</li>
+  <li>Fires: <code>saveRegistration</code>, <code>createUploadUrl</code> (before lock only).</li>
+</ul>
+
+<h3>Admin auction setup <code>/admin/auctions/[id]</code></h3>
+<p class="small">Who: admin. Data: auction row, config snapshot, lots, teams, admins.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Shows</th><th>Fires</th></tr></thead>
+<tbody>
+<tr><td>Config snapshot (bands, wallets, squad sizes, ladder) with "frozen" badge after START</td><td><code>saveAuctionConfig</code>, "Refresh from season" (draft only)</td></tr>
+<tr><td>Setup checks, all must pass to START a live auction:<br>every confirmed player seeded and banded; each band's pool at least <code>teams x minPerTeam</code>; pool at least <code>sum(minSquad - squad)</code>; every team has its owner pre-placed; wallets read 275 cr main and 50 cr reserve</td><td></td></tr>
+<tr><td>Lot table: order, set (band), status, round, price</td><td><code>addConfirmedPlayers</code>, <code>addFakePlayers</code>, <code>shuffleSets</code>, <code>clearTestLots</code></td></tr>
+<tr><td>Owners and their registrations</td><td><code>placeOwners</code> (one <code>PRESOLD</code> per team)</td></tr>
+<tr><td>Auction admins, share link</td><td><code>addAuctionAdmin</code>, <code>removeAuctionAdmin</code>, <code>rotateShareToken</code></td></tr>
+<tr><td>Test auctions: "Promote to live"</td><td><code>promoteToLive</code></td></tr>
+<tr><td>After COMPLETE (live only): publish state</td><td><code>publishRosters</code>, CSV export</td></tr>
+</tbody></table></div>
+
+<h3>Admin settings <code>/admin/settings</code></h3>
+<p class="small">Who: admin. Data: <code>seasons.config</code>, teams, <code>season_bands</code>.</p>
+<ul>
+  <li>League settings (exists): fee line, e-Transfer email, registration open. Adds <code>edits_lock_at</code>, <code>auction_starts_at</code>.</li>
+  <li>Teams (exists): name, short, colour, logo. Adds slug and owner registration picker.</li>
+  <li><strong>Bands editor</strong> (new): one row per band: code, label, base, max per team (blank = no limit), min per team, Star toggle, order. Checks: base above 0 and a ladder amount; min not above max; codes unique; at most one Star; sum of minimums at most <code>maxSquad - 1</code> (owner slot). A band with players assigned cannot be deleted. Saving affects new auctions only; the page says so.</li>
+  <li>Fires: <code>saveLeagueSettings</code>, <code>saveTeams</code>, <code>saveBands</code>.</li>
+</ul>
+
+<div class="callout">
+  <div class="eyebrow">Decisions</div>
+  <ul>
+    <li>Greyed buttons always show the reason from <code>bidBlocker</code>, in the same words the server would reject with.</li>
+    <li>Reserve is shown separately from main everywhere, with its lock band.</li>
+    <li>The player page subscribes to the same channel as the board; no extra endpoint.</li>
+    <li>A live auction cannot START until the setup checks pass. Test auctions skip them.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="api">7. API surface</h2>
+<p>Server Actions for writes and snapshot reads, route handlers only where a URL is needed (OAuth callback, CSV download, redirects, cron). Every action re-checks auth on the server. Server code talks to Postgres through <code>DATABASE_URL</code>, so auth checks live in code; RLS is the backstop for anything using the anon key.</p>
+
+<div class="tablewrap"><table style="min-width:820px">
+<thead><tr><th>Area</th><th>Action / route</th><th>Auth check</th><th>Writes</th><th>Status</th></tr></thead>
+<tbody>
+<tr class="group"><td colspan="5">Registration</td></tr>
+<tr><td></td><td><code>saveRegistration</code> (create or edit by token)</td><td>none to create; token to edit; <code>registration_open</code>, <code>edits_lock_at</code></td><td>player_registrations</td><td>exists; add <code>can_keep</code>, 3 roles</td></tr>
+<tr><td></td><td><code>createUploadUrl(kind, type)</code></td><td>none; size and type limits</td><td>storage (signed upload)</td><td>exists</td></tr>
+<tr class="group"><td colspan="5">Admin: registrations and settings</td></tr>
+<tr><td></td><td><code>markPaid</code>, <code>withdraw</code></td><td><code>requireAdmin</code></td><td>player_registrations, audit_log</td><td>exists; add audit</td></tr>
+<tr><td></td><td><code>setBand(id, bandId)</code></td><td><code>requireAdmin</code></td><td>player_registrations, audit_log</td><td>replaces <code>setTier</code></td></tr>
+<tr><td></td><td><code>saveLeagueSettings</code>, <code>saveTeams</code></td><td><code>requireAdmin</code></td><td>seasons.config, teams, audit_log</td><td>exists; add audit and new keys</td></tr>
+<tr><td></td><td><code>saveBands</code></td><td><code>requireAdmin</code></td><td>season_bands, audit_log</td><td>new</td></tr>
+<tr class="group"><td colspan="5">Admin: auctions</td></tr>
+<tr><td></td><td><code>createAuction</code></td><td><code>requireAdmin</code></td><td>auctions (config snapshot, format), auction_teams, audit_log</td><td>exists; snapshot new</td></tr>
+<tr><td></td><td><code>saveAuctionConfig</code>, <code>refreshConfigFromSeason</code></td><td><code>requireAdmin</code>; status draft</td><td>auctions.config, audit_log</td><td>new (JSON editor exists)</td></tr>
+<tr><td></td><td><code>addConfirmedPlayers</code>, <code>addFakePlayers</code>, <code>shuffleSets</code>, <code>clearTestLots</code></td><td><code>requireAdmin</code>; draft</td><td>auction_lots</td><td>exists; sets by band</td></tr>
+<tr><td></td><td><code>placeOwners</code></td><td><code>requireAdmin</code>; draft</td><td>auction_events (PRESOLD) via <code>runCommand</code></td><td>new (Presell exists)</td></tr>
+<tr><td></td><td><code>addAuctionAdmin</code>, <code>removeAuctionAdmin</code>, <code>rotateShareToken</code>, <code>promoteToLive</code></td><td><code>requireAdmin</code></td><td>auction_admins, auctions, audit_log</td><td>exists; add audit</td></tr>
+<tr><td></td><td><code>adminCommand</code></td><td><code>requireAdmin</code></td><td>auction_events via <code>runCommand</code></td><td>exists</td></tr>
+<tr><td></td><td><code>publishRosters(auctionId)</code></td><td><code>requireAdmin</code>; live, completed, not published</td><td>team_players, auctions.published_at, audit_log</td><td>new</td></tr>
+<tr><td></td><td><code>GET /admin/auctions/[id]/export</code></td><td><code>requireAdmin</code> or <code>canOperate</code></td><td>none (CSV of events and lots)</td><td>exists</td></tr>
+<tr><td></td><td><code>GET /admin/rosters/export</code></td><td><code>requireAdmin</code></td><td>none (CSV of team_players)</td><td>new</td></tr>
+<tr class="group"><td colspan="5">Live auction</td></tr>
+<tr><td></td><td><code>fetchSnapshot(id, "full" | "live")</code></td><td>none (live or test by id)</td><td>none</td><td>exists</td></tr>
+<tr><td></td><td><code>fetchConsoleSnapshot(id, part)</code></td><td><code>canOperate</code></td><td>none</td><td>exists</td></tr>
+<tr><td></td><td><code>sendCommand(id, cmd, {expectedVersion, idempotencyKey})</code></td><td><code>canOperate</code>; not published</td><td>auction_events, auction_teams, auction_lots, auctions</td><td>exists; thin commands, PLACE</td></tr>
+<tr><td></td><td><code>startClock(id, seconds)</code></td><td><code>canOperate</code></td><td>none (broadcast)</td><td>exists</td></tr>
+<tr class="group"><td colspan="5">Auth and system</td></tr>
+<tr><td></td><td><code>GET /auth/callback</code></td><td>Supabase OAuth code exchange</td><td>user_roles.user_id, team_owners.user_id on first sign-in</td><td>exists</td></tr>
+<tr><td></td><td><code>GET /api/cron/keepalive</code></td><td><code>CRON_SECRET</code> header</td><td>none (one select)</td><td>new</td></tr>
+<tr><td></td><td><code>GET /go/[id]</code></td><td>none</td><td>sponsors.clicks</td><td>later</td></tr>
+<tr><td></td><td>Content actions (<code>savePost</code>, <code>saveMedia</code>, <code>savePage</code>)</td><td><code>requireAdmin</code></td><td>posts, media, pages, audit_log</td><td>later</td></tr>
+</tbody></table></div>
+
+<h3>Realtime</h3>
+<p>One Supabase Broadcast channel per auction, <code>auction:{id}</code>. The server sends through the Realtime REST endpoint after the transaction commits. Phones subscribe with the anon key. Messages carry nothing private.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Event name</th><th>Payload</th><th>Client does</th></tr></thead>
+<tbody>
+<tr><td><code>event</code></td><td><code>{ version, event: {seq, type, payload, undone, at} | null, reload?: true }</code></td><td>If <code>version = mine + 1</code> and event is set: apply with the shared reducer. Otherwise fetch <code>fetchSnapshot(id, "live")</code>. On <code>reload</code>: fetch full.</td></tr>
+<tr><td><code>clock</code></td><td><code>{ type: "CLOCK", endsAt, seconds }</code></td><td>Show countdown. Not stored.</td></tr>
+</tbody></table></div>
+<p class="small">UNDO and REDO broadcast as <code>event: null</code> with the new version, so phones refetch. Fallback: poll the "live" snapshot every 5 s while the socket is down, and refetch on <code>visibilitychange</code>. Shapes are unchanged from the engine branch; only payload contents grow (split fields, PLACE).</p>
+
+<h3>Caching and revalidation</h3>
+<ul>
+  <li><code>/</code>, <code>/teams</code>, <code>/teams/[slug]</code>: static, tagged <code>season:{id}</code> and <code>rosters:{id}</code>. <code>saveTeams</code>, sponsor edits and <code>publishRosters</code> call <code>revalidateTag</code>.</li>
+  <li><code>/auction</code>, <code>/auction/t/[token]</code>, console, owner: dynamic. First paint renders the current snapshot on the server; the client then subscribes.</li>
+  <li><code>/r/[token]</code>: dynamic, <code>no-store</code>, <code>noindex</code>, <code>Referrer-Policy: no-referrer</code> (exists).</li>
+  <li>Snapshot actions and the broadcast fetch use <code>cache: "no-store"</code>.</li>
+</ul>
+
+<div class="callout">
+  <div class="eyebrow">Decisions</div>
+  <ul>
+    <li>No public REST API. Server Actions only, plus the four route handlers above.</li>
+    <li>Channel and message shapes stay as built; no second channel before Sunday.</li>
+    <li>Commands are refused after <code>published_at</code> is set. Fixing a published roster is an admin roster edit (later), not an auction undo.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="security">8. Security and privacy</h2>
+<p>Two layers. Server code connects as the table owner and skips RLS, so every Server Action checks the viewer itself (<code>requireAdmin</code>, <code>canOperate</code>, token lookup). RLS covers anything that uses the anon key from a browser, so a leaked anon key reads only what is public anyway.</p>
+
+<h3>RLS per table</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Table</th><th>anon / signed-in</th><th>Admin (<code>is_admin()</code>)</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>seasons, season_bands, teams</td><td>read</td><td>all</td><td>Public facts.</td></tr>
+<tr><td>sponsors</td><td>read where <code>active</code></td><td>all</td><td></td></tr>
+<tr><td>player_registrations</td><td>none</td><td>all</td><td>Public reads go through the view below.</td></tr>
+<tr><td>public_player_cards (view)</td><td>read</td><td>read</td><td>id, season_id, status, full_name, role, can_keep, band_id, band label, styles, bio, stats, photo_url, cricheroes_url. No phone, email, token or payment fields. Excludes withdrawn.</td></tr>
+<tr><td>team_players</td><td>read</td><td>all</td><td>Published rosters are public.</td></tr>
+<tr><td>user_roles, team_owners</td><td>none</td><td>all</td><td></td></tr>
+<tr><td>auctions, auction_admins, auction_teams, auction_lots, auction_events</td><td>none</td><td>all</td><td>Boards read through server snapshots, which strip actor emails for public viewers.</td></tr>
+<tr><td>audit_log</td><td>none</td><td>read only</td><td>No update or delete policy for anyone.</td></tr>
+<tr><td>posts, media, pages (later)</td><td>read where published</td><td>all</td><td></td></tr>
+<tr><td>notifications, polls, poll_votes (later)</td><td>none</td><td>all</td><td>Written and read by server code only.</td></tr>
+<tr><td>storage <code>photos</code></td><td>read</td><td>all</td><td>Uploads only through signed URLs.</td></tr>
+<tr><td>storage <code>payment-proofs</code></td><td>none</td><td>via signed read URL (10 min)</td><td>Private bucket.</td></tr>
+</tbody></table></div>
+
+<h3>Other rules</h3>
+<ul>
+  <li><strong>Service role key</strong>: server only. Used for the Realtime broadcast REST call, signed upload and read URLs, and e2e test setup. Never in a <code>NEXT_PUBLIC_</code> variable.</li>
+  <li><strong>Edit tokens</strong>: random, unique, only shown to the player and to admins (for the WhatsApp resend). Stored in plain text for S4; hashing is on the later list.</li>
+  <li><strong>Test auction tokens</strong>: 20 URL-safe characters, "unlisted video" level. Rotate with one click. Test boards are <code>noindex</code>. Test auctions can never publish rosters (server refuses; button not rendered).</li>
+  <li><strong>Actor emails</strong> appear only in the console snapshot and the admin CSV.</li>
+  <li><strong>Rate limiting</strong>: none at app level for S4. The public form has a honeypot field, zod length caps, a 5 MB upload cap and one row per phone per season. Every write beyond registration needs a Google session on the allowlist. If the form gets spammed, turn on Vercel's attack challenge mode and close registration from settings.</li>
+  <li><strong>Command safety</strong>: optimistic version check plus idempotency key (exists). A replayed request is a no-op; a stale one gets "Board changed, refreshed".</li>
+  <li><strong>Backups</strong>: Supabase free has no point-in-time restore. A GitHub Action runs <code>supabase db dump</code> (schema and data) nightly and keeps it as a private workflow artifact for 30 days. Manual dumps Saturday night and Sunday after the auction. The event CSV at each break is the auction-day backup; the log can rebuild every projection.</li>
+  <li><strong>Privacy notice</strong> on the form: public (name, photo, role, keeper, styles, stats, band, team, price), private (phone, email, payment). Withdrawn players drop out of the public view.</li>
+</ul>
+
+<div class="callout">
+  <div class="eyebrow">Decisions</div>
+  <ul>
+    <li>Authorization is enforced in Server Actions; RLS is deny-by-default for anything not listed as public.</li>
+    <li><code>public_player_cards</code> is recreated with <code>can_keep</code> and band, without <code>tier</code>.</li>
+    <li>No app-level rate limiter before Sunday.</li>
+    <li>Nightly dump via GitHub Actions ships Saturday.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="migrations">9. Migration plan from the current schema</h2>
+<p>Conventions from the repo: Drizzle generates schema migrations (<code>pnpm db:generate</code> after editing <code>lib/db/schema.ts</code>, Supabase-style timestamped names); data backfills, policies and views are hand-written files in the same folder; the Supabase CLI applies them (<code>supabase db push</code>), never <code>drizzle-kit migrate</code>. Where Drizzle cannot express a change (enum value removal, <code>USING</code> casts), generate, then edit the SQL by hand and keep <code>schema.ts</code> matching.</p>
+<p>Expand first, contract later: anything that removes a column or enum value ships after the code that stops using it is live in prod.</p>
+
+<h3>Order</h3>
+<div class="tablewrap"><table style="min-width:760px">
+<thead><tr><th>#</th><th>Migration</th><th>Kind</th><th>Code in the same PR</th><th>When</th></tr></thead>
+<tbody>
+<tr><td>0</td><td><code>20260929194512_auction_one_live</code> (on main, not yet applied to dev or prod)</td><td>generated</td><td>Run <code>pnpm db:push</code> on dev, then prod</td><td>Tue</td></tr>
+<tr><td>1</td><td><code>..._season_bands</code>: table, <code>band_id</code> on registrations and lots</td><td>generated</td><td>schema.ts</td><td>Wed</td></tr>
+<tr><td>1b</td><td><code>..._season_bands_backfill</code>: S4 bands, map tier to band, recreate view</td><td>hand</td><td><code>setBand</code>, bands editor, config reads bands, sets by band</td><td>Wed</td></tr>
+<tr><td>2</td><td><code>..._can_keep</code>: add column, convert keeper rows</td><td>generated + hand update</td><td>Form: 3 roles + "Can keep wicket" checkbox; card shows "WK"</td><td>Wed</td></tr>
+<tr><td>3</td><td><code>..._player_role_contract</code>: drop <code>wicket_keeper</code> from the enum</td><td>hand</td><td><code>ROLE_VALUES</code> without keeper; lots.ts without keeper set</td><td>Thu, after 2 is live in prod</td></tr>
+<tr><td>4</td><td><code>..._auction_v2</code>: format, published_at, reserve columns, round, sold_via, team slug and owner link</td><td>generated + hand guard</td><td>Rules engine v2 (section 5)</td><td>Thu</td></tr>
+<tr><td>5</td><td><code>..._team_players</code></td><td>generated</td><td><code>publishRosters</code>, roster CSV, <code>/teams</code></td><td>Sat</td></tr>
+<tr><td>6</td><td><code>..._audit_log</code></td><td>generated</td><td><code>audit()</code> helper wired into admin actions</td><td>Sat</td></tr>
+<tr><td>7</td><td><code>..._policies_v2</code>: RLS for new tables</td><td>hand</td><td>none</td><td>with 5 and 6</td></tr>
+<tr><td>8</td><td><code>..._content</code>: posts, media, pages</td><td>generated + policies</td><td>Content admin</td><td>after Sunday</td></tr>
+<tr><td>9</td><td><code>..._drop_tier</code>: drop <code>tier</code> columns</td><td>hand</td><td>Remove tier reads</td><td>after Sunday</td></tr>
+</tbody></table></div>
+
+<h3>SQL sketches</h3>
+<details open><summary>1 and 1b: bands</summary><div class="body">
+<pre><code>create table season_bands (
+  id smallserial primary key,
+  season_id smallint not null references seasons(id),
+  code text not null,
+  label text not null,
+  base_lakhs integer not null check (base_lakhs &gt; 0),
+  max_per_team smallint check (max_per_team is null or max_per_team &gt;= 0),
+  min_per_team smallint not null default 0 check (min_per_team &gt;= 0),
+  sort_order smallint not null,
+  is_star boolean not null default false,
+  unique (season_id, code),
+  check (max_per_team is null or min_per_team &lt;= max_per_team)
+);
+create unique index season_bands_one_star on season_bands (season_id) where is_star;
+alter table player_registrations add column band_id smallint references season_bands(id);
+alter table auction_lots        add column band_id smallint references season_bands(id);
+create index player_registrations_band on player_registrations (band_id);
+
+-- 1b (hand-written, safe to re-run)
+insert into season_bands (season_id, code, label, base_lakhs, max_per_team, min_per_team, sort_order, is_star) values
+  (1, 'star', 'Star',  2000, 2,    0, 1, true),
+  (1, '10cr', '10 cr', 1000, 3,    1, 2, false),
+  (1, '5cr',  '5 cr',   500, 4,    2, 3, false),
+  (1, '2cr',  '2 cr',   200, null, 2, 4, false)
+on conflict (season_id, code) do nothing;
+
+update player_registrations r set band_id = b.id
+  from season_bands b
+ where b.season_id = r.season_id and r.band_id is null
+   and b.code = case r.tier when 'M' then 'star' when 'A' then '10cr' when 'B' then '5cr' when 'C' then '2cr' end;
+
+create or replace view public_player_cards as
+select r.id, r.season_id, r.status, r.full_name, r.role, r.batting_style, r.bowling_style,
+       r.tier, r.bio, r.stats, r.photo_url, r.cricheroes_url, r.created_at,
+       r.band_id, b.label as band_label, b.base_lakhs as band_base_lakhs
+  from player_registrations r left join season_bands b on b.id = r.band_id
+ where r.status &lt;&gt; 'withdrawn';</code></pre>
+</div></details>
+
+<details><summary>2 and 3: keeper flag, then the enum contract</summary><div class="body">
+<pre><code>-- 2 (expand)
+alter table player_registrations add column can_keep boolean not null default false;
+alter table auction_lots        add column can_keep boolean not null default false;
+update player_registrations set can_keep = true, role = 'batter' where role = 'wicket_keeper';
+update auction_lots        set can_keep = true, role = 'batter' where role = 'wicket_keeper';
+
+-- 3 (contract; only after the form no longer sends wicket_keeper in prod)
+update player_registrations set can_keep = true, role = 'batter' where role = 'wicket_keeper';
+update auction_lots        set can_keep = true, role = 'batter' where role = 'wicket_keeper';
+drop view public_player_cards;                         -- depends on the column type
+create type player_role_v2 as enum ('batter', 'bowler', 'all_rounder');
+alter table player_registrations alter column role type player_role_v2 using role::text::player_role_v2;
+alter table auction_lots        alter column role type player_role_v2 using role::text::player_role_v2;
+drop type player_role;
+alter type player_role_v2 rename to player_role;
+create view public_player_cards as select ...  -- as in 1b, plus r.can_keep
+revoke all on public_player_cards from anon, authenticated;
+grant select on public_player_cards to anon, authenticated;</code></pre>
+</div></details>
+
+<details><summary>4: auction v2</summary><div class="body">
+<pre><code>-- Guard: only pre-v2 rehearsal data may exist. Stop if a live auction has started.
+do $$ begin
+  if exists (select 1 from auctions where mode = 'live' and status &lt;&gt; 'draft') then
+    raise exception 'A live auction has started; migrate by hand';
+  end if;
+end $$;
+-- Pre-v2 test and draft auctions have no bands or reserve; clear them (recreate in one minute).
+delete from auction_events; delete from auction_lots; delete from auction_teams;
+delete from auction_admins; delete from auctions;
+
+create type auction_format as enum ('voice_ledger', 'owner_phone_bidding', 'snake_draft');
+create type sold_via as enum ('auction', 'presold', 'placed');
+alter table auctions
+  add column format auction_format not null default 'voice_ledger',
+  add column published_at timestamptz;
+alter table auction_teams
+  add column reserve_start_lakhs integer not null default 0,
+  add column reserve_left_lakhs  integer not null default 0,
+  add column reserve_band_id smallint references season_bands(id),
+  add constraint auction_teams_wallets_nonneg check (purse_left_lakhs &gt;= 0 and reserve_left_lakhs &gt;= 0);
+alter table auction_lots
+  add column round smallint not null default 1,
+  add column sold_via sold_via;
+create index auction_lots_order on auction_lots (auction_id, sort_order);
+create unique index auction_lots_one_per_player on auction_lots (auction_id, registration_id) where registration_id is not null;
+create unique index auction_teams_one_per_team on auction_teams (auction_id, team_id) where team_id is not null;
+
+alter table teams add column slug text, add column owner_registration_id uuid references player_registrations(id);
+update teams set slug = lower(short) where slug is null;
+alter table teams alter column slug set not null;
+create unique index teams_season_slug on teams (season_id, slug);
+alter table sponsors add column active boolean not null default true;</code></pre>
+</div></details>
+
+<details><summary>5, 6, 7: rosters, audit, policies</summary><div class="body">
+<pre><code>create type roster_source as enum ('auction', 'presold', 'placed', 'trade');
+create table team_players (
+  id uuid primary key default gen_random_uuid(),
+  season_id smallint not null references seasons(id),
+  team_id uuid not null references teams(id),
+  registration_id uuid not null references player_registrations(id),
+  band_id smallint references season_bands(id),
+  price_lakhs integer not null check (price_lakhs &gt;= 0),
+  source roster_source not null,
+  auction_id uuid references auctions(id),
+  lot_id uuid unique references auction_lots(id),
+  joined_at timestamptz not null default now(),
+  left_at timestamptz,
+  note text
+);
+create unique index team_players_one_active on team_players (season_id, registration_id) where left_at is null;
+create index team_players_team on team_players (team_id) where left_at is null;
+
+create table audit_log (
+  id bigserial primary key,
+  at timestamptz not null default now(),
+  actor_email text not null,
+  action text not null,
+  entity text not null,
+  entity_id text,
+  season_id smallint,
+  before jsonb,
+  after jsonb
+);
+create index audit_log_entity on audit_log (entity, entity_id);
+create index audit_log_at on audit_log (at desc);
+
+-- 7: same pattern as 20260929183900_policies.sql
+-- "admin all" on season_bands, team_players; "public read" on season_bands, team_players;
+-- audit_log: enable RLS, one "admin read" select policy, nothing else.
+-- sponsors "public read" becomes: using (active).</code></pre>
+<p class="small">Publish, inside one transaction:</p>
+<pre><code>insert into team_players (season_id, team_id, registration_id, band_id, price_lakhs, source, auction_id, lot_id)
+select a.season_id, t.team_id, l.registration_id, l.band_id, l.price_lakhs, l.sold_via::text::roster_source, a.id, l.id
+  from auction_lots l
+  join auctions a on a.id = l.auction_id
+  join auction_teams t on t.id = l.sold_to_team_id
+ where l.auction_id = $1 and l.status = 'sold' and l.registration_id is not null
+on conflict (lot_id) do nothing;
+update auctions set published_at = now() where id = $1;</code></pre>
+</div></details>
+
+<details><summary>9: contract, after Sunday</summary><div class="body">
+<pre><code>drop view public_player_cards;
+alter table player_registrations drop column tier;
+alter table auction_lots drop column tier;
+create view public_player_cards as select ...;  -- without tier
+-- re-grant select to anon, authenticated</code></pre>
+</div></details>
+
+<h3>Code changes per migration</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>Code</th></tr></thead>
+<tbody>
+<tr><td>1, 1b</td><td><code>schema.ts</code> (seasonBands, bandId columns). <code>lib/bands.ts</code>: load, validate, sort. <code>setTier</code> becomes <code>setBand</code>; admin table and registration detail show band labels. <code>/admin/settings</code> bands editor + <code>saveBands</code>. <code>lots.ts</code>: <code>setNameFor</code> uses band label and band order. Public cards read <code>band_label</code>.</td></tr>
+<tr><td>2</td><td><code>options.ts</code> roles without keeper for new input (still reads old value); <code>validate.ts</code> accepts <code>can_keep</code>; form checkbox; card and board show "WK".</td></tr>
+<tr><td>3</td><td>Remove <code>wicket_keeper</code> everywhere; fake player generator sets <code>can_keep</code> instead.</td></tr>
+<tr><td>4</td><td><code>config.ts</code>: v1 snapshot type, <code>buildSnapshotConfig(season, bands)</code>; drop <code>basePrices</code>/<code>TIER_KEYS</code>. <code>reducer.ts</code>: wallets, band counts, round, sold_via, PLACE. <code>rules.ts</code>: section 5. <code>engine.ts</code>: fill thin commands, new projections. <code>admin.ts</code>: snapshot on create, reserve on teams, draft-only config edits, <code>placeOwners</code>. Console: delete <code>CustomBid.tsx</code>, add reserve, reasons, second go, placement. Board, owner, player views.</td></tr>
+<tr><td>5</td><td><code>publishRosters</code>, <code>/teams</code>, <code>/teams/[slug]</code>, roster CSV, <code>revalidateTag</code>.</td></tr>
+<tr><td>6</td><td><code>lib/audit.ts</code>; call it in every admin action listed in section 7.</td></tr>
+</tbody></table></div>
+
+<h3>How to run: local, then dev, then prod</h3>
+<ol>
+  <li><strong>Local</strong>: <code>supabase start</code>, <code>supabase db reset</code> (all migrations plus seed), <code>pnpm test</code>, <code>TEST_DATABASE_URL=... pnpm test</code> for the DB suite, <code>pnpm e2e</code>.</li>
+  <li><strong>Dev project</strong>: <code>supabase link --project-ref &lt;dev&gt;</code>, <code>supabase db push --dry-run</code>, then <code>supabase db push</code>. Open the PR; the Vercel preview points at dev. Click through the changed screens.</li>
+  <li><strong>Prod</strong>: <code>supabase db dump -f prod-&lt;date&gt;.sql</code> and <code>--data-only</code> first. <code>supabase link --project-ref &lt;prod&gt;</code>, <code>db push --dry-run</code>, <code>db push</code>, then merge the PR so Vercel deploys. Additive migrations go before the deploy; contract migrations (3, 9) go only after the deploy that stops using the old shape.</li>
+  <li>Relink to dev afterwards so the next push cannot hit prod by accident.</li>
+</ol>
+
+<div class="callout">
+  <div class="eyebrow">Decisions</div>
+  <ul>
+    <li>Nine migrations in the order above; 1 to 7 before Sunday, 8 and 9 after.</li>
+    <li>Migration 4 deletes pre-v2 auction rows, guarded so it refuses if a live auction has started.</li>
+    <li><code>tier</code> stays until after Sunday as a rollback path; nothing reads it after migration 1b.</li>
+    <li>Every prod push is preceded by a dump and a dry run.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="testing">10. Testing strategy</h2>
+
+<h3>Unit: pure rules (Vitest, no DB)</h3>
+<ul>
+  <li><strong>Money and ladder</strong> (exists): formatting, <code>stepAt</code> at each rung edge (9.5 cr to 10 cr, 49 cr to 50 cr, 97.5 cr to 100 cr).</li>
+  <li><strong>Config</strong>: season v0 upgrades to v1; snapshot built from season plus bands; bad values fall back; edits refused after START.</li>
+  <li><strong>Bands</strong>: editor validation (min above max, two stars, duplicate code, sum of minimums too high).</li>
+  <li><strong><code>maxBid</code> table tests</strong>, one row per rule: squad guard (100 cr, 6 players, max 92 cr), band cap reached, band-minimum slots, pool guard at exactly 44 players, reserve eligible, reserve on Star refused, reserve locked to another band, reserve shut once the minimum is met, paused auction.</li>
+  <li><strong>Split</strong>: main only; main to floor plus reserve; lock set on first reserve use; undo of that sale clears the lock.</li>
+  <li><strong>Reducer</strong>: every event type, including PLACE and REQUEUE to round 2; undo and redo of each.</li>
+  <li><strong>Simulation (property-style)</strong>: 500 seeded auctions (4 teams, 44 to 52 lots, S4 bands). A driver picks random legal commands from <code>bidOptions</code> and the console's allowed actions, including undo, redo, skip, second go and placement, and checks every invariant from section 5 after each step. Uses the existing <code>seeded()</code> PRNG so failures replay by seed.</li>
+</ul>
+
+<h3>Postgres integration (<code>commands.db.test.ts</code>, against <code>supabase start</code>)</h3>
+<ul>
+  <li>Command writes one event, updates projections and version in one transaction.</li>
+  <li>Same idempotency key twice: one event. Stale <code>expectedVersion</code>: conflict with a fresh snapshot.</li>
+  <li>Two commands fired together with the same version: exactly one wins.</li>
+  <li>200 random commands, then <code>rebuildProjections</code>: no row changes (projections already equal the replay).</li>
+  <li>Check constraint: a hand-crafted negative wallet update fails.</li>
+  <li><code>publishRosters</code>: correct rows, sources and prices; second call adds nothing; test auction refused; commands refused afterwards.</li>
+  <li>Migrations: on a DB seeded with M/A/B/C tiers and <code>wicket_keeper</code> rows, 1b and 2 to 3 produce the right bands and keeper flags; migration 4 refuses when a live auction has started.</li>
+</ul>
+
+<h3>End-to-end (Playwright, local Supabase)</h3>
+<ol>
+  <li>Register with each role and the keeper box; edit by token; duplicate phone; invalid token 404 (exist, updated for roles).</li>
+  <li>Admin marks paid and sets a band; band shows on the public pool.</li>
+  <li>Bands editor rejects min above max; accepts a valid change; existing auction config does not change.</li>
+  <li>Create a test auction, seed 48 fake players, pre-place owners; wallets read 275 cr main and 50 cr reserve.</li>
+  <li>Console: lot on the block, three shouts, SOLD. A second browser context on the board sees each step within 2 s.</li>
+  <li>Undo SOLD: board shows the lot back on the block and wallets restored.</li>
+  <li>Reserve: team below a band minimum bids past its main cap; SOLD sheet shows the split; the board shows the lock.</li>
+  <li>Star lot: the same team's max bid excludes reserve; greyed button shows the reason.</li>
+  <li>Second go and placement: unsold lot requeued at the same base, unsold again, placed on the suggested team.</li>
+  <li>Owner view shows the right max bid and needs for the signed-in owner.</li>
+  <li>Complete, publish, <code>/teams/[slug]</code> lists the squad with prices. Test auction shows no publish button.</li>
+  <li>Public board HTML contains no actor emails.</li>
+  <li><code>/r/[token]</code> shows "You're up in N lots" during a live-mode auction.</li>
+</ol>
+
+<h3>Rehearsal checklist</h3>
+<h4>Friday evening: owners on their own phones, fake players</h4>
+<ol class="checks">
+  <li>Test auction created from current season settings; 48 fake players; owners pre-placed.</li>
+  <li>Each owner signs in with Google and opens the owner view of the test auction.</li>
+  <li>Run 15 lots across all four bands, including one Star.</li>
+  <li>Force a reserve use, show the lock on every phone, then try a Star bid with reserve (must be refused).</li>
+  <li>Force a pool-guard block and a band-cap block; read the reason out loud.</li>
+  <li>Undo a SOLD three lots later; redo it.</li>
+  <li>Airplane-mode one phone for 30 s; it catches up on reconnect.</li>
+  <li>Run a second go and one placement.</li>
+  <li>Export CSV. Write down every complaint.</li>
+</ol>
+<h4>Saturday: real pool</h4>
+<ol class="checks">
+  <li>Noon: close registration, lock edits. Every confirmed player has a band. Band pool counts meet <code>4 x min</code>.</li>
+  <li>Test auction with the real pool; shuffle within bands; post the running order.</li>
+  <li>Full rehearsal with the real operator and auctioneer, at least 20 lots.</li>
+  <li>Create the live auction (or promote the test), check config snapshot numbers against the rules page.</li>
+  <li>Setup checks all green. Pre-place owners. Do not START.</li>
+  <li>Database dump taken and saved off-machine. No deploys after 10 pm except a hotfix.</li>
+</ol>
+
+<h3>Day-of runbook (Sunday morning)</h3>
+<ol class="checks">
+  <li>Supabase dashboard: project active, not paused; DB size and connections normal.</li>
+  <li>Vercel: latest prod deploy is the Saturday build; no failed deploys since.</li>
+  <li>Open <code>/auction</code> on two phones on cellular: pool shows, countdown right.</li>
+  <li>Admin setup page: live auction in draft, setup checks green, wallets 275 cr main + 50 cr reserve each, owners on their teams.</li>
+  <li>Operator signs in on the console phone; backup operator signs in on a second phone. Both on battery packs.</li>
+  <li>Realtime check: start the 10 s clock in the console; every phone shows it.</li>
+  <li>Paper ledger person has the running order printed.</li>
+  <li>Board link pinned in the WhatsApp group.</li>
+  <li>At each break: export CSV, post it in the organisers' chat.</li>
+  <li>After COMPLETE: export CSV, publish rosters, check <code>/teams</code>, post the link.</li>
+</ol>
+
+<div class="callout">
+  <div class="eyebrow">Decisions</div>
+  <ul>
+    <li>The simulation test with invariants is the gate for merging the rules engine PR.</li>
+    <li>E2E runs in CI against local Supabase on every PR (workflow exists on the e2e branch).</li>
+    <li>Two rehearsals, Friday and Saturday, are part of the plan, not optional.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="delivery">11. Delivery plan</h2>
+<p>One developer as tech lead, Sonnet and Opus agents writing code in worktrees, one PR per slice. The organiser reviews every diff and runs the rehearsals. Opus takes the rules engine; Sonnet takes migrations, admin screens and pages.</p>
+
+<div class="tablewrap"><table style="min-width:760px">
+<thead><tr><th>Slice / PR</th><th>Contains</th><th>Agent</th><th>Done by</th></tr></thead>
+<tbody>
+<tr><td>0. Land what exists</td><td>Engine and e2e are on main (PRs #3 and #4). Apply the one-live-auction migration to dev and prod; add this doc to <code>docs/</code>.</td><td>none (review)</td><td>Tue night</td></tr>
+<tr><td>1. Bands and keeper flag</td><td>Migrations 1, 1b, 2. <code>setBand</code>, bands editor, form with 3 roles and keeper box, public cards with band, sets by band. Unit and e2e updates.</td><td>Sonnet</td><td>Wed evening, in prod</td></tr>
+<tr><td>2. Role contract</td><td>Migration 3; remove <code>wicket_keeper</code> from code.</td><td>Sonnet</td><td>Thu morning</td></tr>
+<tr><td>3. Rules engine v2</td><td>Migration 4. Config snapshot and format; reducer wallets, band counts, round, sold_via, PLACE; <code>maxBid</code>, split, thin commands; invariants simulation; DB tests.</td><td>Opus</td><td>Thu evening</td></tr>
+<tr><td>4. Screens v2</td><td>Console (no custom bid, reserve, reasons, second go, placement), board, owner view (also on test auctions), player "up in N", setup checks, <code>placeOwners</code>.</td><td>Sonnet</td><td>Fri 4 pm</td></tr>
+<tr><td>Rehearsal 1</td><td>Friday evening checklist.</td><td></td><td>Fri evening</td></tr>
+<tr><td>5. Fixes from rehearsal 1</td><td>Whatever Friday found. Nothing new.</td><td>Sonnet or Opus</td><td>Sat 11 am</td></tr>
+<tr><td>6. Publish and trail</td><td>Migrations 5, 6, 7. <code>publishRosters</code>, <code>/teams</code>, roster CSV, <code>audit()</code> in admin actions, keep-alive cron, nightly dump workflow.</td><td>Sonnet</td><td>Sat 4 pm</td></tr>
+<tr><td>Rehearsal 2</td><td>Saturday checklist; create and prepare the live auction.</td><td></td><td>Sat evening</td></tr>
+<tr><td>Freeze</td><td>No deploys after Sat 10 pm except hotfixes.</td><td></td><td>Sat 10 pm</td></tr>
+<tr><td>Auction</td><td>Runbook; publish rosters after COMPLETE.</td><td></td><td>Sun 4 Oct</td></tr>
+</tbody></table></div>
+<p class="small">If Thursday slips: slice 4 drops the owner view and player "up in N" (board and console only). If Friday slips: slice 6 moves to Sunday night; rosters go out as the CSV first.</p>
+
+<h3>Later backlog (in order)</h3>
+<ol>
+  <li>Migration 9: drop <code>tier</code>.</li>
+  <li>Sponsor admin form and <code>/go/[id]</code> click counts.</li>
+  <li>Team pages with owner blurb and photo.</li>
+  <li>Posts, videos, gallery, pages (migration 8).</li>
+  <li><code>/admin/people</code> and <code>/admin/audit</code> screens.</li>
+  <li>Fixtures, results, awards.</li>
+  <li>Polls; move the rules ballot in-app.</li>
+  <li>Notifications inbox, then Web Push.</li>
+  <li>Trades.</li>
+  <li>Hash edit tokens.</li>
+  <li>Online payments.</li>
+  <li>Season 5 setup (copy bands and teams), season switcher.</li>
+  <li>RTM, owner-phone bidding, snake draft.</li>
+</ol>
+
+<div class="callout">
+  <div class="eyebrow">Decisions</div>
+  <ul>
+    <li>Seven PRs before Sunday, in the order above. Slice 3 is the critical path.</li>
+    <li>Rehearsal 1 runs on whatever is in prod on Friday afternoon, even if slice 4 is partial.</li>
+    <li>Freeze Saturday 10 pm.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="open">12. Open questions</h2>
+<p>Only the ones that change code or the rules sheet. Each has the answer this doc assumes.</p>
+<div class="q"><div class="n">Q1</div><div><div class="ask">Does the owner count toward a band's cap or minimum?</div><div class="assume">Assumed: <b>no</b>. The owner counts toward squad size (11 to 13) only.</div></div></div>
+<div class="q"><div class="n">Q2</div><div><div class="ask">Should band minimums also block buys that would leave too few open slots (the band-minimum slot guard)?</div><div class="assume">Assumed: <b>yes</b>. Without it, minimums only affect when the reserve opens. Rarely triggers with 13 slots and minimums summing to 5.</div></div></div>
+<div class="q"><div class="n">Q3</div><div><div class="ask">When a bid goes past the main wallet, does main drain to zero or only to the squad-guard floor?</div><div class="assume">Assumed: <b>to the floor</b>, so the team can still fill its squad at 2 cr each. Draining to zero could leave a team unable to reach 11.</div></div></div>
+<div class="q"><div class="n">Q4</div><div><div class="ask">What does a placed leftover cost, and can the reserve pay for it?</div><div class="assume">Assumed: <b>base price</b>, paid like a sale (reserve if eligible). If the team cannot pay base, the operator lowers it with a note.</div></div></div>
+<div class="q"><div class="n">Q5</div><div><div class="ask">Who is the operator, who is the backup, and what are their Google emails?</div><div class="assume">Needed by Friday for <code>auction_admins</code>.</div></div></div>
+<div class="q"><div class="n">Q6</div><div><div class="ask">If a band's pool is smaller than 4 x its minimum on Saturday, do we re-band players or lower the minimum?</div><div class="assume">Assumed: <b>the organiser re-bands</b> before START; the setup check blocks until it adds up.</div></div></div>
+<div class="q"><div class="n">Q7</div><div><div class="ask">Is Saturday noon still the edit lock and registration close?</div><div class="assume">Assumed: <b>yes</b>, set in <code>edits_lock_at</code>.</div></div></div>
+
+<p class="small" style="margin-top:32px">Sources: <code>burnaby-premier-league</code> main at ce0b6a9; v1 design doc; <code>bpl-auction-options.html</code> for the agreed rules.</p>
+</div>
