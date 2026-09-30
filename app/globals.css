@@ -1,42 +1,176 @@
 @import "tailwindcss";
 
-/* High-contrast light theme: this gets read on phones in direct sunlight. */
+/*
+ * BPL design tokens. See docs/design-system.md.
+ * Light theme first: people read this on phones in direct sunlight.
+ * Every text colour here passes WCAG AA on paper and canvas; ink, muted and pitch pass AAA.
+ */
 @theme {
-  --color-ink: #0a0a0a;
-  --color-muted: #3f3f46;
-  --color-brand: #065f46;
-  --color-brand-dark: #064e3b;
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Surfaces */
+  --color-paper: #ffffff;
+  --color-canvas: #f3f6f1;
+  --color-line: #cbd5cc; /* dividers only, never text */
+  --color-edge: #56675b; /* borders on inputs and outline buttons (6:1) */
+
+  /* Text */
+  --color-ink: #0b1510; /* 18.6:1 on white */
+  --color-muted: #37473c; /* 9.9:1 on white: secondary text, still AAA */
+
+  /* Pitch green: brand, primary actions */
+  --color-pitch: #0b4d2c; /* white on it 9.9:1 */
+  --color-pitch-dark: #07371f;
+  --color-pitch-soft: #e1efe5;
+  /* Old names, kept so existing classes keep working */
+  --color-brand: #0b4d2c;
+  --color-brand-dark: #07371f;
+
+  /* Gold: accent fill, always with ink text on it (10:1). Never gold text on white. */
+  --color-gold: #f5b301;
+  --color-gold-dark: #d99c00;
+  --color-gold-soft: #fff3c7;
+  --color-gold-ink: #6b4700; /* gold-toned text on white, 8.3:1 */
+
+  /* Red ball: unsold, errors, live mode, danger */
+  --color-ball: #b3261e; /* white on it 6.5:1 */
+  --color-ball-dark: #8c1d17;
+  --color-ball-soft: #fdecea;
+
+  /* Type (the variables come from next/font in app/layout.tsx) */
+  --font-sans: var(--font-body), system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-display: var(--font-heading), "Arial Narrow", system-ui, sans-serif;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Shadow: soft lift on white; borders do the real work in sunlight */
+  --shadow-card: 0 1px 2px rgb(11 21 16 / 0.08), 0 2px 8px rgb(11 21 16 / 0.06);
+  --shadow-pop: 0 8px 28px rgb(11 21 16 / 0.18);
+
+  /* Motion: 150-300ms, transform and opacity only */
+  --ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-sold-in: sold-in 300ms var(--ease-snap) both;
+  --animate-rise: rise 200ms var(--ease-snap) both;
+  --animate-pulse-dot: pulse-dot 1.6s ease-in-out infinite;
+
+  @keyframes sold-in {
+    0% {
+      opacity: 0;
+      transform: scale(1.4) rotate(-8deg);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) rotate(-4deg);
+    }
+  }
+  @keyframes rise {
+    0% {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
 }
 
 html {
   color-scheme: light;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: #ffffff;
+  background: var(--color-canvas);
   color: var(--color-ink);
   font-size: 17px;
   line-height: 1.5;
 }
 
+/* Prices, purses and timers never jiggle. */
+.num {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer components {
+  /* Buttons. One look everywhere: 48px tall, bold, clear gold focus ring. */
+  .btn,
+  .btn-outline,
+  .btn-accent,
+  .btn-danger,
+  .btn-ghost {
+    @apply inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-md px-5 text-center text-lg font-bold transition-[background-color,border-color,color,transform] duration-150 select-none focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-gold active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
+  }
   .btn {
-    @apply inline-flex min-h-12 items-center justify-center rounded-lg bg-brand px-6 text-lg font-bold text-white hover:bg-brand-dark focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60;
+    @apply bg-pitch text-white hover:bg-pitch-dark;
+  }
+  .btn-accent {
+    @apply bg-gold text-ink hover:bg-gold-dark;
   }
   .btn-outline {
-    @apply inline-flex min-h-12 items-center justify-center rounded-lg border-2 border-ink bg-white px-5 font-bold text-ink hover:bg-zinc-100 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60;
+    @apply border-2 border-edge bg-paper text-ink hover:border-ink hover:bg-canvas;
   }
+  .btn-danger {
+    @apply border-2 border-ball bg-paper text-ball hover:bg-ball-soft;
+  }
+  .btn-ghost {
+    @apply px-3 text-pitch underline-offset-4 hover:underline;
+  }
+
+  /* Text link with a proper tap area. */
+  .link {
+    @apply inline-flex min-h-11 items-center gap-1 font-bold text-pitch underline decoration-2 underline-offset-4 hover:text-pitch-dark;
+  }
+
+  /* Form fields */
   .field {
-    @apply block min-h-12 w-full rounded-lg border-2 border-ink bg-white px-3 py-2 text-lg text-ink placeholder:text-zinc-500 focus:outline-4 focus:outline-offset-1 focus:outline-brand;
+    @apply block min-h-12 w-full rounded-md border-2 border-edge bg-paper px-3 py-2 text-lg text-ink placeholder:text-muted focus:border-pitch focus:outline-4 focus:outline-offset-0 focus:outline-pitch/25 aria-invalid:border-ball;
   }
   .label {
-    @apply mb-1 block font-bold;
+    @apply mb-1 block font-bold text-ink;
+  }
+  .hint {
+    @apply text-sm text-muted;
   }
   .error {
-    @apply mt-1 font-semibold text-red-700;
+    @apply mt-1 font-semibold text-ball;
   }
   .choice {
-    @apply flex min-h-12 cursor-pointer items-center gap-2 rounded-lg border-2 border-ink px-3 has-checked:bg-brand has-checked:text-white;
+    @apply flex min-h-12 cursor-pointer items-center gap-2 rounded-md border-2 border-edge bg-paper px-3 transition-colors duration-150 hover:border-ink has-checked:border-pitch has-checked:bg-pitch has-checked:text-white has-focus-visible:outline-4 has-focus-visible:outline-offset-2 has-focus-visible:outline-gold;
+  }
+
+  /* Surfaces */
+  .card {
+    @apply rounded-lg border border-line bg-paper shadow-card;
+  }
+
+  /* Display type for headings and big numbers */
+  .display {
+    @apply font-display leading-none font-extrabold tracking-tight uppercase;
+  }
+  .eyebrow {
+    @apply text-sm font-bold tracking-wider text-muted uppercase;
   }
 }
