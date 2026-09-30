@@ -35,6 +35,11 @@ async function consoleAfterASale(page: Page, name: string) {
   const { id } = await seedTestAuction(name, TEAMS, LOTS);
   await adminSession(page);
   await page.goto(`/auction/${id}/console`);
+  // E2E_CPU=4 slows the page down like a CI runner, to shake out timing bugs.
+  if (process.env.E2E_CPU) {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: Number(process.env.E2E_CPU) });
+  }
   await page.getByRole("button", { name: /Next lot: Sam Star/ }).click();
   await page.getByRole("button", { name: /Royals bids/ }).click();
   await sellToLeader(page);

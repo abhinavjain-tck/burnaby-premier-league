@@ -22,6 +22,11 @@ type Props = {
   nextCount?: number;
 };
 
+const LIVE = "live";
+const NEXT = "next";
+/** Where a card key sits now. A previous card that's gone (undo) falls back to live. */
+const indexOf = (keys: string[], key: string): number => (keys.includes(key) ? keys.indexOf(key) : keys.indexOf(LIVE));
+
 const reducedMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /**
@@ -35,51 +40,80 @@ export function LotCarousel({ snap, live, liveAccent, prevCount = 5, nextCount =
   const liveIdx = prev.length;
   const total = prev.length + 2;
 
-  const scroller = useRef<HTMLDivElement>(null);
-  const [idx, setIdx] = useState(liveIdx);
+  // Which card is showing is tracked by key ("live", "next" or a previous lot's id), not by
+  // index: a result landing adds a card on the left and shifts every index, and an index kept
+  // from before would point at the wrong card.
+  const keys = [...prev.map((r) => r.lot.id).reverse(), LIVE, NEXT];
+  const keysRef = useRef(keys);
+  useLayoutEffect(() => {
+    keysRef.current = keys;
+  });
 
-  const nearest = useCallback((): number => {
+  const scroller = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState<string>(LIVE);
+  // The card we mean to show, updated at once (state lags a render). Resizes re-snap to it.
+  const wanted = useRef<string>(LIVE);
+
+  // Back to live whenever the lot on the block or the latest result changes. Bids change
+  // neither, so browsing is left alone while bidding goes on. Done during render (not in an
+  // effect) so the labels are right on the same paint.
+  const changeKey = `${snap.onBlock ?? "-"}|${prev[0] ? `${prev[0].lot.id}:${prev[0].outcome}` : "-"}`;
+  const [seenKey, setSeenKey] = useState(changeKey);
+  if (seenKey !== changeKey) {
+    setSeenKey(changeKey);
+    setShown(LIVE);
+  }
+  const idx = indexOf(keys, shown);
+
+  const scrollTo = useCallback((key: string, smooth: boolean) => {
     const el = scroller.current;
-    if (!el) return 0;
+    const i = indexOf(keysRef.current, key);
+    const slide = el?.children[i] as HTMLElement | undefined;
+    if (!el || !slide) return;
+    wanted.current = keysRef.current[i];
+    el.scrollTo({ left: slide.offsetLeft, behavior: smooth && !reducedMotion() ? "smooth" : "instant" });
+  }, []);
+  const go = (i: number) => {
+    const key = keys[Math.max(0, Math.min(i, keys.length - 1))];
+    scrollTo(key, true);
+  };
+
+  // Jump (no animation) to live on first paint and on every lot change, after the new cards are
+  // in the DOM and before the browser paints.
+  useLayoutEffect(() => {
+    wanted.current = LIVE;
+    scrollTo(LIVE, false);
+  }, [changeKey, scrollTo]);
+
+  // Width changes (rotation, window resize, fonts) move the cards: put the wanted one back.
+  // Height changes (the live card growing with a bid) don't move anything sideways, so skip them.
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    let width = el.clientWidth;
+    const ro = new ResizeObserver(() => {
+      if (el.clientWidth === width) return;
+      width = el.clientWidth;
+      scrollTo(wanted.current, false);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [scrollTo]);
+
+  const onScroll = () => {
+    const el = scroller.current;
+    if (!el) return;
     let best = 0;
     Array.from(el.children).forEach((c, i) => {
       const d = Math.abs((c as HTMLElement).offsetLeft - el.scrollLeft);
       if (d < Math.abs((el.children[best] as HTMLElement).offsetLeft - el.scrollLeft)) best = i;
     });
-    return best;
-  }, []);
-
-  const go = useCallback((i: number, smooth = true) => {
-    const el = scroller.current;
-    const slide = el?.children[Math.max(0, Math.min(i, el.children.length - 1))] as HTMLElement | undefined;
-    if (!el || !slide) return;
-    el.scrollTo({
-      left: slide.offsetLeft,
-      behavior: smooth && !reducedMotion() ? "smooth" : "auto",
-    });
-  }, []);
-
-  // Back to live on first paint and whenever the lot on the block or the latest result changes.
-  // Bids change neither, so browsing is left alone while bidding goes on.
-  const changeKey = `${snap.onBlock ?? "-"}|${prev[0] ? `${prev[0].lot.id}:${prev[0].outcome}` : "-"}`;
-  useLayoutEffect(() => {
-    go(liveIdx, false);
-    const raf = requestAnimationFrame(() => setIdx(nearest()));
-    return () => cancelAnimationFrame(raf);
-  }, [changeKey, liveIdx, go, nearest]);
-
-  // Keep the same card in view when the width changes (rotation, window resize).
-  const idxRef = useRef(idx);
-  useEffect(() => {
-    idxRef.current = idx;
-  }, [idx]);
-  useEffect(() => {
-    const el = scroller.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(() => go(idxRef.current, false));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [go]);
+    const key = keysRef.current[best];
+    if (key === undefined) return;
+    // Mid smooth-scroll the nearest card is only on the way; keep aiming at the target.
+    if (Math.abs((el.children[best] as HTMLElement).offsetLeft - el.scrollLeft) < 2) wanted.current = key;
+    setShown(key);
+  };
 
   // The strip is as tall as the live card, not the tallest card, so there's no big gap under
   // short cards. Browsing never changes the live card, so the bid buttons below never jump.
@@ -167,7 +201,7 @@ export function LotCarousel({ snap, live, liveAccent, prevCount = 5, nextCount =
         role="group"
         aria-label="Swipe or use arrow keys to see the last and next lots"
         onKeyDown={onKeyDown}
-        onScroll={() => setIdx(nearest())}
+        onScroll={onScroll}
         style={liveHeight ? { height: liveHeight } : undefined}
         className="relative flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain rounded-lg [scrollbar-width:none] focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-gold [&::-webkit-scrollbar]:hidden"
       >
