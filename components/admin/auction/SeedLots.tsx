@@ -33,7 +33,7 @@ export function SeedLots({ snap }: { snap: Snapshot }) {
       )}
       {test && snap.auction.version === 0 && snap.lots.length > 0 && (
         <ActionForm action={clearTestLots.bind(null, id)}>
-          <button type="submit" className="btn-outline w-full border-red-700 text-red-800">
+          <button type="submit" className="btn-danger w-full">
             Remove all lots
           </button>
         </ActionForm>

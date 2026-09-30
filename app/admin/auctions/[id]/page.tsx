@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { promoteToLive, rotateShareToken } from "@/app/admin/auctions/actions";
+import { ArrowLeft, Download, Eye, Gavel, Monitor, RefreshCw } from "lucide-react";
 import { ActionForm } from "@/components/admin/ActionForm";
+import { StatusBadge } from "@/components/admin/StatusBadge";
 import { AdminBar } from "@/components/admin/AdminBar";
 import { AuctionAdmins } from "@/components/admin/auction/AuctionAdmins";
 import { Controls } from "@/components/admin/auction/Controls";
@@ -27,8 +29,8 @@ type Props = { params: Promise<{ id: string }> };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3 rounded-lg border-2 border-ink p-4">
-      <h2 className="text-xl font-black">{title}</h2>
+    <section className="card space-y-3 p-4">
+      <h2 className="font-display text-2xl font-extrabold uppercase">{title}</h2>
       {children}
     </section>
   );
@@ -41,7 +43,7 @@ export default async function AuctionAdminPage({ params }: Props) {
     return (
       <>
         <AdminBar email={admin.email} />
-        <main className="mx-auto max-w-2xl p-4">
+        <main className="mx-auto max-w-5xl px-4 py-6">
           <NotConfigured>Auction setup shows up once DATABASE_URL is set.</NotConfigured>
         </main>
       </>
@@ -58,38 +60,40 @@ export default async function AuctionAdminPage({ params }: Props) {
   return (
     <>
       <AdminBar email={admin.email} />
-      <main className="mx-auto max-w-2xl space-y-5 p-4">
-        <Link href="/admin/auctions" className="font-bold text-brand underline">
-          ← All auctions
+      <main className="mx-auto max-w-5xl space-y-5 px-4 py-6">
+        <Link href="/admin/auctions" className="link">
+          <ArrowLeft aria-hidden className="size-5" /> All auctions
         </Link>
-        <header>
-          <h1 className="text-3xl font-black">{row.name}</h1>
-          <p className="text-lg">
-            <span className={`rounded px-2 font-bold ${test ? "bg-zinc-200" : "bg-red-700 text-white"}`}>{row.mode}</span> · {statusText(snap)} ·{" "}
-            {snap.lots.length} lots · {snap.auction.version} events
+        <header className="space-y-2">
+          <h1 className="font-display text-4xl leading-none font-extrabold uppercase">{row.name}</h1>
+          <p className="flex flex-wrap items-center gap-2 font-semibold text-muted">
+            <StatusBadge status={row.mode} /> <StatusBadge status={snap.state.status} />
+            <span className="num">
+              {statusText(snap)} · {snap.lots.length} lots · {snap.auction.version} events
+            </span>
           </p>
         </header>
 
         <nav className="grid grid-cols-3 gap-2" aria-label="Screens">
-          <Link href={`/auction/${id}/console`} className="btn">
-            Console
+          <Link href={`/auction/${id}/console`} className="btn px-2">
+            <Gavel aria-hidden className="size-5" /> Console
           </Link>
-          <Link href={boardPath} className="btn-outline">
-            Board
+          <Link href={boardPath} className="btn-outline px-2">
+            <Monitor aria-hidden className="size-5" /> Board
           </Link>
-          <Link href={`/auction/${id}/owner`} className="btn-outline">
-            Owner view
+          <Link href={`/auction/${id}/owner`} className="btn-outline px-2 leading-tight">
+            <Eye aria-hidden className="size-5 shrink-0" /> Owners
           </Link>
         </nav>
 
         {test && (
           <Section title="Private link">
             <p>Anyone with this link can watch. Only auction admins can run it. It never shows up in menus.</p>
-            <p className="font-mono text-sm break-all">{boardPath}</p>
+            <p className="rounded-md bg-canvas p-2 font-mono text-sm break-all">{boardPath}</p>
             <CopyButton label="Copy link" path={boardPath} />
             <ActionForm action={rotateShareToken.bind(null, id)}>
-              <button type="submit" className="font-bold underline">
-                Make a new link (old one stops working)
+              <button type="submit" className="btn-ghost min-h-11 justify-start px-0 text-left text-base">
+                <RefreshCw aria-hidden className="size-4" /> Make a new link (old one stops working)
               </button>
             </ActionForm>
           </Section>
@@ -115,11 +119,11 @@ export default async function AuctionAdminPage({ params }: Props) {
         <Section title="Export">
           <p>The event log and final lots as CSV. Post them in the group after the auction.</p>
           <div className="grid grid-cols-2 gap-2">
-            <a href={exportHref("events")} className="btn-outline">
-              Events CSV
+            <a href={exportHref("events")} className="btn-outline px-2">
+              <Download aria-hidden className="size-5" /> Events CSV
             </a>
-            <a href={exportHref("lots")} className="btn-outline">
-              Lots CSV
+            <a href={exportHref("lots")} className="btn-outline px-2">
+              <Download aria-hidden className="size-5" /> Lots CSV
             </a>
           </div>
         </Section>
