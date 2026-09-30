@@ -2,7 +2,7 @@ import { TeamChip } from "@/components/auction/TeamBar";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { RoleChip } from "@/components/ui/Badge";
 import type { Snapshot } from "@/lib/auction/types";
-import { teamById } from "@/lib/auction/view";
+import { setLabel, teamById } from "@/lib/auction/view";
 import { fmt } from "@/lib/money";
 
 /** Every lot in running order with its current state. Rows on phones, a table on laptops. */
@@ -21,7 +21,7 @@ export function LotTable({ snap }: { snap: Snapshot }) {
             <span className="min-w-0 flex-1">
               <span className="block truncate font-bold">{l.playerName}</span>
               <span className="text-sm text-muted">
-                {l.setName} · <span className="num">{fmt(live?.base ?? l.base)}</span>
+                {setLabel(l.setName)} · <span className="num">{fmt(live?.base ?? l.base)}</span>
               </span>
             </span>
             {team && live?.price !== undefined ? (
@@ -55,7 +55,7 @@ export function LotTable({ snap }: { snap: Snapshot }) {
                 <td className="px-3 py-1.5">
                   <RoleChip role={l.role} short />
                 </td>
-                <td className="px-3 py-1.5">{l.setName}</td>
+                <td className="px-3 py-1.5">{setLabel(l.setName)}</td>
                 <td className="px-3 py-1.5">{l.tier ?? "—"}</td>
                 <td className="num px-3 py-1.5 font-semibold">{fmt(live?.base ?? l.base)}</td>
                 <td className="px-3 py-1.5">

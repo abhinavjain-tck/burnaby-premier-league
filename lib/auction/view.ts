@@ -86,3 +86,6 @@ export function describeEvent(snap: Snapshot, e: EventRow): string {
     default: return e.type;
   }
 }
+
+/** Set name as people see it. The top set is stored as "Marquee" but called "Star" everywhere in the UI. */
+export const setLabel = (name: string): string => (name === "Marquee" ? "Star" : name);

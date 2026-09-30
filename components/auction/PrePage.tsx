@@ -4,6 +4,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { teamColour, teamStyle } from "@/components/ui/team";
 import type { AuctionConfig } from "@/lib/auction/config";
 import type { Snapshot } from "@/lib/auction/types";
+import { setLabel } from "@/lib/auction/view";
 import { fmt } from "@/lib/money";
 import { AutoRefresh } from "./AutoRefresh";
 import { Rules } from "./Rules";
@@ -53,7 +54,7 @@ export function PrePage({ config, snap, notice }: { config: AuctionConfig; snap:
             {[...sets.entries()].map(([name, lots]) => (
               <div key={name} className="card overflow-hidden">
                 <h3 className="flex items-center justify-between bg-pitch px-4 py-2 font-display text-xl font-extrabold text-white uppercase">
-                  {name} <span className="num text-base">{lots.length}</span>
+                  {setLabel(name)} <span className="num text-base">{lots.length}</span>
                 </h3>
                 <ul className="divide-y divide-line">
                   {lots.map((l) => (
