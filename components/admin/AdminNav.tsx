@@ -1,6 +1,6 @@
 "use client";
 
-import { Gavel, Settings, Users } from "lucide-react";
+import { Gavel, Settings, ShieldCheck, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -9,13 +9,14 @@ const LINKS = [
   { href: "/admin/auctions", label: "Auctions", icon: Gavel },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
+const ADMINS_LINK = { href: "/admin/admins", label: "Admins", icon: ShieldCheck };
 
-/** Admin tabs. The current section is underlined in gold. */
-export function AdminNav() {
+/** Admin tabs. The current section is underlined in gold. Super admins also get Admins. */
+export function AdminNav({ showAdmins = false }: { showAdmins?: boolean }) {
   const path = usePathname();
   return (
     <nav aria-label="Admin" className="flex gap-1 overflow-x-auto">
-      {LINKS.map(({ href, label, icon: Icon }) => {
+      {(showAdmins ? [...LINKS, ADMINS_LINK] : LINKS).map(({ href, label, icon: Icon }) => {
         const active = path === href || path.startsWith(href + "/");
         return (
           <Link

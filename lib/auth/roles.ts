@@ -48,3 +48,10 @@ export async function requireAdmin(): Promise<Admin> {
   if (!viewer?.role) redirect("/admin");
   return viewer as Admin;
 }
+
+/** Like requireAdmin, but only super admins get through. Everyone else goes back to /admin. */
+export async function requireSuperAdmin(): Promise<Admin> {
+  const admin = await requireAdmin();
+  if (admin.role !== "super_admin") redirect("/admin");
+  return admin;
+}
