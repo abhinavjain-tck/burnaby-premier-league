@@ -24,6 +24,10 @@
   --color-brand: #0b4d2c;
   --color-brand-dark: #07371f;
 
+  /* The Curated Knot (title sponsor) brand. Maroon is the only colour used for its UI; never recolour the logo. */
+  --color-tck: #7d222f;
+  --color-tck-cream: #faf9f6;
+
   /* Gold: accent fill, always with ink text on it (10:1). Never gold text on white. */
   --color-gold: #f5b301;
   --color-gold-dark: #d99c00;
@@ -169,6 +173,11 @@ body {
   /* Display type for headings and big numbers */
   .display {
     @apply font-display leading-none font-extrabold tracking-tight uppercase;
+  }
+  /* Sponsor name in the TCK wordmark style */
+  .wordmark {
+    font-family: var(--font-wordmark), system-ui, sans-serif;
+    @apply font-semibold tracking-[0.18em] uppercase;
   }
   .eyebrow {
     @apply text-sm font-bold tracking-wider text-muted uppercase;

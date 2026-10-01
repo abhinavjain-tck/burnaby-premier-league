@@ -15,6 +15,13 @@
       "when": 1790711112154,
       "tag": "20260929194512_auction_one_live",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790830215443,
+      "tag": "20261001045015_outstanding_magus",
+      "breakpoints": true
     }
   ]
 }
