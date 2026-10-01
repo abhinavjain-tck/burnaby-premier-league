@@ -27,7 +27,9 @@ export type RegistrationRow = {
 
 /** Wipe registrations and put the season config back to the seed default. Seasons, teams and sponsors stay. */
 export async function resetState() {
-  await db`truncate table player_registrations cascade`;
+  // Not `truncate ... cascade` on registrations: teams point at their captain, so that would wipe teams too.
+  await db`truncate table auction_lots`;
+  await db`delete from player_registrations`; // captain links go null (on delete set null)
   await db`update seasons set config = '{}'::jsonb where id = 1`;
 }
 

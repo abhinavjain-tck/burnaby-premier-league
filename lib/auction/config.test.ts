@@ -21,7 +21,7 @@ describe("config defaults", () => {
     expect(c.purseLakhs).toBe(30000);
     expect([c.minSquad, c.maxSquad]).toEqual([11, 13]);
     expect(c.basePrices).toEqual({ M: 2000, A: 1000, B: 500, C: 200 });
-    expect(c.ownerPresoldLakhs).toBe(2500);
+    expect(c.ownerPresoldLakhs).toBe(0);
     expect(c.unsoldBaseMultiplier).toBe(1);
     expect(c.ladder.at(-1)).toEqual({ upTo: null, step: 500 });
   });

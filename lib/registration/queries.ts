@@ -63,6 +63,16 @@ export async function getRegistrationById(id: string): Promise<Registration | nu
   return row ?? null;
 }
 
+/** Name of the team this player captains, or null. */
+export async function captainTeamOf(registrationId: string): Promise<string | null> {
+  const [row] = await getDb().select({ name: teams.name }).from(teams).where(eq(teams.captainRegistrationId, registrationId)).limit(1);
+  return row?.name ?? null;
+}
+
+/** Players in the auction pool: confirmed and not a team's captain. */
+export const poolCount = (rows: Array<{ status: string; captainOf: string | null }>): number =>
+  rows.filter((r) => r.status === "confirmed" && !r.captainOf).length;
+
 /** Admin list. Newest first. */
 export async function listRegistrations(status?: RegStatus) {
   return getDb()
@@ -73,8 +83,11 @@ export async function listRegistrations(status?: RegStatus) {
       tier: playerRegistrations.tier,
       status: playerRegistrations.status,
       paidAt: playerRegistrations.paidAt,
+      phone: playerRegistrations.phone,
+      captainOf: teams.name,
     })
     .from(playerRegistrations)
+    .leftJoin(teams, eq(teams.captainRegistrationId, playerRegistrations.id))
     .where(status ? eq(playerRegistrations.status, status) : undefined)
     .orderBy(desc(playerRegistrations.createdAt));
 }

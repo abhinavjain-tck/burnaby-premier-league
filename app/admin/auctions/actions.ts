@@ -61,9 +61,14 @@ export async function createAuction(_prev: FormResult, formData: FormData): Prom
 }
 
 export async function addConfirmedPlayers(id: string): Promise<FormResult> {
+  const viewer = await requireAdmin();
   return attempt(id, async () => {
-    const n = await admin.addConfirmedPlayers(id);
-    return n === 0 ? "No new confirmed players to add." : `Added ${n} confirmed players.`;
+    const { added, captains } = await admin.addConfirmedPlayers(id, viewer.email);
+    const parts = [
+      added === 0 ? "No new confirmed players to add." : `Added ${added} confirmed players.`,
+      captains > 0 ? `${captains} captains placed on their teams.` : "",
+    ];
+    return parts.filter(Boolean).join(" ");
   });
 }
 

@@ -31,9 +31,15 @@ export type Squad = {
 
 const num = (v: unknown): number | undefined => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
 
-/** Lot id of the team's captain: the first lot pre-sold to it that still sits with it. */
+/**
+ * Lot id of the team's captain. The team's named captain (teams.captain_registration_id) when
+ * that lot sits with the team; otherwise the first lot pre-sold to it that still sits with it.
+ */
 export function captainLotId(snap: Snapshot, teamId: string): string | null {
-  return (snap.presold ?? []).find((id) => snap.state.lots[id]?.status === "sold" && snap.state.lots[id]?.soldTo === teamId) ?? null;
+  const withTeam = (id: string) => snap.state.lots[id]?.status === "sold" && snap.state.lots[id]?.soldTo === teamId;
+  const named = snap.teams.find((t) => t.id === teamId)?.captainLotId;
+  if (named && withTeam(named)) return named;
+  return (snap.presold ?? []).find(withTeam) ?? null;
 }
 
 /** Captain's name and photo for a team card, or null when nobody is linked. */

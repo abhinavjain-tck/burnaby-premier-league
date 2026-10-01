@@ -9,6 +9,7 @@ import { teamStyle } from "@/components/ui/team";
 import { squadOf, type Squad, type SquadPlayer } from "@/lib/auction/squad";
 import type { Snapshot } from "@/lib/auction/types";
 import { fmt } from "@/lib/money";
+import { TeamLogo } from "./TeamBar";
 
 type Props = { snap: Snapshot; teamId: string | null; onClose: () => void };
 
@@ -59,6 +60,7 @@ function SquadBody({ squad, snap, onClose }: { squad: Squad; snap: Snapshot; onC
   return (
     <>
       <header className="flex shrink-0 items-center gap-3 py-2 pr-3 pl-4" style={teamStyle(team, snap.teams)}>
+        {team.logoUrl && <TeamLogo team={team} teams={snap.teams} size="lg" onColour />}
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold uppercase opacity-90">Squad so far</p>
           <h2 id="squad-h" className="font-display text-3xl leading-tight font-extrabold break-words uppercase">

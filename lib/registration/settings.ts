@@ -38,7 +38,8 @@ export const teamSchema = z.object({
   colour: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Pick a colour"),
   logoUrl: trimmed
     .max(500)
-    .refine((v) => v === "" || /^https?:\/\//i.test(v), "Logo must be an http(s) link")
+    // A full http(s) link, or a file on this site like /teams/hawks.webp.
+    .refine((v) => v === "" || /^https?:\/\//i.test(v) || /^\/(?!\/)[\w./-]+$/.test(v), "Logo must be an http(s) link or a /path on this site")
     .transform((v) => (v === "" ? null : v)),
 });
 export type TeamInput = z.infer<typeof teamSchema>;

@@ -27,6 +27,11 @@ If a colour is missing or invalid, `components/ui/team.ts` gives a fixed one by 
 (blue, red, purple, ochre, …). If a team's colour is too close to an earlier team's (ΔE under 25), the later
 one gets a fallback too, so the teams never look alike side by side. Always use `teamStyle()` / `teamColour()`, never raw `team.colour`.
 
+Season 4: Hawks `#8a6100` (deep gold), Hunters `#7c2d12` (rust), Panthers `#262626` (charcoal), Tigers `#c2410c` (orange).
+All take white text at AA and stay clear of pitch green. Crests live in `public/teams/<slug>.webp` (512px square,
+cropped to the badge). `TeamLogo` shows a small round crest next to the team name (purse cards, squad sheet header,
+owner view, last sale, pre-auction teams) and falls back to a colour chip with the short code. Console bid buttons keep text codes.
+
 Rules:
 - Never put gold text on white. Gold is a fill with ink text.
 - No light greys for text. `muted` is the lightest text colour.

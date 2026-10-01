@@ -1,8 +1,8 @@
 import "server-only";
-import { and, asc, desc, eq, isNotNull, notInArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, ne, notInArray, sql } from "drizzle-orm";
 import { getDb, isUniqueViolation } from "../db/client";
 import { auctionAdmins, auctionLots, auctions, auctionTeams, playerRegistrations, seasons, teams } from "../db/schema";
-import { broadcastReload, rebuildProjections } from "./commands";
+import { broadcastReload, rebuildProjections, runCommand } from "./commands";
 import { baseForTier, resolveConfig, type AuctionConfig } from "./config";
 import { FAKE_TEAMS, fakePlayers } from "./fake";
 import { renumber, setNameFor, shuffleWithinSets } from "./lots";
@@ -39,16 +39,16 @@ async function renumberLots(q: Queryable, auctionId: string): Promise<void> {
 
 export type NewAuction = { name: string; mode: AuctionMode; config: AuctionConfig };
 
-/** Create an auction with its teams: the season's real teams for live, four made-up ones for test. */
+/**
+ * Create an auction with its teams. Live uses the season's real teams. Test uses them too
+ * when the season has any (a true rehearsal, captains included), else four made-up ones.
+ */
 export async function createAuction(input: NewAuction): Promise<string> {
   const db = getDb();
   const [season] = await db.select({ id: seasons.id }).from(seasons).orderBy(desc(seasons.id)).limit(1);
   if (!season) throw new AdminError("Create a season first.");
 
-  const real =
-    input.mode === "live"
-      ? await db.select().from(teams).where(eq(teams.seasonId, season.id)).orderBy(asc(teams.name))
-      : [];
+  const real = await db.select().from(teams).where(eq(teams.seasonId, season.id)).orderBy(asc(teams.name));
   if (input.mode === "live" && real.length === 0) throw new AdminError("This season has no teams yet. Add them before a live auction.");
   if (input.mode === "live") {
     const [existing] = await db
@@ -61,7 +61,7 @@ export async function createAuction(input: NewAuction): Promise<string> {
 
   const purse = input.config.purseLakhs;
   const teamRows =
-    input.mode === "live"
+    real.length > 0
       ? real.map((t) => ({ teamId: t.id, name: t.name, short: t.short, colour: t.colour }))
       : FAKE_TEAMS.map((t) => ({ teamId: null, name: t.name, short: t.short, colour: t.colour }));
 
@@ -86,69 +86,158 @@ function requireDraft(row: { status: string }, what: string) {
   if (row.status !== "draft") throw new AdminError(`${what} only works before the auction opens.`);
 }
 
-/** Copy confirmed players into lots: public card fields only, base from tier. Skips players already added. */
-export async function addConfirmedPlayers(auctionId: string): Promise<number> {
+type CardSource = {
+  battingStyle: string | null;
+  bowlingStyle: string | null;
+  bio: string | null;
+  stats: unknown;
+  cricheroesUrl: string | null;
+};
+
+const cardOf = (p: CardSource): CardSnapshot => ({
+  battingStyle: p.battingStyle,
+  bowlingStyle: p.bowlingStyle,
+  bio: p.bio,
+  stats: (p.stats ?? {}) as CardSnapshot["stats"],
+  cricheroesUrl: p.cricheroesUrl,
+});
+
+const playerFields = {
+  id: playerRegistrations.id,
+  fullName: playerRegistrations.fullName,
+  role: playerRegistrations.role,
+  tier: playerRegistrations.tier,
+  photoUrl: playerRegistrations.photoUrl,
+  battingStyle: playerRegistrations.battingStyle,
+  bowlingStyle: playerRegistrations.bowlingStyle,
+  bio: playerRegistrations.bio,
+  stats: playerRegistrations.stats,
+  cricheroesUrl: playerRegistrations.cricheroesUrl,
+};
+
+/** Set name for captains' lots. They are placed before lot 1, never put up for bids. */
+export const CAPTAINS_SET = "Captains";
+
+export type SeedResult = { added: number; captains: number };
+
+/**
+ * Copy confirmed players into lots: public card fields only, base from tier. Skips players already added.
+ * Each team's captain (teams.captain_registration_id) is not a lot for bidding: they get a lot row
+ * so the engine can count them, then a PRESOLD to their team at config.ownerPresoldLakhs (default 0).
+ */
+export async function addConfirmedPlayers(auctionId: string, actorEmail: string): Promise<SeedResult> {
   const db = getDb();
-  const added = await db.transaction(async (tx) => {
+  const seeded = await db.transaction(async (tx) => {
     const row = await mustFind(tx, auctionId);
     requireDraft(row, "Adding players");
     const config = await configFor(tx, row);
+
+    // Captains of the real teams in this auction.
+    const captainRows = await tx
+      .select({ auctionTeamId: auctionTeams.id, registrationId: teams.captainRegistrationId })
+      .from(auctionTeams)
+      .innerJoin(teams, eq(teams.id, auctionTeams.teamId))
+      .where(and(eq(auctionTeams.auctionId, auctionId), isNotNull(teams.captainRegistrationId)));
+    const captainIds = captainRows.map((c) => c.registrationId!);
+
     const already = tx
       .select({ id: auctionLots.registrationId })
       .from(auctionLots)
       .where(and(eq(auctionLots.auctionId, auctionId), isNotNull(auctionLots.registrationId)));
     const players = await tx
-      .select({
-        id: playerRegistrations.id,
-        fullName: playerRegistrations.fullName,
-        role: playerRegistrations.role,
-        tier: playerRegistrations.tier,
-        photoUrl: playerRegistrations.photoUrl,
-        battingStyle: playerRegistrations.battingStyle,
-        bowlingStyle: playerRegistrations.bowlingStyle,
-        bio: playerRegistrations.bio,
-        stats: playerRegistrations.stats,
-        cricheroesUrl: playerRegistrations.cricheroesUrl,
-      })
+      .select(playerFields)
       .from(playerRegistrations)
       .where(
         and(
           eq(playerRegistrations.seasonId, row.seasonId),
           eq(playerRegistrations.status, "confirmed"),
           notInArray(playerRegistrations.id, already),
+          captainIds.length > 0 ? notInArray(playerRegistrations.id, captainIds) : undefined,
         ),
       )
       .orderBy(asc(playerRegistrations.createdAt));
-    if (players.length === 0) return 0;
-    await tx.insert(auctionLots).values(
-      players.map((p, i) => {
-        const tier = p.tier?.trim() || null;
-        const card: CardSnapshot = {
-          battingStyle: p.battingStyle,
-          bowlingStyle: p.bowlingStyle,
-          bio: p.bio,
-          stats: (p.stats ?? {}) as CardSnapshot["stats"],
-          cricheroesUrl: p.cricheroesUrl,
-        };
-        return {
-          auctionId,
-          registrationId: p.id,
-          playerName: p.fullName,
-          role: p.role,
-          tier,
-          photoUrl: p.photoUrl,
-          card,
-          setName: setNameFor(tier, p.role),
-          sortOrder: NEW_LOT_ORDER + i,
-          baseLakhs: baseForTier(config, tier),
-        };
-      }),
-    );
-    await renumberLots(tx, auctionId);
-    return players.length;
+    if (players.length > 0) {
+      await tx.insert(auctionLots).values(
+        players.map((p, i) => {
+          const tier = p.tier?.trim() || null;
+          return {
+            auctionId,
+            registrationId: p.id,
+            playerName: p.fullName,
+            role: p.role,
+            tier,
+            photoUrl: p.photoUrl,
+            card: cardOf(p),
+            setName: setNameFor(tier, p.role),
+            sortOrder: NEW_LOT_ORDER + i,
+            baseLakhs: baseForTier(config, tier),
+          };
+        }),
+      );
+    }
+
+    // A lot row per captain (any status but withdrawn), added once.
+    const captains =
+      captainIds.length === 0
+        ? []
+        : await tx
+            .select(playerFields)
+            .from(playerRegistrations)
+            .where(
+              and(
+                inArray(playerRegistrations.id, captainIds),
+                ne(playerRegistrations.status, "withdrawn"),
+                notInArray(playerRegistrations.id, already),
+              ),
+            );
+    if (captains.length > 0) {
+      await tx.insert(auctionLots).values(
+        captains.map((p, i) => {
+          const tier = p.tier?.trim() || null;
+          return {
+            auctionId,
+            registrationId: p.id,
+            playerName: p.fullName,
+            role: p.role,
+            tier,
+            photoUrl: p.photoUrl,
+            card: cardOf(p),
+            setName: CAPTAINS_SET,
+            sortOrder: NEW_LOT_ORDER + i,
+            baseLakhs: baseForTier(config, tier),
+          };
+        }),
+      );
+    }
+    if (players.length + captains.length > 0) await renumberLots(tx, auctionId);
+
+    // Captains' lots still waiting to be placed on their team.
+    const lots = captainIds.length
+      ? await tx
+          .select({ id: auctionLots.id, registrationId: auctionLots.registrationId })
+          .from(auctionLots)
+          .where(
+            and(eq(auctionLots.auctionId, auctionId), inArray(auctionLots.registrationId, captainIds), eq(auctionLots.status, "queued")),
+          )
+      : [];
+    const place = lots.map((l) => ({
+      lotId: l.id,
+      teamId: captainRows.find((c) => c.registrationId === l.registrationId)!.auctionTeamId,
+    }));
+    return { added: players.length, place, amount: config.ownerPresoldLakhs };
   });
-  if (added > 0) await broadcastReload(auctionId);
-  return added;
+
+  // Same command path as the console's pre-sell, so the log, projections and phones all agree.
+  for (const p of seeded.place) {
+    const row = await mustFind(getDb(), auctionId);
+    await runCommand(
+      auctionId,
+      { type: "PRESOLD", lotId: p.lotId, teamId: p.teamId, amount: seeded.amount },
+      { expectedVersion: row.version, idempotencyKey: `captain-${p.lotId}`, actorEmail },
+    );
+  }
+  if (seeded.added > 0 || seeded.place.length > 0) await broadcastReload(auctionId);
+  return { added: seeded.added, captains: seeded.place.length };
 }
 
 /** Made-up players for a test auction. Never touches registrations. */

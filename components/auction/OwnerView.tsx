@@ -13,7 +13,7 @@ import { LiveStatus } from "./LiveStatus";
 import { LotCard } from "./LotCard";
 import { LotCarousel } from "./LotCarousel";
 import { SquadList, SquadSheet } from "./SquadSheet";
-import { TeamBar, TeamChip } from "./TeamBar";
+import { TeamBar, TeamChip, TeamLogo } from "./TeamBar";
 import { useAuctionLive } from "./useAuctionLive";
 
 /** Read-only view for one team owner: money, squad, what's on the block and what's next. */
@@ -41,8 +41,9 @@ export function OwnerView({ initial, teamId }: { initial: Snapshot; teamId: stri
       </div>
 
       <section aria-label="Your team" className="card overflow-hidden">
-        <TeamBar team={team} teams={snap.teams} className="rounded-none px-4 py-3 text-4xl">
-          {team.name}
+        <TeamBar team={team} teams={snap.teams} className="flex items-center gap-3 rounded-none px-4 py-3 text-4xl">
+          {team.logoUrl && <TeamLogo team={team} teams={snap.teams} size="lg" onColour />}
+          <span className="min-w-0 break-words">{team.name}</span>
         </TeamBar>
         {squad.captain && (
           <p className="flex items-center gap-2 border-b border-line px-4 py-2">

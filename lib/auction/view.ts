@@ -30,12 +30,14 @@ export function teamStats(snap: Snapshot, team: TeamMeta): TeamStats {
 export const pursesByRemaining = (snap: Snapshot): TeamStats[] =>
   snap.teams.map((t) => teamStats(snap, t)).sort((a, b) => b.purseLeft - a.purseLeft || a.name.localeCompare(b.name));
 
-/** Sold lots, latest sale first. */
-export const soldFeed = (snap: Snapshot): LotView[] =>
-  snap.lots
+/** Lots sold in the room, latest sale first. Pre-placed players (captains) are not sales, so they're left out. */
+export function soldFeed(snap: Snapshot): LotView[] {
+  const placed = new Set(snap.presold ?? []);
+  return snap.lots
     .map((l) => ({ ...l, live: snap.state.lots[l.id] }))
-    .filter((l): l is LotView => l.live?.status === "sold")
+    .filter((l): l is LotView => l.live?.status === "sold" && !placed.has(l.id))
     .sort((a, b) => (b.live.soldOrder ?? 0) - (a.live.soldOrder ?? 0));
+}
 
 /** Next n queued lots in running order. */
 export const upcoming = (snap: Snapshot, n: number): LotView[] =>

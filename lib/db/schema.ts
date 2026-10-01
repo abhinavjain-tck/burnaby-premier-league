@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, pgEnum, uuid, text, integer, smallint, smallserial, boolean, timestamp, jsonb, char, bigserial, unique, uniqueIndex } from "drizzle-orm/pg-core";
+import { type AnyPgColumn, pgTable, pgEnum, uuid, text, integer, smallint, smallserial, boolean, timestamp, jsonb, char, bigserial, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const regStatus = pgEnum("reg_status", ["registered", "confirmed", "withdrawn"]);
 export const playerRole = pgEnum("player_role", ["batter", "bowler", "all_rounder", "wicket_keeper"]);
@@ -24,6 +24,8 @@ export const teams = pgTable("teams", {
   short: char("short", { length: 3 }).notNull(),
   colour: text("colour").notNull(),
   logoUrl: text("logo_url"),
+  // The owner/captain: a registered player who is on this team before the auction.
+  captainRegistrationId: uuid("captain_registration_id").references((): AnyPgColumn => playerRegistrations.id, { onDelete: "set null" }),
 });
 
 export const playerRegistrations = pgTable("player_registrations", {

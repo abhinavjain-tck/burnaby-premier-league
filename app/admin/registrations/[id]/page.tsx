@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { markPaid, setTier, withdraw } from "@/app/admin/actions";
+import { markPaid, setPhone, setTier, withdraw } from "@/app/admin/actions";
+import { ActionForm } from "@/components/admin/ActionForm";
+import { Badge } from "@/components/ui/Badge";
 import { ArrowLeft } from "lucide-react";
 import { AdminBar } from "@/components/admin/AdminBar";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -13,7 +15,8 @@ import { requireAdmin } from "@/lib/auth/roles";
 import { isDbConfigured, isStorageConfigured } from "@/lib/config";
 import { editPath, whatsappIntro } from "@/lib/registration/messages";
 import { TIERS } from "@/lib/registration/options";
-import { getRegistrationById } from "@/lib/registration/queries";
+import { hasNoPhone, isPlaceholderPlayer } from "@/lib/registration/phone";
+import { captainTeamOf, getRegistrationById } from "@/lib/registration/queries";
 import { createServiceClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Registration", robots: { index: false, follow: false } };
@@ -45,7 +48,8 @@ export default async function RegistrationDetailPage({ params }: Props) {
   if (!z.uuid().safeParse(id).success) notFound();
   const reg = await getRegistrationById(id);
   if (!reg) notFound();
-  const proof = await proofLink(reg.paymentProofUrl);
+  const [proof, captainOf] = await Promise.all([proofLink(reg.paymentProofUrl), captainTeamOf(reg.id)]);
+  const noPhone = hasNoPhone(reg.phone);
 
   return (
     <>
@@ -56,12 +60,20 @@ export default async function RegistrationDetailPage({ params }: Props) {
         </Link>
 
         <div className="grid gap-5 md:grid-cols-2 md:items-start">
-        <CardPreview card={toCard(reg)} />
+        <div className="space-y-3">
+          {(captainOf || isPlaceholderPlayer(reg.phone)) && (
+            <p className="flex flex-wrap gap-1.5">
+              {captainOf && <Badge tone="gold">Captain · {captainOf}</Badge>}
+              {isPlaceholderPlayer(reg.phone) && <Badge tone="ball">Placeholder</Badge>}
+            </p>
+          )}
+          <CardPreview card={toCard(reg)} />
+        </div>
 
         <div className="space-y-5">
         <dl className="card grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 p-4">
           <dt className="font-bold text-muted">WhatsApp</dt>
-          <dd className="num font-semibold">{reg.phone}</dd>
+          <dd className="num font-semibold">{noPhone ? <span className="text-muted">No phone yet</span> : reg.phone}</dd>
           <dt className="font-bold text-muted">Email</dt>
           <dd className="break-all">{reg.email ?? "—"}</dd>
           <dt className="font-bold text-muted">Status</dt>
@@ -115,7 +127,37 @@ export default async function RegistrationDetailPage({ params }: Props) {
             </fieldset>
           </form>
 
-          <CopyButton label="Copy WhatsApp message" before={whatsappIntro(reg.fullName)} path={editPath(reg.editToken)} />
+          <ActionForm action={setPhone.bind(null, reg.id)}>
+            <label className="label" htmlFor="phone">
+              {noPhone ? "Add WhatsApp number" : "Change WhatsApp number"}
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="off"
+                className="field min-w-0 flex-1"
+                defaultValue={noPhone ? "" : reg.phone}
+                placeholder="604 555 0101"
+                required
+              />
+              <button type="submit" className="btn-outline shrink-0">
+                Save phone
+              </button>
+            </div>
+          </ActionForm>
+
+          <div className="space-y-2">
+            <p className="label">Private edit link</p>
+            <p className="hint">Send it to the player so they can add a photo and stats. Anyone with it can edit this card.</p>
+            <p className="rounded-md bg-canvas px-3 py-2 font-mono text-sm break-all">{editPath(reg.editToken)}</p>
+            <div className="flex flex-wrap gap-2">
+              <CopyButton label="Copy link" path={editPath(reg.editToken)} />
+              <CopyButton label="Copy WhatsApp message" before={whatsappIntro(reg.fullName)} path={editPath(reg.editToken)} />
+            </div>
+          </div>
 
           {reg.status !== "withdrawn" && (
             <form action={withdraw.bind(null, reg.id)}>

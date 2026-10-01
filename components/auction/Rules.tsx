@@ -16,9 +16,10 @@ export function Rules({ config }: { config: AuctionConfig }) {
           Every team starts with <strong>{fmt(config.purseLakhs)}</strong>. Squads are <strong>{config.minSquad}</strong> to{" "}
           <strong>{config.maxSquad}</strong> players.
         </li>
-        {config.ownerPresoldLakhs > 0 && (
-          <li>Each owner is in their own team before lot 1, at {fmt(config.ownerPresoldLakhs)}.</li>
-        )}
+        <li>
+          Each captain is on their own team before lot 1
+          {config.ownerPresoldLakhs > 0 ? <>, at {fmt(config.ownerPresoldLakhs)}</> : ", free"}.
+        </li>
         <li>
           Base prices: {TIER_KEYS.map((t) => `${TIER_NAME[t]} ${fmt(config.basePrices[t])}`).join(" · ")}. Bidding starts at base.
         </li>

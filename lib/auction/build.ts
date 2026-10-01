@@ -7,7 +7,16 @@ import { activeEvents, redoTarget, undoTarget, type LogRow } from "./log";
 import { replay, type AuctionState } from "./reducer";
 import type { AuctionInfo, CardSnapshot, EventRow, LiveSnapshot, LotMeta, Snapshot, TeamMeta } from "./types";
 
-export type TeamRow = { id: string; name: string; short: string; colour: string; purseStartLakhs: number };
+export type TeamRow = {
+  id: string;
+  name: string;
+  short: string;
+  colour: string;
+  purseStartLakhs: number;
+  logoUrl?: string | null;
+  /** From the real team (teams.captain_registration_id). Null for made-up teams. */
+  captainRegistrationId?: string | null;
+};
 
 export type LotRow = {
   id: string;
@@ -19,6 +28,8 @@ export type LotRow = {
   setName: string;
   sortOrder: number;
   baseLakhs: number;
+  /** Null for made-up players. Never sent to phones. */
+  registrationId?: string | null;
 };
 
 export type EventDbRow = { seq: number; type: string; payload: unknown; undone: boolean; at: Date | string | null; actorEmail: string };
@@ -50,7 +61,18 @@ export function eventRow(e: EventDbRow, withActor: boolean): EventRow {
   return row;
 }
 
-const teamMeta = (t: TeamRow): TeamMeta => ({ id: t.id, name: t.name, short: t.short.trim(), colour: t.colour, purseStart: t.purseStartLakhs });
+function teamMeta(t: TeamRow, lots: LotRow[]): TeamMeta {
+  const captain = t.captainRegistrationId ? lots.find((l) => l.registrationId === t.captainRegistrationId) : undefined;
+  return {
+    id: t.id,
+    name: t.name,
+    short: t.short.trim(),
+    colour: t.colour,
+    purseStart: t.purseStartLakhs,
+    logoUrl: t.logoUrl ?? null,
+    captainLotId: captain?.id ?? null,
+  };
+}
 
 const lotMeta = (l: LotRow): LotMeta => ({
   id: l.id,
@@ -92,7 +114,7 @@ export function buildSnapshot(input: SnapshotInput): Snapshot {
   return {
     auction,
     config,
-    teams: teams.map(teamMeta),
+    teams: teams.map((t) => teamMeta(t, lots)),
     lots: byOrder(lots).map(lotMeta),
     state,
     onBlock: state.onBlockLotId ?? null,

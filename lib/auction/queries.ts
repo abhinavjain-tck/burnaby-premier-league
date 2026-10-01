@@ -3,7 +3,7 @@ import { asc, eq } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema";
-import { auctionEvents, auctionLots, auctions, auctionTeams, seasons } from "../db/schema";
+import { auctionEvents, auctionLots, auctions, auctionTeams, seasons, teams } from "../db/schema";
 import type { EventDbRow, LotRow, TeamRow } from "./build";
 import { resolveConfig, type AuctionConfig } from "./config";
 import type { AuctionInfo } from "./types";
@@ -51,8 +51,11 @@ export async function loadTeams(q: Queryable, auctionId: string): Promise<TeamFu
       purseStartLakhs: auctionTeams.purseStartLakhs,
       purseLeftLakhs: auctionTeams.purseLeftLakhs,
       squadSize: auctionTeams.squadSize,
+      logoUrl: teams.logoUrl,
+      captainRegistrationId: teams.captainRegistrationId,
     })
     .from(auctionTeams)
+    .leftJoin(teams, eq(teams.id, auctionTeams.teamId))
     .where(eq(auctionTeams.auctionId, auctionId))
     .orderBy(asc(auctionTeams.name));
 }

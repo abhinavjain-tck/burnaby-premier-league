@@ -22,6 +22,13 @@
       "when": 1790830215443,
       "tag": "20261001045015_outstanding_magus",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790831900591,
+      "tag": "20261001051820_teams_captain",
+      "breakpoints": true
     }
   ]
 }

@@ -4,7 +4,17 @@ import type { AuctionEvent, AuctionState } from "./reducer";
 
 export type AuctionMode = "test" | "live";
 
-export type TeamMeta = { id: string; name: string; short: string; colour: string; purseStart: number };
+export type TeamMeta = {
+  id: string;
+  name: string;
+  short: string;
+  colour: string;
+  purseStart: number;
+  /** Crest image (site path or URL), or null to show the colour chip. */
+  logoUrl?: string | null;
+  /** Lot of the team's named captain (teams.captain_registration_id), when it has one in this auction. */
+  captainLotId?: string | null;
+};
 
 /** Public card fields copied into auction_lots.card when the lot is seeded. Never phone or email. */
 export type CardSnapshot = {

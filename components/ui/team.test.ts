@@ -31,6 +31,17 @@ describe("teamColour", () => {
     expect(coloursOf(league([null, "nope", null, null]))).toEqual(TEAM_FALLBACK.slice(0, 4));
   });
 
+  it("keeps the Season 4 colours (Hawks, Hunters, Panthers, Tigers): distinct, white text at AA, clear of pitch green", () => {
+    // Same values as supabase/migrations/20261001051900_season4_teams_players.sql, in board (name) order.
+    const season4 = ["#8a6100", "#7c2d12", "#262626", "#c2410c"];
+    expect(coloursOf(league(season4))).toEqual(season4);
+    for (const c of season4) {
+      expect(textOn(c)).toBe("#ffffff");
+      expect(whiteContrast(c)).toBeGreaterThanOrEqual(4.5);
+      expect(colourDistance(c, "#0b4d2c")).toBeGreaterThanOrEqual(MIN_TEAM_DISTANCE);
+    }
+  });
+
   it("uses the team's own colour when no league is passed", () => {
     expect(teamColour({ id: "x", colour: "#7c1bd6" })).toBe("#7c1bd6");
   });
