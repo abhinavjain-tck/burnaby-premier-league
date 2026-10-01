@@ -44,9 +44,9 @@ export async function SiteFooter({ sponsors = true }: { sponsors?: boolean }) {
   return (
     <footer className="mt-12">
       {show && (
-        <div className="border-y border-line bg-paper">
+        <div className="border-t-2 border-t-ink bg-paper">
           <div className="mx-auto max-w-6xl px-4 py-5">
-            <p className="eyebrow mb-2 text-center">Thanks to our sponsors</p>
+            <p className="eyebrow mb-3 text-center">Thanks to our sponsors</p>
             <SponsorSlot placement="strip" />
           </div>
         </div>

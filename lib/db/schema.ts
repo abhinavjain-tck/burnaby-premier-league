@@ -55,6 +55,8 @@ export const sponsors = pgTable("sponsors", {
   tier: text("tier").notNull(), // title|gold|silver|partner
   logoUrl: text("logo_url"),
   url: text("url"),
+  instagramUrl: text("instagram_url"),
+  tagline: text("tagline"),
   placements: jsonb("placements").notNull().default([]), // ["hero","strip","reg_step","auction_lot"]
   sortOrder: integer("sort_order").notNull().default(0),
 });
