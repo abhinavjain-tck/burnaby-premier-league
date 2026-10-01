@@ -5,6 +5,7 @@ import { captainOf } from "@/lib/auction/squad";
 import type { Snapshot } from "@/lib/auction/types";
 import { pursesByRemaining } from "@/lib/auction/view";
 import { fmt } from "@/lib/money";
+import { TeamLogo } from "./TeamBar";
 
 type Props = { snap: Snapshot; leaderId?: string; onOpen?: (teamId: string) => void };
 
@@ -31,8 +32,11 @@ export function Purses({ snap, leaderId, onOpen }: Props) {
             <>
               <span aria-hidden className="absolute inset-x-0 top-0 h-1.5" style={{ background: teamColour(t, snap.teams) }} />
               <span className="flex items-center justify-between gap-2">
-                <span className="rounded-sm px-1.5 font-display text-lg leading-6 font-extrabold uppercase" style={teamStyle(t, snap.teams)}>
-                  {t.short}
+                <span className="flex min-w-0 items-center gap-1.5">
+                  {t.logoUrl && <TeamLogo team={t} teams={snap.teams} size="sm" />}
+                  <span className="rounded-sm px-1.5 font-display text-lg leading-6 font-extrabold uppercase" style={teamStyle(t, snap.teams)}>
+                    {t.short}
+                  </span>
                 </span>
                 <span className="num flex items-center text-sm font-bold text-muted">
                   {t.squadSize}/{snap.config.maxSquad}

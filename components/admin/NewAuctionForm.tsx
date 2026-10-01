@@ -4,7 +4,7 @@ import { createAuction } from "@/app/admin/auctions/actions";
 import { ActionForm } from "./ActionForm";
 
 /** New auction: name, test or live, purse, and the rules as JSON (defaults filled in). */
-export function NewAuctionForm({ defaultConfig }: { defaultConfig: string }) {
+export function NewAuctionForm({ defaultConfig, defaultPurseCr }: { defaultConfig: string; defaultPurseCr: number }) {
   return (
     <ActionForm action={createAuction}>
       <div>
@@ -17,7 +17,7 @@ export function NewAuctionForm({ defaultConfig }: { defaultConfig: string }) {
         <legend className="label">Mode</legend>
         <div className="grid grid-cols-2 gap-2">
           <label className="choice">
-            <input type="radio" name="mode" value="test" defaultChecked /> Test (fake teams, private link)
+            <input type="radio" name="mode" value="test" defaultChecked /> Test (private link, rehearsal)
           </label>
           <label className="choice">
             <input type="radio" name="mode" value="live" /> Live (real teams, one per season)
@@ -28,7 +28,7 @@ export function NewAuctionForm({ defaultConfig }: { defaultConfig: string }) {
         <label className="label" htmlFor="purseCr">
           Purse per team (crores)
         </label>
-        <input id="purseCr" name="purseCr" className="field" inputMode="decimal" defaultValue="300" required />
+        <input id="purseCr" name="purseCr" className="field" inputMode="decimal" defaultValue={defaultPurseCr} required />
       </div>
       <div>
         <label className="label" htmlFor="config">

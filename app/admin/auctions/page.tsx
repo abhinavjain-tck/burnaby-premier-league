@@ -9,6 +9,8 @@ import { NotConfigured } from "@/components/NotConfigured";
 import { requireAdmin } from "@/lib/auth/roles";
 import { listAuctions } from "@/lib/auction/admin";
 import { DEFAULT_CONFIG } from "@/lib/auction/config";
+import { latestSeasonConfig } from "@/lib/auction/snapshot";
+import { LAKH_PER_CRORE } from "@/lib/money";
 import { isDbConfigured } from "@/lib/config";
 
 export const metadata: Metadata = { title: "Auctions", robots: { index: false, follow: false } };
@@ -29,7 +31,7 @@ export default async function AuctionsPage() {
     );
   }
 
-  const rows = await listAuctions();
+  const [rows, season] = await Promise.all([listAuctions(), latestSeasonConfig()]);
   return (
     <>
       <AdminBar email={admin.email} />
@@ -63,7 +65,7 @@ export default async function AuctionsPage() {
 
         <section className="card space-y-3 p-4">
           <h2 className="font-display text-2xl font-extrabold uppercase">New auction</h2>
-          <NewAuctionForm defaultConfig={DEFAULT_JSON} />
+          <NewAuctionForm defaultConfig={DEFAULT_JSON} defaultPurseCr={season.purseLakhs / LAKH_PER_CRORE} />
         </section>
       </main>
     </>

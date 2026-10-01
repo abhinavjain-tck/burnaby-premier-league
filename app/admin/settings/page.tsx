@@ -124,7 +124,7 @@ export default async function SettingsPage({ searchParams }: Props) {
                   </div>
                   <label className="block space-y-1">
                     <span className="text-sm font-bold">Logo URL</span>
-                    <input name={`logo_${t.id}`} defaultValue={t.logoUrl ?? ""} maxLength={500} placeholder="https://..." className={input} />
+                    <input name={`logo_${t.id}`} defaultValue={t.logoUrl ?? ""} maxLength={500} placeholder="https://... or /teams/name.webp" className={input} />
                   </label>
                 </fieldset>
               ))}

@@ -62,6 +62,48 @@ describe("captainOf", () => {
   it("is null when nobody was pre-sold", () => {
     expect(captainOf(snap(history()), "T2")).toBeNull();
   });
+
+  describe("with a named captain on the team", () => {
+    const named = (events: EventDbRow[], captainRegistrationId = "R3") =>
+      buildSnapshot({
+        auction: { id: "A", name: "Test", mode: "test", seasonId: 1, version: events.length },
+        config: DEFAULT_CONFIG,
+        teams: teams.map((t) => (t.id === "T1" ? { ...t, captainRegistrationId } : t)),
+        lots: lots.map((l) => ({ ...l, registrationId: `R${l.id.slice(1)}` })),
+        events,
+      });
+    // Owner One is pre-sold first, but the team names Second Buy (R3) as captain.
+    const both = () => {
+      seq = 0;
+      return [ev("PRESOLD", { lotId: "L1", teamId: "T1", amount: 0 }), ev("PRESOLD", { lotId: "L3", teamId: "T1", amount: 0 })];
+    };
+
+    it("prefers the named captain over the first pre-sold", () => {
+      const s = named(both());
+      expect(s.teams[0].captainLotId).toBe("L3");
+      expect(captainOf(s, "T1")?.name).toBe("Second Buy");
+      expect(squadOf(s, "T1")!.players.map((p) => [p.name, p.captain])).toEqual([
+        ["Second Buy", true],
+        ["Owner One", false],
+      ]);
+    });
+
+    it("falls back to the first pre-sold while the named captain isn't with the team", () => {
+      seq = 0;
+      const s = named([ev("PRESOLD", { lotId: "L1", teamId: "T1", amount: 0 })]);
+      expect(captainOf(s, "T1")?.name).toBe("Owner One");
+    });
+
+    it("falls back when the named captain has no lot in this auction", () => {
+      const s = named(both(), "R-missing");
+      expect(s.teams[0].captainLotId).toBeNull();
+      expect(captainOf(s, "T1")?.name).toBe("Owner One");
+    });
+
+    it("never sends registration ids to phones", () => {
+      expect(JSON.stringify(named(both()).lots)).not.toMatch(/"R\d"/);
+    });
+  });
 });
 
 describe("squadOf", () => {

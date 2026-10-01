@@ -1,19 +1,22 @@
 import { ArrowRight, CalendarDays, Gavel, MapPin, Trophy, UserPlus } from "lucide-react";
 import Link from "next/link";
+import { EventCard } from "@/components/home/EventCard";
 import { NotConfigured } from "@/components/NotConfigured";
 import { SponsorSlot } from "@/components/sponsors/SponsorSlot";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageShell } from "@/components/ui/PageShell";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { isDbConfigured } from "@/lib/config";
+import { EVENT } from "@/lib/event";
+import { getFeeInfo, type FeeInfo } from "@/lib/registration/queries";
 
 // Static and cached; sponsors refresh every minute.
 export const revalidate = 60;
 
 const STEPS = [
   { icon: UserPlus, title: "Register", text: "Name, WhatsApp and role. Add a photo and stats for your auction card any time before the day." },
-  { icon: Gavel, title: "Get picked", text: "Four team owners bid for players on Sunday 4 Oct. Watch it live on your phone." },
-  { icon: Trophy, title: "Play the season", text: "Your team gets in touch on WhatsApp. Then it's cricket every weekend." },
+  { icon: Gavel, title: "Get picked", text: "Four captains bid for players on Sunday 4 Oct. Watch it live on your phone." },
+  { icon: Trophy, title: "Play the season", text: `Your team gets in touch on WhatsApp. Matches are on ${EVENT.matches.dates}.` },
 ];
 
 function Hero() {
@@ -26,17 +29,22 @@ function Hero() {
     >
       <div className="mx-auto flex max-w-6xl flex-col items-start gap-5 px-4 pt-8 pb-10 sm:pt-14 sm:pb-16">
         <p className="rounded-sm bg-gold px-2 py-1 text-sm font-bold tracking-wider text-ink uppercase">Burnaby Premier League</p>
-        <h1 id="hero-h" className="font-display text-6xl leading-[0.9] font-extrabold uppercase sm:text-8xl">
-          BPL Season 4
-        </h1>
+        <div>
+          <h1 id="hero-h" className="font-display text-6xl leading-[0.9] font-extrabold uppercase sm:text-8xl">
+            BPL Season 4
+          </h1>
+          <p className="mt-2 text-lg font-semibold text-white/90">
+            {EVENT.presenter} presents {EVENT.title}, an {EVENT.tagline.toLowerCase()}.
+          </p>
+        </div>
         <div className="flex flex-col gap-2 text-lg font-semibold sm:flex-row sm:gap-6">
           <p className="flex items-center gap-2">
             <CalendarDays aria-hidden className="size-6 text-gold" />
-            Player auction: <strong className="font-bold">Sunday 4 Oct 2026</strong>
+            Player auction: <strong className="font-bold">Sunday 4 Oct, 11:30 AM</strong>
           </p>
           <p className="flex items-center gap-2">
             <MapPin aria-hidden className="size-6 text-gold" />
-            On the ground, live on every phone
+            Sperling cricket ground, live on every phone
           </p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -56,7 +64,18 @@ function Hero() {
   );
 }
 
-export default function Home() {
+/** Fee from admin settings. The page still renders without the database. */
+async function feeInfo(): Promise<FeeInfo> {
+  if (!isDbConfigured()) return {};
+  try {
+    return await getFeeInfo();
+  } catch {
+    return {};
+  }
+}
+
+export default async function Home() {
+  const fee = await feeInfo();
   return (
     <PageShell current="home" width="wide" before={<Hero />} className="space-y-10">
       {!isDbConfigured() && <NotConfigured>Sponsors show up here once the database is connected.</NotConfigured>}
@@ -64,6 +83,8 @@ export default function Home() {
       <div className="mx-auto max-w-md">
         <SponsorSlot placement="hero" />
       </div>
+
+      <EventCard fee={fee} />
 
       <section aria-labelledby="how-h" className="space-y-4">
         <SectionHeader id="how-h" eyebrow="How it works" title="Three steps to a team" />

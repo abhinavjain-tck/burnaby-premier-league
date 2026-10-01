@@ -16,6 +16,7 @@ import { DEFAULT_CONFIG, stepAt } from "./config";
 import { stateFrom } from "./build";
 import { findAuction, loadAll } from "./queries";
 import { getSnapshot } from "./snapshot";
+import { captainOf, squadOf } from "./squad";
 import type { Command, Snapshot } from "./types";
 
 const url = process.env.TEST_DATABASE_URL;
@@ -100,7 +101,7 @@ describe.skipIf(!url)("auction commands against Postgres", () => {
   let id = "";
   let snap: Snapshot;
 
-  it("creates a test auction with 4 fake teams and 48 fake lots in set order", async () => {
+  it("creates a test auction with the season's 4 teams and 48 fake lots in set order", async () => {
     id = await admin.createAuction({ name: "DB test", mode: "test", config: DEFAULT_CONFIG });
     made.push(id);
     await admin.addFakePlayers(id, 48);
@@ -268,9 +269,9 @@ describe.skipIf(!url)("auction commands against Postgres", () => {
 
     const rehearsal = await admin.createAuction({ name: "Rehearsal", mode: "test", config: { ...DEFAULT_CONFIG, purseLakhs: 25000 } });
     made.push(rehearsal);
-    expect(await admin.addConfirmedPlayers(rehearsal)).toBeGreaterThanOrEqual(1);
-    expect(await admin.addConfirmedPlayers(rehearsal)).toBe(0); // no duplicates
-    expect(await admin.addConfirmedPlayers(liveRow.id)).toBeGreaterThanOrEqual(1);
+    expect((await admin.addConfirmedPlayers(rehearsal, "op@example.com")).added).toBeGreaterThanOrEqual(1);
+    expect((await admin.addConfirmedPlayers(rehearsal, "op@example.com")).added).toBe(0); // no duplicates
+    expect((await admin.addConfirmedPlayers(liveRow.id, "op@example.com")).added).toBeGreaterThanOrEqual(1);
 
     const lot = (await getDb().select().from(auctionLots).where(eq(auctionLots.registrationId, reg.id))).find((l) => l.auctionId === rehearsal)!;
     expect(lot).toMatchObject({ playerName: "Test Player", setName: "All-rounders", baseLakhs: 1000 });
@@ -284,5 +285,40 @@ describe.skipIf(!url)("auction commands against Postgres", () => {
     expect(promoted.teams.every((t) => t.purseStart === 25000)).toBe(true);
     expect(Object.values(promoted.state.teams).every((t) => t.purseLeft === 25000)).toBe(true);
     await expectProjectionsMatchReplay(liveRow.id);
+  });
+
+  it("places each team's named captain at the owner price instead of making them a lot", async () => {
+    const [team] = await getDb().select().from(teams).where(eq(teams.seasonId, seasonId)).orderBy(teams.name).limit(1);
+    const [cap] = await getDb()
+      .insert(playerRegistrations)
+      .values({
+        seasonId,
+        editToken: `c${Date.now()}`.padEnd(20, "c").slice(0, 20),
+        status: "registered", // captains go in whether or not they've paid yet
+        fullName: "Cap Tain",
+        phone: `cap-${Date.now()}`,
+      })
+      .returning({ id: playerRegistrations.id });
+    regs.push(cap.id);
+    await getDb().update(teams).set({ captainRegistrationId: cap.id }).where(eq(teams.id, team.id));
+    try {
+      const auction = await admin.createAuction({ name: "Captains", mode: "test", config: DEFAULT_CONFIG });
+      made.push(auction);
+      expect((await admin.addConfirmedPlayers(auction, "op@example.com")).captains).toBe(1);
+      expect((await admin.addConfirmedPlayers(auction, "op@example.com")).captains).toBe(0); // placed once
+
+      const s = (await getSnapshot(auction))!;
+      const mine = s.teams.find((t) => t.name === team.name)!;
+      const lot = s.lots.find((l) => l.playerName === "Cap Tain")!;
+      expect(lot.setName).toBe(admin.CAPTAINS_SET);
+      expect(s.state.lots[lot.id]).toMatchObject({ status: "sold", soldTo: mine.id, price: 0 });
+      expect(s.state.teams[mine.id]).toMatchObject({ purseLeft: DEFAULT_CONFIG.purseLakhs, squadSize: 1 });
+      expect(mine.captainLotId).toBe(lot.id);
+      expect(captainOf(s, mine.id)?.name).toBe("Cap Tain");
+      expect(squadOf(s, mine.id)?.players[0]).toMatchObject({ name: "Cap Tain", captain: true, price: 0 });
+      await expectProjectionsMatchReplay(auction);
+    } finally {
+      await getDb().update(teams).set({ captainRegistrationId: null }).where(eq(teams.id, team.id));
+    }
   });
 });

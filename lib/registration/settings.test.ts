@@ -47,6 +47,8 @@ describe("teamSchema", () => {
   it("rejects bad colour and logo", () => {
     expect(teamSchema.safeParse({ ...ok, colour: "red" }).success).toBe(false);
     expect(teamSchema.safeParse({ ...ok, logoUrl: "javascript:alert(1)" }).success).toBe(false);
+    expect(teamSchema.safeParse({ ...ok, logoUrl: "//evil.example/x.png" }).success).toBe(false);
+    expect(teamSchema.parse({ ...ok, logoUrl: "/teams/hawks.webp" }).logoUrl).toBe("/teams/hawks.webp");
   });
 });
 

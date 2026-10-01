@@ -12,7 +12,7 @@ import { LotCard } from "./LotCard";
 import { Purses } from "./Purses";
 import { SoldFeed } from "./SoldFeed";
 import { SquadSheet } from "./SquadSheet";
-import { TeamBar } from "./TeamBar";
+import { TeamBar, TeamLogo } from "./TeamBar";
 import { useAuctionLive, type AuctionLive } from "./useAuctionLive";
 
 type Sponsors = {
@@ -107,8 +107,11 @@ function LastSale({ snap, lot, running }: { snap: Snapshot; lot: LotView; runnin
       </p>
       <p className="font-display text-4xl leading-tight font-extrabold break-words uppercase">{lot.playerName}</p>
       {team && (
-        <TeamBar team={team} teams={snap.teams} className="text-3xl">
-          <span className="num">{fmt(lot.live.price ?? 0)}</span> · {team.name}
+        <TeamBar team={team} teams={snap.teams} className="flex items-center justify-center gap-3 text-3xl">
+          {team.logoUrl && <TeamLogo team={team} teams={snap.teams} size="md" onColour />}
+          <span className="min-w-0 break-words">
+            <span className="num">{fmt(lot.live.price ?? 0)}</span> · {team.name}
+          </span>
         </TeamBar>
       )}
       {running && <p className="font-semibold text-muted">Next lot coming up…</p>}

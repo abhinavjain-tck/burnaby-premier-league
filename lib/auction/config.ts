@@ -29,7 +29,7 @@ export const DEFAULT_CONFIG: AuctionConfig = {
   maxSquad: 13,
   basePrices: { M: 2000, A: 1000, B: 500, C: 200 },
   ladder: LADDER.map((r) => ({ upTo: Number.isFinite(r.upTo) ? r.upTo : null, step: r.step })),
-  ownerPresoldLakhs: 2500,
+  ownerPresoldLakhs: 0, // captains join their team free; set it to charge them
   unsoldBaseMultiplier: 1,
 };
 
